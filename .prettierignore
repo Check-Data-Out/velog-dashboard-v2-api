@@ -1,0 +1,27 @@
+# 의존성 관련 
+node_modules 
+pnpm-lock.yaml 
+
+# 빌드 결과물 
+dist 
+build 
+
+# 환경설정 
+.env* 
+
+# IDE 설정 
+.vscode 
+.idea 
+
+# 로그파일 
+logs 
+*.log 
+
+# OS 파일 
+.DS_Store 
+Thumbs.db 
+
+# TypeScript 
+*.tsbuildinfo 
+.pnpm 
+.eslintcache
