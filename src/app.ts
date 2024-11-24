@@ -8,7 +8,6 @@ const app: Application = express();
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Hello, V.D.');
+  res.send('Hello, V.D.!');
 });
-
 export default app;
