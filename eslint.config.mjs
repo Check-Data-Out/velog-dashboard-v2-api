@@ -1,11 +1,12 @@
 import eslint from '@eslint/js';
 import * as typescriptEslint from 'typescript-eslint';
-import eslintPluginPrettier from 'eslint-plugin-prettier';
-import eslintConfigPrettier from 'eslint-config-prettier';
+import pluginPrettier from 'eslint-plugin-prettier';
+import configPrettier from 'eslint-config-prettier';
+import pluginJest from 'eslint-plugin-jest';
 
 export default typescriptEslint.config(
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.ts'],
   },
   {
     ignores: ['**/node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
@@ -13,9 +14,10 @@ export default typescriptEslint.config(
   eslint.configs.recommended,
   ...typescriptEslint.configs.recommended,
   ...typescriptEslint.configs.strict,
-  eslintConfigPrettier,
+  pluginJest.configs['flat/recommended'],
+  configPrettier,
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.ts'],
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
@@ -23,7 +25,8 @@ export default typescriptEslint.config(
       },
     },
     plugins: {
-      prettier: eslintPluginPrettier,
+      prettier: pluginPrettier,
+      jest: pluginJest,
     },
   },
   {

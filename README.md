@@ -1,6 +1,6 @@
 # Velog Dashboard Project
 
-- 추후 업데이트 예정
+- 백엔드 API 서버
 
 ## Project Setup Guide
 
@@ -22,5 +22,27 @@ cp .env.sample .env
 3. 서버 실행
 
 ```bash
-pnpm run dev
+pnpm dev
+```
+
+## 실행 가능한 명령어
+
+```
+pnpm dev: 개발 서버 실행
+pnpm test: 테스트 실행
+pnpm lint: 린트 검사
+pnpm lint:fix: 린트 자동 수정
+```
+
+## Project Structure
+
+```bash
+├── src/
+├── __test__/       # 테스트 파일
+├── configs/        # 설정 파일 (DB 등)
+├── controllers/    # API 컨트롤러
+├── models/         # 데이터 모델
+├── repositories/   # 데이터 액세스 레이어
+├── routers/        # API 라우트 정의
+└── services/       # 비즈니스 로직
 ```
