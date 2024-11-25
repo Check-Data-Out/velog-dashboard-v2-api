@@ -10,6 +10,9 @@
 
 ```bash
 pnpm install
+
+# 만약 pnpm 이 없다면 
+brew install pnpm
 ```
 
 2. 환경 변수 설정
