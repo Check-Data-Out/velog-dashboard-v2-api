@@ -30,11 +30,11 @@ pnpm dev
 
 ## 실행 가능한 명령어
 
-```
-pnpm dev: 개발 서버 실행
-pnpm test: 테스트 실행
-pnpm lint: 린트 검사
-pnpm lint:fix: 린트 자동 수정
+```bash
+pnpm dev  # 개발 서버 실행
+pnpm test  # 테스트 실행
+pnpm lint  # 린트 검사
+pnpm lint:fix  # 린트 자동 수정
 ```
 
 ## Project Structure
