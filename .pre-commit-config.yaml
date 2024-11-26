@@ -17,4 +17,4 @@ repos:
         entry: bash -c 'pnpm lint-staged && pnpm test'
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
