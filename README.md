@@ -11,7 +11,7 @@
 ```bash
 pnpm install
 
-# 만약 pnpm 이 없다면 
+# 만약 pnpm 이 없다면
 brew install pnpm
 ```
 
