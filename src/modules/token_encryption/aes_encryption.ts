@@ -28,7 +28,7 @@ class AESEncryption {
     const iv = crypto.randomBytes(16); // 16바이트 IV 생성
     const cipher = crypto.createCipheriv('aes-256-cbc', this.key, iv);
 
-    // PKCS7 패딩은 Node.js에서 자동 처리됩니다.
+    // PKCS7 패딩은 node 에서 자동 처리
     const encrypted = Buffer.concat([
       cipher.update(Buffer.from(plaintext, 'utf-8')),
       cipher.final(),
