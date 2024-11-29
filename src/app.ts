@@ -7,7 +7,9 @@ dotenv.config();
 
 const app: Application = express();
 
+app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: process.env.NODE_ENV === 'production' ? process.env.ALLOWED_ORIGINS?.split(',') : 'http://localhost:8080',
@@ -16,9 +18,6 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(cors());
 
 app.use('/', router);
 app.get('/', (req, res) => {
