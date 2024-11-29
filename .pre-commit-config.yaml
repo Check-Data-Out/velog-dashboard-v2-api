@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: lint-staged-and-test
+        name: Lint Staged and Test
+        entry: bash -c '
+          command -v pnpm >/dev/null 2>&1 || { echo "pnpm이 설치되어 있지 않습니다. 먼저 설치해주세요."; exit 1; }
+          pnpm lint-staged || { echo "린트 검사 실패"; exit 1; }
+          pnpm test || { echo "테스트 실패"; exit 1; }
+        '
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
