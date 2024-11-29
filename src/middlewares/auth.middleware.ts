@@ -37,17 +37,8 @@ export interface CustomRequest extends Request {
  * 2. 기존 유저 - header와 cookie에서 추출 후 반환
  */
 const extractTokens = (req: CustomRequest): { accessToken: string | undefined; refreshToken: string | undefined } => {
-  let { accessToken, refreshToken } = req.body;
-
-  if (!accessToken || !refreshToken) {
-    accessToken = req.headers['access_token'];
-    refreshToken = req.headers['refresh_token'];
-  }
-
-  if (!accessToken || !refreshToken) {
-    accessToken = req.cookies['access_token'];
-    refreshToken = req.cookies['refresh_token'];
-  }
+  const accessToken = req.body.accessToken || req.headers['access_token'] || req.cookies['access_token'];
+  const refreshToken = req.body.refreshToken || req.headers['refresh_token'] || req.cookies['refresh_token'];
 
   return { accessToken, refreshToken };
 };
