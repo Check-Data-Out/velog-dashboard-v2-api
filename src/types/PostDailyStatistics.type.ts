@@ -1,9 +1,9 @@
 export interface PostDailyStatistics {
   id: number;
-  postId: number;
+  post_id: number;
   date: string;
-  dailyViewCount: number;
-  dailyLikeCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  daily_view_count: number;
+  daily_like_count: number;
+  created_at: Date;
+  updated_at: Date;
 }
