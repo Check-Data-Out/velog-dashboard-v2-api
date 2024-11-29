@@ -1,7 +1,8 @@
 import express, { Application } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-
+import router from './routes/user.router';
+import cookieParser from 'cookie-parser';
 dotenv.config();
 
 const app: Application = express();
@@ -15,6 +16,11 @@ app.use(
     credentials: true,
   }),
 );
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(cors());
+
+app.use('/', router);
 app.get('/', (req, res) => {
   res.send('Hello, V.D.!');
 });
