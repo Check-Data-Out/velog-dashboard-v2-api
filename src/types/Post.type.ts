@@ -1,8 +1,8 @@
 export interface Post {
   id: number;
-  postUuid: string;
-  userId: number;
+  post_uuid: string;
+  user_id: number;
   title: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
