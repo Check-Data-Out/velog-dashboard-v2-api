@@ -32,9 +32,13 @@ export interface CustomRequest extends Request {
  */
 
 /**
- * 토큰 추출 함수
- * 1. 신규 유저 - body 에서 추출
- * 2. 기존 유저 - header와 cookie에서 추출 후 반환
+ * 요청에서 토큰을 추출하는 함수
+ * @param {CustomRequest} req - req에 user 프로퍼티를 추가한 Express 객체
+ * @returns {string | null, string | null} accessToken 및 refreshToken 객체 반환
+ * @description 다음과 같은 순서로 토큰을 확인합니다
+ * 1. 요청 본문 - 신규 유저인 경우
+ * 2. 요청 헤더 - 기존 유저인 경우
+ * 3. 요청 쿠키 - 기존 유저인 경우
  */
 const extractTokens = (req: CustomRequest): { accessToken: string | undefined; refreshToken: string | undefined } => {
   const accessToken = req.body.accessToken || req.headers['access_token'] || req.cookies['access_token'];
@@ -43,7 +47,11 @@ const extractTokens = (req: CustomRequest): { accessToken: string | undefined; r
   return { accessToken, refreshToken };
 };
 
-// Velog GraphQL API 호출 함수
+/**
+ * Velog GraphQL API를 호출하여 액세스 토큰을 검증하는 함수
+ * @param {string} accessToken - Velog Api 검증에 사용할 Access Token
+ * @returns {Promise<VelogUser | null>} 검증 성공 시 사용자 데이터, 실패 시 null 반환
+ */
 const verifyVelogToken = async (accessToken: string): Promise<VelogUser | null> => {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const VELOG_API_URL = 'https://v3.velog.io/graphql';
@@ -97,10 +105,19 @@ const verifyVelogToken = async (accessToken: string): Promise<VelogUser | null> 
 };
 
 /**
- * Velog API 호출
- * 1. extractTokens로 요청 (토큰 추출)
- * 2. 추출 후 velog API 호출 후 검증
- * 3. 사용자 정보 반환
+ * Bearer 토큰을 검증하고 Velog 사용자를 인증하는 미들웨어
+ * @param {CustomRequest} req - req에 user 프로퍼티를 추가한 Express 객체
+ * @param {Response} res - 응답 객체
+ * @param {NextFunction} next - 다음 미들 웨어 화출 함수
+ * @returns {Promise<void>}
+ * @description
+ * 인증 처리 과정:
+ * 1. 요청에서 액세스 토큰과 리프레시 토큰 추출
+ * 2. Velog API를 통해 토큰 유효성 검증
+ * 3. 검증 성공 시 요청 객체에 사용자 정보 첨부
+ * 4. 토큰이 유효하지 않거나 누락된 경우 에러 응답 반환
+ *
+ * @throws {Error} 토큰 검증 실패 시 에러 발생
  */
 export const verifyBearerTokens = async (req: CustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {

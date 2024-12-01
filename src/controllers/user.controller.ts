@@ -1,10 +1,13 @@
+import { CustomRequest } from 'src/middlewares/auth.middleware';
 import { UserService } from '../services/user.service';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 
 export class UserController {
   constructor(private userService: UserService) {}
 
-  velogApi = async (req: Request, res: Response): Promise<void> => {
-    res.status(400).json({ message: 'good' });
+  velogApi = async (req: CustomRequest, res: Response): Promise<void> => {
+    console.log(req.user);
+    console.log(req.body);
+    res.status(200).json({ data: req.user });
   };
 }
