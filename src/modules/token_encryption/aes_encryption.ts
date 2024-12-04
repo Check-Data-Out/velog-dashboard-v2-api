@@ -29,10 +29,7 @@ class AESEncryption {
     const cipher = crypto.createCipheriv('aes-256-cbc', this.key, iv);
 
     // PKCS7 패딩은 node 에서 자동 처리
-    const encrypted = Buffer.concat([
-      cipher.update(Buffer.from(plaintext, 'utf-8')),
-      cipher.final(),
-    ]);
+    const encrypted = Buffer.concat([cipher.update(Buffer.from(plaintext, 'utf-8')), cipher.final()]);
 
     // IV와 암호화된 데이터를 결합하여 base64로 반환
     return Buffer.concat([iv, encrypted]).toString('base64');
@@ -51,10 +48,7 @@ class AESEncryption {
     const decipher = crypto.createDecipheriv('aes-256-cbc', this.key, iv);
 
     // 복호화된 데이터를 반환
-    const decrypted = Buffer.concat([
-      decipher.update(encryptedContent),
-      decipher.final(),
-    ]);
+    const decrypted = Buffer.concat([decipher.update(encryptedContent), decipher.final()]);
 
     return decrypted.toString('utf-8');
   }
