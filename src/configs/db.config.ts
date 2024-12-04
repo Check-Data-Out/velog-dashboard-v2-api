@@ -1,5 +1,7 @@
-import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import pg from 'pg';
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const { Pool } = pg;
 
 dotenv.config();
 
