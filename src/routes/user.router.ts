@@ -3,8 +3,8 @@ import { UserController } from '../controllers/user.controller';
 import { UserRepository } from '../reposities/user.repository';
 import { UserService } from '../services/user.service';
 import pool from '../configs/db.config';
-import { authMiddleware } from 'src/middlewares/auth.middleware';
-import { validateResponse } from 'src/middlewares/validation.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { validateResponse } from '../middlewares/validation.middleware';
 import { VelogUserLoginResponseDTO, VelogUserVerifyResponseDto } from 'src/types/dto/velog-user.dto';
 
 import dotenv from 'dotenv';

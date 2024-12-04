@@ -9,12 +9,11 @@ declare global {
         refreshToken: string;
       };
     }
-    namespace Express {
-      interface CustomError extends Error {
-        status: number;
-        code: number;
-        path: string;
-      }
+
+    interface CustomError extends Error {
+      status: number;
+      code: number;
+      path: string;
     }
   }
 }
