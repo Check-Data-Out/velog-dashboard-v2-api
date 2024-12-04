@@ -25,8 +25,6 @@ app.get('/', (req, res) => {
   res.send('Hello, V.D.!');
 });
 app.use(errorHandlingMiddleware);
-
-app.use('/', router);
 app.get('/', (req, res) => {
   res.send('Hello, V.D.!');
 });
