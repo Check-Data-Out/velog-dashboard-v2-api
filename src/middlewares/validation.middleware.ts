@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const validateResponse = (dtoClass: any) => {
+
+export const validateResponse = <T extends object>(dtoClass: new () => T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const dtoObject = plainToInstance(dtoClass, req.user);
     validate(dtoObject).then((errors) => {

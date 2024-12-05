@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
-import { VelogUserLoginResponse, VelogUserVerifyResponse } from 'src/types/velog.type';
+import { VelogUserLoginResponse } from 'src/types/velog.type';
 import logger from 'src/configs/logger.config';
 
 // Request에 user 프로퍼티를 추가하기 위한 타입 확장
@@ -14,26 +14,10 @@ const QUERIES = {
       username
       email
       profile {
-        id
         thumbnail
-        display_name
-        short_bio
-        profile_links
+        }
       }
-      user_meta {
-        id
-        email_notification
-        email_promotion
-      }
-    }
-  }`,
-  VERIFY: `query currentUser {
-    currentUser {
-      id
-      username
-      email
-    }
-  }`,
+    }`,
 };
 
 /**
@@ -59,10 +43,7 @@ const extractTokens = (req: Request): { accessToken: string | undefined; refresh
  * @throws {Error} API 호출 실패 시
  * @returns Promise<VelogUserLoginResponse | VelogUserVerifyResponse | null>
  */
-const fetchVelogApi = async (
-  query: string,
-  accessToken: string,
-): Promise<VelogUserLoginResponse | VelogUserVerifyResponse | null> => {
+const fetchVelogApi = async (query: string, accessToken: string): Promise<VelogUserLoginResponse | null> => {
   try {
     const response = await axios.post(
       VELOG_API_URL,
@@ -129,5 +110,4 @@ export const verifyBearerTokens = (query: string) => {
  */
 export const authMiddleware = {
   login: verifyBearerTokens(QUERIES.LOGIN),
-  verify: verifyBearerTokens(QUERIES.VERIFY),
 };

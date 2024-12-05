@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import express, { Application } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -15,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: process.env.NODE_ENV === 'production' ? process.env.ALLOWED_ORIGINS?.split(',') : 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     credentials: true,
   }),
@@ -26,8 +27,4 @@ app.get('/', (req, res) => {
 });
 app.use(errorHandlingMiddleware);
 
-app.use('/', router);
-app.get('/', (req, res) => {
-  res.send('Hello, V.D.!');
-});
 export default app;
