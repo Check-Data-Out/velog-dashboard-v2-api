@@ -29,7 +29,7 @@ export class UserRepository {
       `;
       const values = [encryptedAccessToken, encryptedRefreshToken, uuid];
 
-      const result = await this.pool.query(query, values);
+      const result = await client.query(query, values);
 
       await client.query('COMMIT');
       return result.rows[0];
@@ -51,7 +51,7 @@ export class UserRepository {
       `;
       const values = [uuid, encryptedAccessToken, encryptedRefreshToken, email];
 
-      const result = await this.pool.query(query, values);
+      const result = await client.query(query, values);
       await client.query('COMMIT');
       return result.rows[0];
     } catch (error) {
