@@ -1,9 +1,9 @@
 import { getKeyByGroup } from '../utils/key.util';
 import AESEncryption from '../modules/token_encryption/aes_encryption';
-import { UserRepository } from '../reposities/user.repository';
+import { UserRepository } from '../repositories/user.repository';
 
 import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
-import { User } from 'src/types';
+import { User } from '../types/models/User.type';
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
