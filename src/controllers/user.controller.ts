@@ -13,7 +13,7 @@ export class UserController {
 
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
-      res.status(200).json({ success: 'true', data: isExistUser });
+      res.status(200).json({ success: true, message: '로그인에 성공하였습니다.', data: isExistUser });
     } catch (error) {
       logger.error('로그인 실패', error);
       next(error);
