@@ -38,7 +38,6 @@ export class UserService {
         accessToken,
         refreshToken,
       });
-      console.log('createUser', createdUser);
 
       const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
         createdUser.group_id,
