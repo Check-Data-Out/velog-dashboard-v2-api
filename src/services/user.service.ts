@@ -4,6 +4,7 @@ import { UserRepository } from '../repositories/user.repository';
 
 import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
 import { User } from '../types/models/User.type';
+import logger from 'src/configs/logger.config';
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
@@ -28,43 +29,47 @@ export class UserService {
 
   async handleUserTokensByVelogUUID(userData: UserWithTokenDto) {
     const { id, email, accessToken, refreshToken } = userData;
+    try {
+      const existingUser = await this.findByVelogUUID(id);
 
-    const existingUser = await this.findByVelogUUID(id);
+      if (!existingUser) {
+        const createdUser = await this.createUser({
+          id,
+          email,
+          accessToken,
+          refreshToken,
+        });
 
-    if (!existingUser) {
-      const createdUser = await this.createUser({
-        id,
-        email,
-        accessToken,
-        refreshToken,
-      });
+        const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
+          createdUser.group_id,
+          accessToken,
+          refreshToken,
+        );
 
-      const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
-        createdUser.group_id,
-        accessToken,
-        refreshToken,
-      );
+        return await this.updateUserTokens({
+          id,
+          email,
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
+        });
+      } else {
+        const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
+          existingUser.group_id,
+          accessToken,
+          refreshToken,
+        );
 
-      return await this.updateUserTokens({
-        id,
-        email,
-        accessToken: encryptedAccessToken,
-        refreshToken: encryptedRefreshToken,
-      });
+        return await this.updateUserTokens({
+          id,
+          email,
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
+        });
+      }
+    } catch (error) {
+      logger.error('유저 토큰 처리 중 오류 발생', error);
+      throw new Error('유저 토큰 처리에 실패했습니다.');
     }
-
-    const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
-      existingUser.group_id,
-      accessToken,
-      refreshToken,
-    );
-
-    return await this.updateUserTokens({
-      id,
-      email,
-      accessToken: encryptedAccessToken,
-      refreshToken: encryptedRefreshToken,
-    });
   }
 
   async findByVelogUUID(uuid: string): Promise<User | null> {
