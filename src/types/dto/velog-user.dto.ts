@@ -4,15 +4,22 @@ import { Type } from 'class-transformer';
 
 export class VelogUserLoginDto implements VelogUserLoginResponse {
   @IsString()
-  id!: string;
+  id: string;
   @IsString()
-  username!: string;
+  username: string;
   @IsEmail()
-  email!: string;
+  email: string;
   @IsObject()
   @ValidateNested()
   @Type(() => ProfileDTO)
-  profile!: ProfileDTO;
+  profile: ProfileDTO;
+
+  constructor(id: string, username: string, email: string, profile: ProfileDTO) {
+    this.id = id;
+    this.username = username;
+    this.email = email;
+    this.profile = profile;
+  }
 }
 class ProfileDTO {
   @IsString()
