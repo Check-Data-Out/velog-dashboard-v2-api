@@ -30,42 +30,29 @@ export class UserService {
   async handleUserTokensByVelogUUID(userData: UserWithTokenDto) {
     const { id, email, accessToken, refreshToken } = userData;
     try {
-      const existingUser = await this.findByVelogUUID(id);
+      let user = await this.findByVelogUUID(id);
 
-      if (!existingUser) {
-        const createdUser = await this.createUser({
+      if (!user) {
+        user = await this.createUser({
           id,
           email,
           accessToken,
           refreshToken,
-        });
-
-        const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
-          createdUser.group_id,
-          accessToken,
-          refreshToken,
-        );
-
-        return await this.updateUserTokens({
-          id,
-          email,
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
-        });
-      } else {
-        const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
-          existingUser.group_id,
-          accessToken,
-          refreshToken,
-        );
-
-        return await this.updateUserTokens({
-          id,
-          email,
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
         });
       }
+
+      const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
+        user.group_id,
+        accessToken,
+        refreshToken,
+      );
+
+      return await this.updateUserTokens({
+        id,
+        email,
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
+      });
     } catch (error) {
       logger.error('유저 토큰 처리 중 오류 발생', error);
       throw new Error('유저 토큰 처리에 실패했습니다.');
