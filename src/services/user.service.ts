@@ -1,4 +1,4 @@
-import { getKeyByGroup } from '../utils/key.urtil';
+import { getKeyByGroup } from '../utils/key.util';
 import AESEncryption from '../modules/token_encryption/aes_encryption';
 import { UserRepository } from '../reposities/user.repository';
 
