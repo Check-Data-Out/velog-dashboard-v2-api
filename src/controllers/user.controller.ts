@@ -1,7 +1,7 @@
-import { UserWithTokenDto } from 'src/types/dto/user-with-token.dto';
+import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
 import { UserService } from '../services/user.service';
 import { NextFunction, Request, Response } from 'express';
-import logger from 'src/configs/logger.config';
+import logger from '../configs/logger.config';
 
 export class UserController {
   constructor(private userService: UserService) {}

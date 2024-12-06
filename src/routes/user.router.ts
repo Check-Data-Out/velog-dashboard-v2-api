@@ -7,7 +7,7 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { validateResponse } from '../middlewares/validation.middleware';
 
 import dotenv from 'dotenv';
-import { VelogUserLoginDto } from 'src/types/dto/velog-user.dto';
+import { VelogUserLoginDto } from '../types/dto/velog-user.dto';
 
 const router: Router = express.Router();
 dotenv.config();

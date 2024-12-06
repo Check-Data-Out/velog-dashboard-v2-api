@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
-import { VelogUserLoginResponse } from 'src/types/velog.type';
-import logger from 'src/configs/logger.config';
+import { VelogUserLoginResponse } from '../types/velog.type';
+import logger from '../configs/logger.config';
 
 // Request에 user 프로퍼티를 추가하기 위한 타입 확장
 

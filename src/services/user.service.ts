@@ -3,8 +3,8 @@ import AESEncryption from '../modules/token_encryption/aes_encryption';
 import { UserRepository } from '../repositories/user.repository';
 
 import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
-import { User } from '../types/models/User.type';
-import logger from 'src/configs/logger.config';
+import { User } from '../types/index';
+import logger from '../configs/logger.config';
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}

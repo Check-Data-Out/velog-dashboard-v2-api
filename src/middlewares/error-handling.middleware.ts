@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from 'src/configs/logger.config';
+import logger from '../configs/logger.config';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorHandlingMiddleware = (err: Express.CustomError, req: Request, res: Response, next: NextFunction) => {

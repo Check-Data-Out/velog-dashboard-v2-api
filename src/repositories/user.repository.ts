@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
-import logger from 'src/configs/logger.config';
-import { User } from 'src/types';
+import logger from '../configs/logger.config';
+import { User } from '../types/index';
 
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
@@ -11,7 +11,7 @@ export class UserRepository {
       return user.rows[0] || null;
     } catch (error) {
       logger.error('이메일로 사용자 조회 중 오류:', error);
-      throw new Error('이메일로 사용자를 조회하지 못했습니다');
+      throw new Error('이메일로 사용자 조회 중 문제가 발생했습니다.');
     }
   }
   async findByUserVelogUUID(uuid: string) {
@@ -20,7 +20,7 @@ export class UserRepository {
       return user.rows[0] || null;
     } catch (error) {
       logger.error('Velog UUID로 유저를 조회 중 오류', error);
-      throw new Error(`UUID: ${uuid}로 사용자 조회 중 문제가 발생했습니다.`);
+      throw new Error(`UUID로 사용자 조회 중 문제가 발생했습니다.`);
     }
   }
   async updateTokens(uuid: string, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
@@ -41,7 +41,7 @@ export class UserRepository {
       return result.rows[0];
     } catch (error) {
       await client.query('ROLLBACK');
-      logger.error('토큰을 업데이트하는 중 오류가 발생하였습니다.', error);
+      logger.error('토큰을 업데이트하는 중 오류', error);
       throw error;
     } finally {
       client.release();
@@ -68,7 +68,7 @@ export class UserRepository {
       return result.rows[0];
     } catch (error) {
       await client.query('ROLLBACK');
-      logger.error('유저를 생성하는 중 오류가 발생하였습니다.', error);
+      logger.error('유저를 생성하는 중 오류', error);
       throw error;
     } finally {
       client.release();
