@@ -10,7 +10,7 @@ export const validateResponse = <T extends object>(dtoClass: new () => T) => {
 
       const errors = await validate(dtoObject);
       if (errors.length > 0) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: '검증에 실패하였습니다. 입력값을 다시 확인해주세요.',
           errors: errors.map((error) => ({
