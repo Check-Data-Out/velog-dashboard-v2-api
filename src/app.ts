@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import express, { Application } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import router from './routes/user.router';
 import cookieParser from 'cookie-parser';
+import router from './routes/user.router';
 import { errorHandlingMiddleware } from './middlewares/error-handling.middleware';
 
 dotenv.config();
