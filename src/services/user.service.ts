@@ -5,6 +5,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
 import { User } from '../types/index';
 import logger from '../configs/logger.config';
+import { TokenError } from '../exception/token.exception';
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
@@ -55,7 +56,7 @@ export class UserService {
       });
     } catch (error) {
       logger.error('유저 토큰 처리 중 오류 발생', error);
-      throw new Error('유저 토큰 처리에 실패했습니다.');
+      throw new TokenError('유저 토큰 처리에 실패했습니다.');
     }
   }
 
@@ -73,6 +74,6 @@ export class UserService {
   }
 
   async updateUserTokens(userData: UserWithTokenDto) {
-    return this.userRepository.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
+    return await this.userRepository.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
   }
 }

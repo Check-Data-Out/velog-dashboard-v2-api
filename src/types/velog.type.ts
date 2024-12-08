@@ -6,8 +6,3 @@ export interface VelogUserLoginResponse {
     thumbnail: string;
   };
 }
-// export interface VelogUserVerifyResponse {
-//   id: string;
-//   username: string;
-//   email: string;
-// }

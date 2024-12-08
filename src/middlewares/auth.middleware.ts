@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
-import { VelogUserLoginResponse } from '../types/velog.type';
 import logger from '../configs/logger.config';
-
-// Request에 user 프로퍼티를 추가하기 위한 타입 확장
 
 const VELOG_API_URL = 'https://v3.velog.io/graphql';
 const QUERIES = {
@@ -29,7 +26,7 @@ const QUERIES = {
  * 2. 요청 헤더 - API 호출
  * 3. 쿠키 - 웹 클라이언트
  */
-const extractTokens = (req: Request): { accessToken: string | undefined; refreshToken: string | undefined } => {
+const extractTokens = (req: Request): { accessToken: string; refreshToken: string } => {
   const accessToken = req.body.accessToken || req.headers['access_token'] || req.cookies['access_token'];
   const refreshToken = req.body.refreshToken || req.headers['refresh_token'] || req.cookies['refresh_token'];
 
@@ -41,9 +38,9 @@ const extractTokens = (req: Request): { accessToken: string | undefined; refresh
  * @param query - GraphQL 쿼리 문자열
  * @param accessToken - Velog access token
  * @throws {Error} API 호출 실패 시
- * @returns Promise<VelogUserLoginResponse | VelogUserVerifyResponse | null>
+ * @returns Promise<VelogUserLoginResponse | null>
  */
-const fetchVelogApi = async (query: string, accessToken: string): Promise<VelogUserLoginResponse | null> => {
+const fetchVelogApi = async (query: string, accessToken: string) => {
   try {
     const response = await axios.post(
       VELOG_API_URL,
@@ -64,7 +61,7 @@ const fetchVelogApi = async (query: string, accessToken: string): Promise<VelogU
       return null;
     }
 
-    return result.data?.currentUser || null;
+    return result.data.currentUser || null;
   } catch (error) {
     logger.error('Velog API 호출 중 오류:', error);
     return null;
@@ -76,22 +73,19 @@ const fetchVelogApi = async (query: string, accessToken: string): Promise<VelogU
  * @param query - 사용자 정보를 조회할 GraphQL 쿼리
  * @returns
  */
-
 export const verifyBearerTokens = (query: string) => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { accessToken, refreshToken } = extractTokens(req);
 
       if (!accessToken || !refreshToken) {
-        res.status(401).json({ message: 'access_token과 refresh_token은 필수값 입니다.' });
-        return;
+        res.status(401).json({ message: 'accessToken과 refreshToken은 필수값 입니다.' });
       }
 
       const velogUser = await fetchVelogApi(query, accessToken);
 
       if (!velogUser) {
         res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
-        return;
       }
 
       req.user = velogUser;
@@ -106,7 +100,6 @@ export const verifyBearerTokens = (query: string) => {
 /**
  * Velog 사용자 인증을 위한 미들웨어 모음
  * @property {Function} login - 사용자의 전체 정보를 조회하는 인증 미들웨어
- * @property {Function} verify - 기본 사용자 정보만 조회하는 인증 미들웨어
  */
 export const authMiddleware = {
   login: verifyBearerTokens(QUERIES.LOGIN),

@@ -1,9 +1,9 @@
-import { VelogUserLoginResponse, VelogUserVerifyResponse } from '../velog.type';
+import { VelogUserLoginResponse } from '../velog.type';
 
 declare global {
   namespace Express {
     interface Request {
-      user: VelogUserLoginResponse | VelogUserVerifyResponse;
+      user: VelogUserLoginResponse;
       tokens: {
         accessToken: string;
         refreshToken: string;
