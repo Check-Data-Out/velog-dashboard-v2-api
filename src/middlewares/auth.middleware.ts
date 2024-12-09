@@ -79,7 +79,7 @@ export const verifyBearerTokens = (query: string) => {
       const { accessToken, refreshToken } = extractTokens(req);
 
       if (!accessToken || !refreshToken) {
-        res.status(401).json({ message: 'accessToken과 refreshToken은 필수값 입니다.' });
+        res.status(401).json({ message: 'accessToken과 refreshToken의 입력이 올바르지 않습니다' });
       }
 
       const velogUser = await fetchVelogApi(query, accessToken);
@@ -93,7 +93,7 @@ export const verifyBearerTokens = (query: string) => {
       next();
     } catch (error) {
       logger.error('인증 처리중 오류가 발생하였습니다.', error);
-      res.status(500).json({ message: '서버 오류로 인해 인증에 실패했습니다.' });
+      next(error);
     }
   };
 };

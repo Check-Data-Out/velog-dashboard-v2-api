@@ -1,8 +1,8 @@
-import { IsEmail, IsString, ValidateNested } from 'class-validator';
+import { IsEmail, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class VelogUserLoginDto {
-  @IsString()
+  @IsUUID()
   id: string;
   @IsString()
   username: string;

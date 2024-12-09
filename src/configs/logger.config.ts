@@ -25,6 +25,7 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
     }),
+
     new winstonDaily({
       level: 'debug',
       datePattern: 'YYYY-MM-DD',

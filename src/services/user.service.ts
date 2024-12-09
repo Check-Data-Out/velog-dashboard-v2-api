@@ -12,12 +12,21 @@ export class UserService {
   // 토큰 암호화 처리
   private encryptTokens(groupId: number, accessToken: string, refreshToken: string) {
     const key = getKeyByGroup(groupId);
-    const aes = new AESEncryption(key);
+    if (!key) {
+      logger.error('그룹 키 조회 중 실패');
+      throw new TokenError('올바르지 않은 그룹 ID로 인해 암호화 키를 찾을 수 없습니다.');
+    }
+    try {
+      const aes = new AESEncryption(key);
 
-    return {
-      encryptedAccessToken: aes.encrypt(accessToken),
-      encryptedRefreshToken: aes.encrypt(refreshToken),
-    };
+      return {
+        encryptedAccessToken: aes.encrypt(accessToken),
+        encryptedRefreshToken: aes.encrypt(refreshToken),
+      };
+    } catch (error) {
+      logger.error('유저 토큰 생성 중 오류 발생', error);
+      throw new TokenError('토큰 암호화 처리에 실패하였습니다.');
+    }
   }
 
   // 토큰 복호화 처리
@@ -55,7 +64,7 @@ export class UserService {
       });
     } catch (error) {
       logger.error('유저 토큰 처리 중 오류 발생', error);
-      throw new TokenError('유저 토큰 처리에 실패했습니다.');
+      throw error;
     }
   }
 
