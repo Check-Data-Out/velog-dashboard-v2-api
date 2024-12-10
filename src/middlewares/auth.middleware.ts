@@ -2,7 +2,7 @@
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import logger from '../configs/logger.config';
-import { TokenError } from 'src/exception/token.exception';
+import { TokenError } from '../exception/token.exception';
 
 const VELOG_API_URL = 'https://v3.velog.io/graphql';
 const QUERIES = {

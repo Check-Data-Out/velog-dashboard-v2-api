@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { TokenError } from 'src/exception/token.exception';
-import { CustomError } from 'src/exception/coustom.exception';
+import { TokenError } from '../exception/token.exception';
+import { CustomError } from '../exception/custom.exception';
 
 export const errorHandlingMiddleware = ((err: CustomError, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof TokenError) {
