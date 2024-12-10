@@ -1,6 +1,7 @@
-export class DBError extends Error {
+import { CustomError } from './coustom.exception';
+
+export class DBError extends CustomError {
   constructor(message: string) {
-    super(message);
-    this.name = 'DBError';
+    super(message, 'DB_ERROR', 500);
   }
 }

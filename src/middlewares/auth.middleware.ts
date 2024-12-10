@@ -2,6 +2,7 @@
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import logger from '../configs/logger.config';
+import { TokenError } from 'src/exception/token.exception';
 
 const VELOG_API_URL = 'https://v3.velog.io/graphql';
 const QUERIES = {
@@ -79,13 +80,13 @@ export const verifyBearerTokens = (query: string) => {
       const { accessToken, refreshToken } = extractTokens(req);
 
       if (!accessToken || !refreshToken) {
-        res.status(401).json({ message: 'accessToken과 refreshToken의 입력이 올바르지 않습니다' });
+        throw new TokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
       }
 
       const velogUser = await fetchVelogApi(query, accessToken);
 
       if (!velogUser) {
-        res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
+        throw new TokenError('유효하지 않은 토큰입니다.');
       }
 
       req.user = velogUser;
