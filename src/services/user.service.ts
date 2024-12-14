@@ -7,7 +7,7 @@ import { UserWithTokenDto } from '../types/dto/userWithToken.dto';
 import { User } from '../types';
 
 export class UserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private userRepo: UserRepository) {}
 
   // 토큰 암호화 처리
   private encryptTokens(groupId: number, accessToken: string, refreshToken: string) {
@@ -69,19 +69,14 @@ export class UserService {
   }
 
   async findByVelogUUID(uuid: string): Promise<User | null> {
-    return await this.userRepository.findByUserVelogUUID(uuid);
+    return await this.userRepo.findByUserVelogUUID(uuid);
   }
 
   async createUser(userData: UserWithTokenDto) {
-    return await this.userRepository.createUser(
-      userData.id,
-      userData.email,
-      userData.accessToken,
-      userData.refreshToken,
-    );
+    return await this.userRepo.createUser(userData.id, userData.email, userData.accessToken, userData.refreshToken);
   }
 
   async updateUserTokens(userData: UserWithTokenDto) {
-    return await this.userRepository.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
+    return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
   }
 }

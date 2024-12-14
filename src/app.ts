@@ -3,8 +3,9 @@ import express, { Application } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import router from './routes/user.router';
-import { errorHandlingMiddleware } from './middlewares/error-handling.middleware';
+import userRouter from './routes/user.router';
+import trackingRouter from './routes/tracking.router';
+import { errorHandlingMiddleware } from './middlewares/errorHandling.middleware';
 
 dotenv.config();
 
@@ -21,7 +22,8 @@ app.use(
     credentials: true,
   }),
 );
-app.use('/', router);
+app.use('/user', userRouter);
+app.use('/api', trackingRouter);
 app.get('/', (req, res) => {
   res.send('Hello, V.D.!');
 });
