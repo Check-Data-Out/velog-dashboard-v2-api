@@ -3,12 +3,14 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import logger from '../configs/logger.config';
 
+type RequestKey = 'body' | 'user';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const validateResponse = <T extends object>(dtoClass: new (...args: any) => T) => {
+export const validateDto = <T extends object>(dtoClass: new (...args: any) => T, key: RequestKey = 'body') => {
   return (async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userDto = plainToInstance(dtoClass, req.user);
-      const errors = await validate(userDto);
+      const value = plainToInstance(dtoClass, req[key]);
+      const errors = await validate(value);
 
       if (errors.length > 0) {
         return res.status(400).json({
@@ -21,10 +23,10 @@ export const validateResponse = <T extends object>(dtoClass: new (...args: any) 
         });
       }
 
-      req.user = userDto as T;
+      req[key] = value as T;
       next();
     } catch (error) {
-      logger.error('Dto 검증 중 오류 발생', error);
+      logger.error(`${key} Dto 검증 중 오류 발생`, error);
       next(error);
     }
   }) as RequestHandler;
