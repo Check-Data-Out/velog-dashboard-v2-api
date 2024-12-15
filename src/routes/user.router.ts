@@ -1,7 +1,6 @@
 import express, { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
 import { UserRepository } from '../repositories/user.repository';
-import { UserRepository } from '../repositories/user.repository';
 import { UserService } from '../services/user.service';
 import pool from '../configs/db.config';
 import { authMiddleware } from '../middlewares/auth.middleware';

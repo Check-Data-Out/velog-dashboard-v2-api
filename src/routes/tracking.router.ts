@@ -15,6 +15,6 @@ const trackingRepository = new TrackingRepository(pool);
 const trackingService = new TrackingService(trackingRepository);
 const trackingController = new TrackingController(trackingService);
 
-router.post('/track', authMiddleware.verify, validateDto(EventRequestDto, 'body'), trackingController.track);
+router.post('/event', authMiddleware.verify, validateDto(EventRequestDto, 'body'), trackingController.track);
 
 export default router;

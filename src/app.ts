@@ -23,7 +23,7 @@ app.use(
     credentials: true,
   }),
 );
-app.use('/user', userRouter);
+app.use('/api', userRouter);
 app.use('/api', trackingRouter);
 app.get('/', (req, res) => {
   res.send('Hello, V.D.!');
