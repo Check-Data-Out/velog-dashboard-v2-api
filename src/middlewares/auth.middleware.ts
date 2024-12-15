@@ -2,6 +2,7 @@
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import logger from '../configs/logger.config';
+import pool from 'src/configs/db.config';
 import { TokenError } from '../exception/token.exception';
 
 const VELOG_API_URL = 'https://v3.velog.io/graphql';
@@ -68,13 +69,13 @@ const fetchVelogApi = async (query: string, accessToken: string) => {
     return null;
   }
 };
-
+const extractPayload = (token: string) => JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 /**
- *  Bearer 토큰을 검증하고 Velog 사용자를 인증하는 함수
+ *  Bearer 토큰을 검증한뒤 최초 로그인이라면 Velog 사용자를 인증을, 아니라면 기존 사용자를 인증하여 user정보를 Request 객체에 담는 함수
  * @param query - 사용자 정보를 조회할 GraphQL 쿼리
  * @returns
  */
-export const verifyBearerTokens = (query: string) => {
+const verifyBearerTokens = (query?: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { accessToken, refreshToken } = extractTokens(req);
@@ -83,13 +84,21 @@ export const verifyBearerTokens = (query: string) => {
         throw new TokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
       }
 
-      const velogUser = await fetchVelogApi(query, accessToken);
-
-      if (!velogUser) {
-        throw new TokenError('유효하지 않은 토큰입니다.');
+      let user = null;
+      if (query) {
+        user = await fetchVelogApi(query, accessToken);
+        if (!user) {
+          throw new TokenError('유효하지 않은 토큰입니다.');
+        }
+      } else {
+        // TODO: accessToken에서 uuid 추출 후 req 저장
+        const payload = extractPayload(accessToken);
+        user = (await pool.query('SELECT * FROM "users" WHERE velog_uuid = $1', [payload.user_id])).rows[0];
+        if (!user) {
+          throw new TokenError('사용자를 찾을 수 없습니다.');
+        }
       }
-
-      req.user = velogUser;
+      req.user = user;
       req.tokens = { accessToken, refreshToken };
       next();
     } catch (error) {
@@ -99,9 +108,11 @@ export const verifyBearerTokens = (query: string) => {
   };
 };
 /**
- * Velog 사용자 인증을 위한 미들웨어 모음
- * @property {Function} login - 사용자의 전체 정보를 조회하는 인증 미들웨어
+ * 사용자 인증을 위한 미들웨어 모음
+ * @property {Function} login - 최초 로그인 시 Velog API를 호출하는 인증 미들웨어
+ *  @property {Function} verify - 기존 유저를 인증하는 미들웨어
  */
 export const authMiddleware = {
   login: verifyBearerTokens(QUERIES.LOGIN),
+  verify: verifyBearerTokens(),
 };
