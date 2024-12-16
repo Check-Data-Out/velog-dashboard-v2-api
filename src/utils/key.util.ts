@@ -5,7 +5,7 @@ dotenv.config();
 const keys: string[] = Array.from({ length: 10 }, (_, i) => {
   const key = process.env[`AES_KEY_${i}`];
   if (!key || key.length !== 32) {
-    throw new Error(`Invalid AES_KEY_${i}: Must be 32 bytes`);
+    throw new Error(`Key must be 256 bits (32 bytes)`);
   }
   return key;
 });
