@@ -4,6 +4,7 @@ import { getKeyByGroup } from '../utils/key.util';
 import AESEncryption from '../modules/token_encryption/aes_encryption';
 import { UserRepository } from '../repositories/user.repository';
 import { UserWithTokenDto, User } from '../types';
+import { generateRandomGroupId } from 'src/utils/generateGroupId.util';
 
 export class UserService {
   constructor(private userRepo: UserRepository) {}
@@ -72,7 +73,14 @@ export class UserService {
   }
 
   async createUser(userData: UserWithTokenDto) {
-    return await this.userRepo.createUser(userData.id, userData.email, userData.accessToken, userData.refreshToken);
+    const groupId = generateRandomGroupId();
+    return await this.userRepo.createUser(
+      userData.id,
+      userData.email,
+      userData.accessToken,
+      userData.refreshToken,
+      groupId,
+    );
   }
 
   async updateUserTokens(userData: UserWithTokenDto) {

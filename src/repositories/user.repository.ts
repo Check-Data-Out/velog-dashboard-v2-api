@@ -8,7 +8,7 @@ export class UserRepository {
 
   async findByUserVelogUUID(uuid: string): Promise<User> {
     try {
-      const user = await this.pool.query('SELECT * FROM "users" WHERE velog_uuid = $1', [uuid]);
+      const user = await this.pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [uuid]);
       return user.rows[0] || null;
     } catch (error) {
       logger.error('Velog UUID로 유저를 조회 중 오류', error);
@@ -18,8 +18,8 @@ export class UserRepository {
   async updateTokens(uuid: string, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
     try {
       const query = `
-        UPDATE users
-        SET access_token = $1, refresh_token = $2
+        UPDATE "users_user"
+        SET access_token = $1, refresh_token = $2, updated_at = NOW(), is_active = true
         WHERE velog_uuid = $3
         RETURNING *;
       `;
@@ -42,14 +42,26 @@ export class UserRepository {
     email: string,
     encryptedAccessToken: string,
     encryptedRefreshToken: string,
+    groupId: number,
   ): Promise<User> {
     try {
       const query = `
-      INSERT INTO users (velog_uuid, access_token, refresh_token, email)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO "users_user" (
+      velog_uuid,
+      access_token,
+      refresh_token,
+      email,
+      group_id,
+      is_active,
+      created_at,
+      updated_at
+      )
+      VALUES (
+      $1, $2, $3, $4, $5, true, NOW(), NOW()
+      )
       RETURNING *;
       `;
-      const values = [uuid, encryptedAccessToken, encryptedRefreshToken, email];
+      const values = [uuid, encryptedAccessToken, encryptedRefreshToken, email, groupId];
 
       const result = await this.pool.query(query, values);
       if (!result.rows[0]) {
