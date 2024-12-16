@@ -2,8 +2,8 @@
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import logger from '../configs/logger.config';
-import pool from 'src/configs/db.config';
-import { TokenError } from '../exception/token.exception';
+import pool from '../configs/db.config';
+import { InvalidTokenError, UnauthorizedError } from '../exception';
 
 const VELOG_API_URL = 'https://v3.velog.io/graphql';
 const QUERIES = {
@@ -60,13 +60,13 @@ const fetchVelogApi = async (query: string, accessToken: string) => {
 
     if (result.errors) {
       logger.error('GraphQL Errors:', result.errors);
-      return null;
+      throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
     }
 
     return result.data.currentUser || null;
   } catch (error) {
     logger.error('Velog API 호출 중 오류:', error);
-    return null;
+    throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
   }
 };
 const extractPayload = (token: string) => JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
@@ -81,21 +81,20 @@ const verifyBearerTokens = (query?: string) => {
       const { accessToken, refreshToken } = extractTokens(req);
 
       if (!accessToken || !refreshToken) {
-        throw new TokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
+        throw new InvalidTokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
       }
 
       let user = null;
       if (query) {
         user = await fetchVelogApi(query, accessToken);
         if (!user) {
-          throw new TokenError('유효하지 않은 토큰입니다.');
+          throw new InvalidTokenError('유효하지 않은 토큰입니다.');
         }
       } else {
-        // TODO: accessToken에서 uuid 추출 후 req 저장
         const payload = extractPayload(accessToken);
         user = (await pool.query('SELECT * FROM "users" WHERE velog_uuid = $1', [payload.user_id])).rows[0];
         if (!user) {
-          throw new TokenError('사용자를 찾을 수 없습니다.');
+          throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
         }
       }
       req.user = user;

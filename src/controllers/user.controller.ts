@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '../configs/logger.config';
-import { UserWithTokenDto } from '../types/dto/userWithToken.dto';
+import { UserWithTokenDto } from '../types';
 import { UserService } from '../services/user.service';
 
 export class UserController {

@@ -3,3 +3,8 @@ export { Post } from './models/Post.type';
 export { PostDailyStatistics } from './models/PostDailyStatistics.type';
 export { PostStatistics } from './models/PostStatistics.type';
 export { UserEventTracking } from './models/UserEventTracking.type';
+export { EventRequestDto } from './dto/event.dto';
+export { UserWithTokenDto } from './dto/userWithToken.dto';
+export { VelogUserLoginDto } from './dto/velogUser.dto';
+export { UserEventType } from './userEvent.type';
+export { VelogUserLoginResponse } from './velog.type';

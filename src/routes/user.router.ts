@@ -6,7 +6,7 @@ import pool from '../configs/db.config';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { validateDto } from '../middlewares/validation.middleware';
 import dotenv from 'dotenv';
-import { VelogUserLoginDto } from '../types/dto/velogUser.dto';
+import { VelogUserLoginDto } from '../types';
 
 const router: Router = express.Router();
 dotenv.config();

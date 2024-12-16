@@ -1,10 +1,9 @@
 import logger from '../configs/logger.config';
-import { TokenError } from '../exception/token.exception';
+import { TokenError } from '../exception/';
 import { getKeyByGroup } from '../utils/key.util';
 import AESEncryption from '../modules/token_encryption/aes_encryption';
 import { UserRepository } from '../repositories/user.repository';
-import { UserWithTokenDto } from '../types/dto/userWithToken.dto';
-import { User } from '../types';
+import { UserWithTokenDto, User } from '../types';
 
 export class UserService {
   constructor(private userRepo: UserRepository) {}

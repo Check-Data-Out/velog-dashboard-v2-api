@@ -1,12 +1,12 @@
 import { Pool } from 'pg';
 import logger from '../configs/logger.config';
 import { User } from '../types';
-import { DBError } from '../exception/db.exception';
+import { DBError } from '../exception';
 
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
-  async findByUserVelogUUID(uuid: string) {
+  async findByUserVelogUUID(uuid: string): Promise<User> {
     try {
       const user = await this.pool.query('SELECT * FROM "users" WHERE velog_uuid = $1', [uuid]);
       return user.rows[0] || null;
@@ -27,6 +27,9 @@ export class UserRepository {
 
       const result = await this.pool.query(query, values);
 
+      if (!result.rows[0]) {
+        throw new DBError('해당 UUID를 가진 유저를 찾을 수 없습니다.');
+      }
       return result.rows[0];
     } catch (error) {
       logger.error('토큰을 업데이트하는 중 오류', error);
@@ -49,6 +52,9 @@ export class UserRepository {
       const values = [uuid, encryptedAccessToken, encryptedRefreshToken, email];
 
       const result = await this.pool.query(query, values);
+      if (!result.rows[0]) {
+        throw new DBError('유저 생성에 실패했습니다.');
+      }
       return result.rows[0];
     } catch (error) {
       logger.error('유저를 생성하는 중 오류', error);

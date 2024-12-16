@@ -1,11 +1,12 @@
 import { Pool } from 'pg';
-import logger from 'src/configs/logger.config';
-import { DBError } from 'src/exception/db.exception';
+import logger from '../configs/logger.config';
+import { DBError } from '../exception';
+import { EventRequestDto } from '../types';
 
 export class TrackingRepository {
   constructor(private readonly pool: Pool) {}
 
-  async save(type: string, id: number) {
+  async save(type: EventRequestDto, id: number) {
     try {
       const result = await this.pool.query(
         `

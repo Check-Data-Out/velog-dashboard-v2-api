@@ -9,6 +9,7 @@ export class TrackingController {
     try {
       const { type } = req.body;
       const { id } = req.user;
+
       const result = await this.trackingService.tracking(type, id);
       return res.status(200).json({ success: true, message: '저장완료', data: result });
     } catch (error) {
