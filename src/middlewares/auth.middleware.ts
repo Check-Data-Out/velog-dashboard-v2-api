@@ -59,13 +59,13 @@ const fetchVelogApi = async (query: string, accessToken: string) => {
     const result = response.data;
 
     if (result.errors) {
-      logger.error('GraphQL Errors:', result.errors);
+      logger.error('GraphQL Errors : ', result.errors);
       throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
     }
 
     return result.data.currentUser || null;
   } catch (error) {
-    logger.error('Velog API 호출 중 오류:', error);
+    logger.error('Velog API 호출 중 오류 : ', error);
     throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
   }
 };
@@ -92,7 +92,7 @@ const verifyBearerTokens = (query?: string) => {
         }
       } else {
         const payload = extractPayload(accessToken);
-        user = (await pool.query('SELECT * FROM "users" WHERE velog_uuid = $1', [payload.user_id])).rows[0];
+        user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id])).rows[0];
         if (!user) {
           throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
         }
@@ -101,7 +101,7 @@ const verifyBearerTokens = (query?: string) => {
       req.tokens = { accessToken, refreshToken };
       next();
     } catch (error) {
-      logger.error('인증 처리중 오류가 발생하였습니다.', error);
+      logger.error('인증 처리중 오류가 발생하였습니다. : ', error);
       next(error);
     }
   };

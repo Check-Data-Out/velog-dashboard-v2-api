@@ -26,7 +26,7 @@ export const validateDto = <T extends object>(dtoClass: new (...args: any) => T,
       req[key] = value as T;
       next();
     } catch (error) {
-      logger.error(`${key} Dto 검증 중 오류 발생`, error);
+      logger.error(`${key} Dto 검증 중 오류 발생 : `, error);
       next(error);
     }
   }) as RequestHandler;

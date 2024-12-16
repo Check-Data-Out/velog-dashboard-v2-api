@@ -7,6 +7,7 @@ import { TrackingController } from '../controllers/tracking.controller';
 import { validateDto } from '../middlewares/validation.middleware';
 import { EventRequestDto } from '../types';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { StayTimeRequestDto } from '../types';
 
 const router: Router = express.Router();
 dotenv.config();
@@ -15,6 +16,7 @@ const trackingRepository = new TrackingRepository(pool);
 const trackingService = new TrackingService(trackingRepository);
 const trackingController = new TrackingController(trackingService);
 
-router.post('/event', authMiddleware.verify, validateDto(EventRequestDto, 'body'), trackingController.track);
+router.post('/event', authMiddleware.verify, validateDto(EventRequestDto, 'body'), trackingController.event);
+router.post('/stay', authMiddleware.verify, validateDto(StayTimeRequestDto, 'body'), trackingController.stay);
 
 export default router;

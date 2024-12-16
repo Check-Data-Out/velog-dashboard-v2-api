@@ -11,7 +11,7 @@ export class UserRepository {
       const user = await this.pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [uuid]);
       return user.rows[0] || null;
     } catch (error) {
-      logger.error('Velog UUID로 유저를 조회 중 오류', error);
+      logger.error('Velog UUID로 유저를 조회 중 오류 : ', error);
       throw new DBError('유저 조회 중 문제가 발생했습니다.');
     }
   }
@@ -32,7 +32,7 @@ export class UserRepository {
       }
       return result.rows[0];
     } catch (error) {
-      logger.error('토큰을 업데이트하는 중 오류', error);
+      logger.error('토큰을 업데이트하는 중 오류 : ', error);
       throw new DBError('토큰 업데이트 중 문제가 발생했습니다.');
     }
   }
@@ -69,7 +69,7 @@ export class UserRepository {
       }
       return result.rows[0];
     } catch (error) {
-      logger.error('유저를 생성하는 중 오류', error);
+      logger.error('유저를 생성하는 중 오류 : ', error);
       throw new DBError('유저 생성 중 문제가 발생했습니다.');
     }
   }

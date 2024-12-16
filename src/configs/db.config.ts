@@ -22,9 +22,9 @@ const pool = new Pool({
   const client = await pool.connect();
   try {
     await client.query('CREATE EXTENSION IF NOT EXISTS timescaledb;');
-    console.log('확장 성공');
+    logger.info('TimescaleDB 확장 성공');
   } catch (error) {
-    logger.error('초기화 실패', error);
+    logger.error('TimescaleDB 초기화 실패 : ', error);
   } finally {
     client.release();
   }

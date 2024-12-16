@@ -19,7 +19,7 @@ export class UserController {
         data: { id: isExistUser.id, email: isExistUser.email, profile },
       });
     } catch (error) {
-      logger.error('로그인 실패', error);
+      logger.error('로그인 실패 : ', error);
       next(error);
     }
   }) as RequestHandler;
