@@ -74,6 +74,7 @@ export class UserService {
 
   async createUser(userData: UserWithTokenDto) {
     const groupId = generateRandomGroupId();
+
     return await this.userRepo.createUser(
       userData.id,
       userData.email,

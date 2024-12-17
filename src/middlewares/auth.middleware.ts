@@ -3,7 +3,8 @@ import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import logger from '../configs/logger.config';
 import pool from '../configs/db.config';
-import { InvalidTokenError, UnauthorizedError } from '../exception';
+import { DBError, InvalidTokenError } from '../exception';
+import { isUUID } from 'class-validator';
 
 const VELOG_API_URL = 'https://v3.velog.io/graphql';
 const QUERIES = {
@@ -92,9 +93,13 @@ const verifyBearerTokens = (query?: string) => {
         }
       } else {
         const payload = extractPayload(accessToken);
+        if (!payload.user_id || !isUUID(payload.user_id)) {
+          throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
+        }
+
         user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id])).rows[0];
         if (!user) {
-          throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+          throw new DBError('사용자를 찾을 수 없습니다.');
         }
       }
       req.user = user;

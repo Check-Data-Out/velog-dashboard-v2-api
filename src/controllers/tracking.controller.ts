@@ -10,8 +10,8 @@ export class TrackingController {
       const { type } = req.body;
       const { id } = req.user;
 
-      const result = await this.trackingService.tracking(type, id);
-      return res.status(200).json({ success: true, message: '저장완료', data: result });
+      await this.trackingService.tracking(type, id);
+      return res.status(200).json({ success: true, message: '이벤트 데이터 저장완료' });
     } catch (error) {
       logger.error('user tracking 실패 : ', error);
       next(error);
@@ -24,7 +24,7 @@ export class TrackingController {
       const { id } = req.user;
 
       await this.trackingService.stay({ loadDate, unloadDate }, id);
-      return res.status(200).json({ success: true, message: '시간조회' });
+      return res.status(200).json({ success: true, message: '체류시간 데이터 완료' });
     } catch (error) {
       logger.error('user stay time 저장 실패 : ', error);
       next(error);

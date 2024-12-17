@@ -47,17 +47,17 @@ export class UserRepository {
     try {
       const query = `
       INSERT INTO "users_user" (
-      velog_uuid,
-      access_token,
-      refresh_token,
-      email,
-      group_id,
-      is_active,
-      created_at,
-      updated_at
+        velog_uuid,
+        access_token,
+        refresh_token,
+        email,
+        group_id,
+        is_active,
+        created_at,
+        updated_at
       )
       VALUES (
-      $1, $2, $3, $4, $5, true, NOW(), NOW()
+        $1, $2, $3, $4, $5, true, NOW(), NOW()
       )
       RETURNING *;
       `;

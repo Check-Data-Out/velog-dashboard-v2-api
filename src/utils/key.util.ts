@@ -12,5 +12,7 @@ const keys: string[] = Array.from({ length: 10 }, (_, i) => {
 
 export const getKeyByGroup = (group: number): string => {
   const keyIndex = (group % 100) % keys.length;
+  console.log('getKeyByGroup ~ keyIndex:', keyIndex);
+
   return keys[keyIndex];
 };
