@@ -5,8 +5,7 @@ import logger from '../configs/logger.config';
 
 type RequestKey = 'body' | 'user';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const validateDto = <T extends object>(dtoClass: new (...args: any) => T, key: RequestKey) => {
+export const validateDto = <T extends object>(dtoClass: new (...args: unknown[]) => T, key: RequestKey) => {
   return (async (req: Request, res: Response, next: NextFunction) => {
     try {
       const value = plainToInstance(dtoClass, req[key]);
