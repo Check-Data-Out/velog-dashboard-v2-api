@@ -1,13 +1,13 @@
 import logger from '../configs/logger.config';
-import { TokenError } from '../exception/token.exception';
+import { TokenError } from '../exception/';
 import { getKeyByGroup } from '../utils/key.util';
 import AESEncryption from '../modules/token_encryption/aes_encryption';
 import { UserRepository } from '../repositories/user.repository';
-import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
-import { User } from '../types';
+import { UserWithTokenDto, User } from '../types';
+import { generateRandomGroupId } from 'src/utils/generateGroupId.util';
 
 export class UserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private userRepo: UserRepository) {}
 
   // 토큰 암호화 처리
   private encryptTokens(groupId: number, accessToken: string, refreshToken: string) {
@@ -24,7 +24,7 @@ export class UserService {
         encryptedRefreshToken: aes.encrypt(refreshToken),
       };
     } catch (error) {
-      logger.error('유저 토큰 생성 중 오류 발생', error);
+      logger.error('유저 토큰 생성 중 오류 발생 : ', error);
       throw new TokenError('토큰 암호화 처리에 실패하였습니다.');
     }
   }
@@ -63,25 +63,28 @@ export class UserService {
         refreshToken: encryptedRefreshToken,
       });
     } catch (error) {
-      logger.error('유저 토큰 처리 중 오류 발생', error);
+      logger.error('유저 토큰 처리 중 오류 발생 : ', error);
       throw error;
     }
   }
 
   async findByVelogUUID(uuid: string): Promise<User | null> {
-    return await this.userRepository.findByUserVelogUUID(uuid);
+    return await this.userRepo.findByUserVelogUUID(uuid);
   }
 
   async createUser(userData: UserWithTokenDto) {
-    return await this.userRepository.createUser(
+    const groupId = generateRandomGroupId();
+
+    return await this.userRepo.createUser(
       userData.id,
       userData.email,
       userData.accessToken,
       userData.refreshToken,
+      groupId,
     );
   }
 
   async updateUserTokens(userData: UserWithTokenDto) {
-    return await this.userRepository.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
+    return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
   }
 }

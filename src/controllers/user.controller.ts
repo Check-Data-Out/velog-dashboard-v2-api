@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '../configs/logger.config';
-import { UserWithTokenDto } from '../types/dto/user-with-token.dto';
+import { UserWithTokenDto } from '../types';
 import { UserService } from '../services/user.service';
 
 export class UserController {
@@ -19,7 +19,7 @@ export class UserController {
         data: { id: isExistUser.id, email: isExistUser.email, profile },
       });
     } catch (error) {
-      logger.error('로그인 실패', error);
+      logger.error('로그인 실패 : ', error);
       next(error);
     }
   }) as RequestHandler;
