@@ -16,8 +16,8 @@ import { VELOG_API_URL, VELOG_QUERIES } from '../constants/velog.constans';
  * 3. 쿠키 - 웹 클라이언트
  */
 const extractTokens = (req: Request): { accessToken: string; refreshToken: string } => {
-  const accessToken = req.body.accessToken || req.headers['accessToken'] || req.cookies['accessToken'];
-  const refreshToken = req.body.refreshToken || req.headers['refreshToken'] || req.cookies['refreshToken'];
+  const accessToken = req.cookies['access_token'] || req.body.accessToken || req.headers['access_token'];
+  const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken || req.headers['refresh_token'];
 
   return { accessToken, refreshToken };
 };
@@ -29,16 +29,17 @@ const extractTokens = (req: Request): { accessToken: string; refreshToken: strin
  * @throws {Error} API 호출 실패 시
  * @returns Promise<VelogUserLoginResponse | null>
  */
-const fetchVelogApi = async (query: string, accessToken: string) => {
+const fetchVelogApi = async (query: string, accessToken: string, refreshToken: string) => {
   try {
     const response = await axios.post(
       VELOG_API_URL,
       { query, variables: {} },
       {
         headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${accessToken}`,
+          authority: 'v3.velog.io',
+          origin: 'https://velog.io',
+          'content-type': 'application/json',
+          cookie: `access_token=${accessToken}; refresh_token=${refreshToken}`,
         },
       },
     );
@@ -73,7 +74,7 @@ const verifyBearerTokens = (query?: string) => {
 
       let user = null;
       if (query) {
-        user = await fetchVelogApi(query, accessToken);
+        user = await fetchVelogApi(query, accessToken, refreshToken);
         if (!user) {
           throw new InvalidTokenError('유효하지 않은 토큰입니다.');
         }
@@ -90,6 +91,7 @@ const verifyBearerTokens = (query?: string) => {
       }
       req.user = user;
       req.tokens = { accessToken, refreshToken };
+
       next();
     } catch (error) {
       logger.error('인증 처리중 오류가 발생하였습니다. : ', error);
