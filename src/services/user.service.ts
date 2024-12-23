@@ -9,7 +9,6 @@ import { generateRandomGroupId } from 'src/utils/generateGroupId.util';
 export class UserService {
   constructor(private userRepo: UserRepository) {}
 
-  // 토큰 암호화 처리
   private encryptTokens(groupId: number, accessToken: string, refreshToken: string) {
     const key = getKeyByGroup(groupId);
     if (!key) {

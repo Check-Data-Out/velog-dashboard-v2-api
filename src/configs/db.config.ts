@@ -17,7 +17,6 @@ const pool = new Pool({
   },
 });
 
-// timescaleDB 확장. 최초 1회 이므로 즉시실행 함수로
 (async () => {
   const client = await pool.connect();
   try {

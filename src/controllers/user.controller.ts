@@ -14,19 +14,18 @@ export class UserController {
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
-      // 만료 시간은 임시
       res.cookie('access_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1 * 60 * 60 * 1000, // 1시간
+        maxAge: 1 * 60 * 60 * 1000,
       });
 
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14일
+        maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
       return res.status(200).json({

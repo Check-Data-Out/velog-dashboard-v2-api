@@ -4,7 +4,7 @@ import { PostRepository } from '../repositories/post.repository';
 export class PostService {
   constructor(private postRepo: PostRepository) {}
 
-  async getAllpost(id: number, cursor?: string, limit: number = 5) {
+  async getAllposts(id: number, cursor?: string, limit: number = 5) {
     try {
       const result = await this.postRepo.findPostsByUserId(id, cursor, limit);
       const totalCounts = await this.getTotalCount(id);
@@ -28,7 +28,7 @@ export class PostService {
     }
   }
 
-  private async getTotalCount(id: number) {
+  async getTotalCount(id: number) {
     return await this.postRepo.getTotalCounts(id);
   }
 }
