@@ -19,7 +19,7 @@ export class TrackingService {
       await this.trackingRepo.createStayTime(loadDate, unloadDate, userId);
       return stayTime;
     } catch (error) {
-      logger.error('체류 시간 처리 중 오류 발생 : ', error);
+      logger.error('Tracking Service stay error : ', error);
       throw error;
     }
   }

@@ -33,7 +33,7 @@ export class UserRepository {
       }
       return result.rows[0];
     } catch (error) {
-      logger.error('토큰을 업데이트하는 중 오류 : ', error);
+      logger.error('User Repo updateTokens error : ', error);
       throw new DBError('토큰 업데이트 중 문제가 발생했습니다.');
     }
   }
@@ -70,7 +70,7 @@ export class UserRepository {
       }
       return result.rows[0];
     } catch (error) {
-      logger.error('유저를 생성하는 중 오류 : ', error);
+      logger.error('User Repo createUser Error : ', error);
       throw new DBError('유저 생성 중 문제가 발생했습니다.');
     }
   }

@@ -5,7 +5,6 @@ export class PostService {
   constructor(private postRepo: PostRepository) {}
 
   async getAllpost(id: number, cursor?: string, limit: number = 5) {
-    // todo : totalCounts , nextPage
     try {
       const result = await this.postRepo.findPostsByUserId(id, cursor, limit);
       const totalCounts = await this.getTotalCount(id);
@@ -24,7 +23,7 @@ export class PostService {
         nextCursor: result.nextCursor,
       };
     } catch (error) {
-      logger.error('PostService getAllpost error:', error);
+      logger.error('PostService getAllpost error : ', error);
       throw error;
     }
   }
