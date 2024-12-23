@@ -17,16 +17,15 @@ export class PostRepository {
       LEFT JOIN posts_postdailystatistics pds on p.id = pds.post_id
       WHERE p.user_id = $1
         ${cursor ? 'AND p.id < $2' : ''}
-      ORDER BY p.created_at DESC
+      ORDER BY p.updated_at DESC
       LIMIT ${cursor ? '$3' : '$2'}
     `;
 
       const params = cursor ? [id, cursor, limit] : [id, limit];
       const posts = await this.pool.query(query, params);
 
-      // 다음 커서는 마지막 항목의 id
-      const lastItem = posts.rows[posts.rows.length - 1];
-      const nextCursor = lastItem ? lastItem.id : null;
+      const lastPost = posts.rows[posts.rows.length - 1];
+      const nextCursor = lastPost ? lastPost.id : null;
 
       return {
         posts: posts.rows || null,
