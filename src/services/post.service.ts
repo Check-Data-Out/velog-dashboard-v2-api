@@ -10,8 +10,16 @@ export class PostService {
       const result = await this.postRepo.findPostsByUserId(id, cursor, limit);
       const totalCounts = await this.getTotalCount(id);
 
+      const transformedPosts = result.posts.map((post) => ({
+        id: post.id,
+        title: post.title,
+        date: post.updated_at,
+        views: post.daily_view_count,
+        likes: post.daily_like_count,
+      }));
+
       return {
-        posts: result.posts,
+        posts: transformedPosts,
         totalCounts,
         nextCursor: result.nextCursor,
       };

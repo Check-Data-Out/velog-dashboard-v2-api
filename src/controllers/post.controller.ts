@@ -20,18 +20,10 @@ export class PostController {
       const cursor = req.query?.cursor as string;
       const { posts, totalCounts, nextCursor } = await this.postService.getAllpost(id, cursor);
 
-      const transformedPosts = posts.map((post) => ({
-        id: post.id,
-        title: post.title,
-        date: post.updated_at,
-        views: post.daily_view_count,
-        likes: post.daily_like_count,
-      }));
-
       return res.status(200).json({
         success: true,
         message: 'post 전체 조회에 성공하였습니다.',
-        data: { totalCounts, nextCursor, transformedPosts },
+        data: { totalCounts, nextCursor, posts },
         error: null,
       });
     } catch (error) {
