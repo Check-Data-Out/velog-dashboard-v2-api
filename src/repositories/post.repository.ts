@@ -4,7 +4,7 @@ import { DBError } from '../exception';
 
 export class PostRepository {
   constructor(private pool: Pool) { }
-  async findPostsByUserId(id: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 5) {
+  async findPostsByUserId(id: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
       const query = `
         SELECT
