@@ -14,7 +14,7 @@ export class PostService {
         title: post.title,
         views: post.daily_view_count,
         likes: post.daily_like_count,
-        created_at: post.post_created_at,
+        createdAt: post.post_created_at,
       }));
 
       return {
