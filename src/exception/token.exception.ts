@@ -7,7 +7,6 @@ export class TokenError extends CustomError {
   }
 }
 
-// todo : 추후 만료 여부를 위해 token 에러 구체화 필요. 웬만한 인증관련은 unauthorized로 넘기는게 나을듯
 export class TokenExpiredError extends UnauthorizedError {
   constructor(message = '토큰이 만료되었습니다') {
     super(message, 'TOKEN_EXPIRED');

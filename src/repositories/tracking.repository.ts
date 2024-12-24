@@ -6,7 +6,7 @@ import { EventRequestDto } from '../types';
 export class TrackingRepository {
   constructor(private readonly pool: Pool) {}
 
-  async saveEvent(type: EventRequestDto, id: number) {
+  async createEvent(type: EventRequestDto, id: number) {
     try {
       const result = await this.pool.query(
         `
@@ -22,7 +22,7 @@ export class TrackingRepository {
       throw new DBError('User Tracking 정보 저장 중 문제가 발생하였습니다.');
     }
   }
-  async saveStayTime(loadDate: Date, unloadDate: Date, userId: number) {
+  async createStayTime(loadDate: Date, unloadDate: Date, userId: number) {
     try {
       await this.pool.query(
         `

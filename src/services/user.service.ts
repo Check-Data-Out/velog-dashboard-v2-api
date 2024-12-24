@@ -9,7 +9,6 @@ import { generateRandomGroupId } from 'src/utils/generateGroupId.util';
 export class UserService {
   constructor(private userRepo: UserRepository) {}
 
-  // 토큰 암호화 처리
   private encryptTokens(groupId: number, accessToken: string, refreshToken: string) {
     const key = getKeyByGroup(groupId);
     if (!key) {
@@ -24,7 +23,7 @@ export class UserService {
         encryptedRefreshToken: aes.encrypt(refreshToken),
       };
     } catch (error) {
-      logger.error('유저 토큰 생성 중 오류 발생 : ', error);
+      logger.error('User Service encryptTokens error : ', error);
       throw new TokenError('토큰 암호화 처리에 실패하였습니다.');
     }
   }
@@ -63,7 +62,7 @@ export class UserService {
         refreshToken: encryptedRefreshToken,
       });
     } catch (error) {
-      logger.error('유저 토큰 처리 중 오류 발생 : ', error);
+      logger.error('User Service handleUserTokensByVelogUUID 중 오류 발생 : ', error);
       throw error;
     }
   }
