@@ -4,7 +4,7 @@ import { DBError } from '../exception';
 
 export class PostRepository {
   constructor(private pool: Pool) { }
-  async findPostsByUserId(id: number, cursor?: string, limit: number = 5) {
+  async findPostsByUserId(id: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 5) {
     try {
       const query = `
         SELECT
@@ -26,7 +26,7 @@ export class PostRepository {
         ) pds ON p.id = pds.post_id
         WHERE p.user_id = $1
           ${cursor ? 'AND p.id < $2' : ''}
-        ORDER BY p.updated_at DESC
+        ORDER BY ${sort ? sort : 'p.updated_at' } ${isAsc? 'ASC': 'DESC'}
         LIMIT ${cursor ? '$3' : '$2'}
       `;
 

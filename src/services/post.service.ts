@@ -4,15 +4,15 @@ import { PostRepository } from '../repositories/post.repository';
 export class PostService {
   constructor(private postRepo: PostRepository) {}
 
-  async getAllposts(id: number, cursor?: string, limit: number = 5) {
+  async getAllposts(id: number, cursor?: string, sort?: string, isAsc?:boolean, limit: number = 5) {
     try {
-      const result = await this.postRepo.findPostsByUserId(id, cursor, limit);
+      const result = await this.postRepo.findPostsByUserId(id, cursor, sort, isAsc, limit);
       const totalCounts = await this.getTotalCount(id);
 
       const transformedPosts = result.posts.map((post) => ({
         id: post.id,
         title: post.title,
-        date: post.updated_at,
+        // date: post.updated_at,
         views: post.daily_view_count,
         likes: post.daily_like_count,
       }));
