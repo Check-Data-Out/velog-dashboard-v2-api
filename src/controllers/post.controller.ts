@@ -7,6 +7,7 @@ interface PostType {
   title: string;
   views: number;
   likes: number;
+  created_at: string;
 }
 
 interface PostResponse {

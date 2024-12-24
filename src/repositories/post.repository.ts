@@ -11,6 +11,7 @@ export class PostRepository {
           p.id,
           p.title,
           p.updated_at AS post_updated_at,
+          p.created_at AS post_created_at,
           pds.daily_view_count,
           pds.daily_like_count,
           pds.date
