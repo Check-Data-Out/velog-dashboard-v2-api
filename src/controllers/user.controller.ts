@@ -15,7 +15,7 @@ export class UserController {
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
       res.cookie('access_token', accessToken, {
-        httpOnly: true,
+        // httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
         domain: process.env.NODE_ENV === 'production'
@@ -25,7 +25,7 @@ export class UserController {
       });
 
       res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
+        // httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
         domain: process.env.NODE_ENV === 'production'
