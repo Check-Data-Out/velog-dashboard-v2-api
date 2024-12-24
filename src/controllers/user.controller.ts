@@ -4,7 +4,7 @@ import { UserWithTokenDto } from '../types';
 import { UserService } from '../services/user.service';
 
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService) { }
 
   login = (async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -17,14 +17,20 @@ export class UserController {
       res.cookie('access_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
+        domain: process.env.NODE_ENV === 'production'
+          ? process.env.COOKIE_DOMAIN
+          : 'localhost',
         maxAge: 1 * 60 * 60 * 1000,
       });
 
       res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
+        domain: process.env.NODE_ENV === 'production'
+          ? process.env.COOKIE_DOMAIN
+          : 'localhost',
         maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
