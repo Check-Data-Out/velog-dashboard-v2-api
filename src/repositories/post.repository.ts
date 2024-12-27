@@ -3,7 +3,7 @@ import logger from '../configs/logger.config';
 import { DBError } from '../exception';
 
 export class PostRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
   async findPostsByUserId(id: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
       const query = `
@@ -12,22 +12,25 @@ export class PostRepository {
           p.title,
           p.updated_at AS post_updated_at,
           p.created_at AS post_created_at,
-          pds.daily_view_count,
-          pds.daily_like_count,
-          pds.date
+          today_stats.daily_view_count,
+          today_stats.daily_like_count,
+          yesterday_stats.daily_view_count as yesterday_daily_view_count,
+          yesterday_stats.daily_like_count as yesterday_daily_like_count,
+          today_stats.date
         FROM posts_post p
         LEFT JOIN (
-          SELECT
-            post_id,
-            daily_view_count,
-            daily_like_count,
-            date
+          SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
           WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
-        ) pds ON p.id = pds.post_id
+        ) today_stats ON p.id = today_stats.post_id
+        LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count, date
+          FROM posts_postdailystatistics
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
+        ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
-          ${cursor ? 'AND p.id < $2' : ''}
-        ORDER BY ${sort ? sort : 'p.updated_at' } ${isAsc? 'ASC': 'DESC'}
+        ${cursor ? 'AND p.id < $2' : ''}
+        ORDER BY ${sort ? sort : 'p.updated_at'} ${isAsc ? 'ASC' : 'DESC'}
         LIMIT ${cursor ? '$3' : '$2'}
       `;
 

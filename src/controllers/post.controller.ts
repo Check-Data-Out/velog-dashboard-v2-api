@@ -7,6 +7,8 @@ interface PostType {
   title: string;
   views: number;
   likes: number;
+  yesterdayViews: number;
+  yesterdayLikes: number;
   createdAt: string;
 }
 
@@ -14,7 +16,6 @@ interface PostResponse {
   success: boolean;
   message: string;
   data: {
-    totalCounts: number;
     nextCursor: string | null;
     posts: PostType[];
   } | null;
@@ -28,7 +29,7 @@ interface GetAllPostsQuery {
 }
 
 export class PostController {
-  constructor(private postService: PostService) { }
+  constructor(private postService: PostService) {}
 
   private validateQueryParams(query: GetAllPostsQuery): {
     cursor: string | undefined;
@@ -38,14 +39,14 @@ export class PostController {
     return {
       cursor: query.cursor,
       sort: query.sort || '',
-      isAsc: query.asc === 'true'
+      isAsc: query.asc === 'true',
     };
   }
 
   getAllPost: RequestHandler = async (
     req: Request<object, object, object, GetAllPostsQuery>,
     res: Response<PostResponse>,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { id } = req.user;
@@ -57,11 +58,10 @@ export class PostController {
         success: true,
         message: 'post 전체 조회에 성공하였습니다.',
         data: {
-          totalCounts: result.totalCounts,
           nextCursor: result.nextCursor,
-          posts: result.posts
+          posts: result.posts,
         },
-        error: null
+        error: null,
       });
     } catch (error) {
       logger.error('전체 조회 실패:', error);
