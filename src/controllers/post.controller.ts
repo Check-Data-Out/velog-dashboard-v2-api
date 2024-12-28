@@ -1,36 +1,10 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '../configs/logger.config';
 import { PostService } from '../services/post.service';
-
-interface PostType {
-  id: number;
-  title: string;
-  views: number;
-  likes: number;
-  yesterdayViews: number;
-  yesterdayLikes: number;
-  createdAt: string;
-  releasedAt: string;
-}
-
-interface PostResponse {
-  success: boolean;
-  message: string;
-  data: {
-    nextCursor: string | null;
-    posts: PostType[];
-  } | null;
-  error: string | null;
-}
-
-interface GetAllPostsQuery {
-  cursor?: string;
-  sort?: '' | 'title' | 'daily_view_count' | 'daily_like_count';
-  asc?: string;
-}
+import { GetAllPostsQuery, PostResponse } from '../types';
 
 export class PostController {
-  constructor(private postService: PostService) { }
+  constructor(private postService: PostService) {}
 
   private validateQueryParams(query: GetAllPostsQuery): {
     cursor: string | undefined;
