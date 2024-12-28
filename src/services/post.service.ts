@@ -4,7 +4,7 @@ import { PostRepository } from '../repositories/post.repository';
 export class PostService {
   constructor(private postRepo: PostRepository) {}
 
-  async getAllposts(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
+  async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
       const result = await this.postRepo.findPostsByUserId(userId, cursor, sort, isAsc, limit);
 

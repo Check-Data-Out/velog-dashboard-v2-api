@@ -5,13 +5,59 @@ import { DBError } from '../exception';
 export class PostRepository {
   constructor(private pool: Pool) {}
 
-  async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
+  async findPostsByUserId(
+    userId: number,
+    cursor?: string,
+    sort?: string, 
+    isAsc?: boolean,
+    limit: number = 15
+  ) {
     try {
+      // 1) 정렬 컬럼 매핑
+      let sortCol = 'p.released_at';
+      switch (sort) {
+        case 'daily_view_count':
+          sortCol = 'pds.daily_view_count';
+          break;
+        case 'daily_like_count':
+          sortCol = 'pds.daily_like_count';
+          break;
+        default:
+          sortCol = 'p.released_at';
+          break;
+      }
+
+      // 2) ASC/DESC 결정
+      const direction = isAsc ? 'ASC' : 'DESC';
+      const orderBy = `${sortCol} ${direction}, p.id ${direction}`;
+
+      // 3) 커서 WHERE 구문
+      let cursorCondition = '';
+      let params: unknown[] = [];
+      if (cursor) {
+        // 예: cursor가 "SOME_SORT_VALUE,1234" 형태라고 가정하고 파싱
+        const [cursorSortValue, cursorId] = cursor.split(',');
+
+        cursorCondition = `
+          AND (
+            ${sortCol} ${isAsc ? '>' : '<'} $2
+            OR (
+              ${sortCol} = $2
+              AND p.id ${isAsc ? '>' : '<'} $3
+            )
+          )
+        `;
+        // 4개 파라미터: userId, cursorSortValue, cursorId, limit
+        params = [userId, cursorSortValue, cursorId, limit];
+      } else {
+        // 2개 파라미터: userId, limit
+        params = [userId, limit];
+      }
+
       const query = `
         SELECT
           p.id,
           p.title,
-          p.updated_at AS post_updated_at,
           p.created_at AS post_created_at,
           p.released_at AS post_released_at,
           COALESCE(pds.daily_view_count, 0) AS daily_view_count,
@@ -34,24 +80,43 @@ export class PostRepository {
           WHERE date::date = (NOW() - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
-        AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
-        ${cursor ? 'AND p.id < $2' : ''}
-        ORDER BY ${sort ? sort : 'p.updated_at'} ${isAsc ? 'ASC' : 'DESC'}
-        LIMIT ${cursor ? '$3' : '$2'}
+          AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
+          ${cursorCondition}
+        ORDER BY ${orderBy}
+        LIMIT ${cursor ? '$4' : '$2'}
       `;
 
-      const params = cursor ? [userId, cursor, limit] : [userId, limit];
       const posts = await this.pool.query(query, params);
 
+      // 다음 커서 만들기
+      if (posts.rows.length === 0) {
+        // 데이터 없으면 nextCursor도 null
+        return {
+          posts: [],
+          nextCursor: null,
+        };
+      }
+
+      // 마지막 레코드
       const lastPost = posts.rows[posts.rows.length - 1];
-      const nextCursor = lastPost ? lastPost.id : null;
+      // nextCursor = `${정렬 컬럼 값},${p.id}`
+      // 예: 만약 sortCol이 p.title인 경우, lastPost.title + ',' + lastPost.id
+      let sortValueForCursor = '';
+      if (sort === 'daily_view_count') {
+        sortValueForCursor = lastPost.daily_view_count;
+      } else if (sort === 'daily_like_count') {
+        sortValueForCursor = lastPost.daily_like_count;
+      } else {
+        sortValueForCursor = new Date(lastPost.post_released_at).toISOString();
+      }
+      const nextCursor = `${sortValueForCursor},${lastPost.id}`;
 
       return {
-        posts: posts.rows || null,
+        posts: posts.rows,
         nextCursor,
       };
     } catch (error) {
-      logger.error('Post Repo findPostsByUserId error : ', error);
+      logger.error('Post Repo findPostsByUserId error: ', error);
       throw new DBError('전체 post 조회 중 문제가 발생했습니다.');
     }
   }
