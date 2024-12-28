@@ -40,7 +40,7 @@ export class PostService {
         yesterdayLikes: parseInt(postsStatistics.yesterday_likes),
         lastUpdatedDate: postsStatistics.last_updated_date,
       };
-      console.log('PostService ~ getAllPostStatistics ~ transformedStatistics:', transformedStatistics);
+
       return transformedStatistics;
     } catch (error) {
       logger.error('PostService getAllPostStatistics error : ', error);
