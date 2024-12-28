@@ -30,6 +30,9 @@ export class UserController {
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+
       res.cookie('access_token', accessToken, this.cookieOption(1 * 60 * 60 * 1000));
       res.cookie('refresh_token', refreshToken, this.cookieOption(14 * 24 * 60 * 60 * 1000));
 
