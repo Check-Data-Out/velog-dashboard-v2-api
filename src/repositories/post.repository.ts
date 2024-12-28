@@ -26,12 +26,12 @@ export class PostRepository {
                  daily_like_count,
                  date
           FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul')::date
+          WHERE date::date = NOW()::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
+          WHERE date::date = (NOW() - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
         AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
@@ -71,21 +71,21 @@ export class PostRepository {
     try {
       const query = `
         SELECT
-          COALESCE(sum(pds.daily_view_count), 0) AS daily_view_count,
-          COALESCE(sum(pds.daily_like_count), 0) AS daily_like_count,
-          COALESCE(sum(yesterday_stats.daily_view_count), 0) AS yesterday_views,
-          COALESCE(sum(yesterday_stats.daily_like_count), 0) AS yesterday_likes,
-          MAX(pds.date) AT TIME ZONE 'Asia/Seoul' AS last_updated_date
+            COALESCE(SUM(pds.daily_view_count), 0) AS daily_view_count,
+            COALESCE(SUM(pds.daily_like_count), 0) AS daily_like_count,
+            COALESCE(SUM(yesterday_stats.daily_view_count), 0) AS yesterday_views,
+            COALESCE(SUM(yesterday_stats.daily_like_count), 0) AS yesterday_likes,
+            MAX(pds.date) AS last_updated_date
         FROM posts_post p
         LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count, date
-          FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul')::date
+            SELECT post_id, daily_view_count, daily_like_count, date
+            FROM posts_postdailystatistics
+            WHERE date::date = NOW()::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count
-          FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
+            SELECT post_id, daily_view_count, daily_like_count
+            FROM posts_postdailystatistics
+            WHERE date::date = (NOW() - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
       `;
