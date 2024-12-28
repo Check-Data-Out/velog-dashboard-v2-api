@@ -32,6 +32,7 @@ export class PostRepository {
           WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
+        AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
         ${cursor ? 'AND p.id < $2' : ''}
         ORDER BY ${sort ? sort : 'p.updated_at'} ${isAsc ? 'ASC' : 'DESC'}
         LIMIT ${cursor ? '$3' : '$2'}
