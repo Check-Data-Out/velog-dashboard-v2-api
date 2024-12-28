@@ -68,6 +68,8 @@ export class PostRepository {
   }
 
   async getYesterdayAndTodayViewLikeStats(userId: number) {
+
+    // pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
     try {
       const query = `
         SELECT
@@ -75,10 +77,10 @@ export class PostRepository {
             COALESCE(SUM(pds.daily_like_count), 0) AS daily_like_count,
             COALESCE(SUM(yesterday_stats.daily_view_count), 0) AS yesterday_views,
             COALESCE(SUM(yesterday_stats.daily_like_count), 0) AS yesterday_likes,
-            MAX(pds.date) AS last_updated_date
+            (MAX(pds.updated_at AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC') AS last_updated_date
         FROM posts_post p
         LEFT JOIN (
-            SELECT post_id, daily_view_count, daily_like_count, date
+            SELECT post_id, daily_view_count, daily_like_count, updated_at
             FROM posts_postdailystatistics
             WHERE date::date = NOW()::date
         ) pds ON p.id = pds.post_id
