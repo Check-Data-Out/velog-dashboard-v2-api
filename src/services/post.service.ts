@@ -2,7 +2,7 @@ import logger from '../configs/logger.config';
 import { PostRepository } from '../repositories/post.repository';
 
 export class PostService {
-  constructor(private postRepo: PostRepository) { }
+  constructor(private postRepo: PostRepository) {}
 
   async getAllposts(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
@@ -40,6 +40,7 @@ export class PostService {
         yesterdayLikes: parseInt(postsStatistics.yesterday_likes),
         lastUpdatedDate: postsStatistics.last_updated_date,
       };
+      console.log('PostService ~ getAllPostStatistics ~ transformedStatistics:', transformedStatistics);
       return transformedStatistics;
     } catch (error) {
       logger.error('PostService getAllPostStatistics error : ', error);

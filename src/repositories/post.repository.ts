@@ -69,10 +69,10 @@ export class PostRepository {
     try {
       const query = `
         SELECT
-          sum(pds.daily_view_count) AS daily_view_count,
-          sum(pds.daily_like_count) AS daily_like_count,
-          sum(yesterday_stats.daily_view_count) AS yesterday_views,
-          sum(yesterday_stats.daily_like_count) AS yesterday_likes,
+          COALESCE(sum(pds.daily_view_count), 0) AS daily_view_count,
+          COALESCE(sum(pds.daily_like_count), 0) AS daily_like_count,
+          COALESCE(sum(yesterday_stats.daily_view_count), 0) AS yesterday_views,
+          COALESCE(sum(yesterday_stats.daily_like_count), 0) AS yesterday_likes,
           MAX(pds.date) AT TIME ZONE 'Asia/Seoul' AS last_updated_date
         FROM posts_post p
         LEFT JOIN (
