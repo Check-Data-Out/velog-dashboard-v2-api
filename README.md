@@ -10,6 +10,7 @@
 
 ```bash
 pnpm install
+NODE_ENV=development pnpm install  # devDpe 설치 위해
 
 # 만약 pnpm 이 없다면
 brew install pnpm

@@ -1,26 +1,66 @@
-import { NextFunction, Request, Response, RequestHandler } from 'express';
+import { NextFunction, Request, Response, RequestHandler, CookieOptions } from 'express';
 import logger from '../configs/logger.config';
-import { UserWithTokenDto } from '../types';
+import { LoginResponse, UserWithTokenDto } from '../types';
 import { UserService } from '../services/user.service';
-
 export class UserController {
   constructor(private userService: UserService) {}
 
-  login = (async (req: Request, res: Response, next: NextFunction) => {
+  private cookieOption(): CookieOptions {
+    const isProd = process.env.NODE_ENV === 'production';
+
+    const baseOptions: CookieOptions = {
+      httpOnly: isProd,
+      secure: isProd,
+      domain: process.env.COOKIE_DOMAIN || 'localhost',
+    };
+
+    if (isProd) {
+      baseOptions.sameSite = 'lax';
+    }
+
+    return baseOptions;
+  }
+
+  login: RequestHandler = async (req: Request, res: Response<LoginResponse>, next: NextFunction): Promise<void> => {
     try {
-      const { id, email, profile } = req.user;
+      const { id, email, profile, username } = req.user;
       const { accessToken, refreshToken } = req.tokens;
 
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
-      return res.status(200).json({
+
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
+
+      res.cookie('access_token', accessToken, this.cookieOption());
+      res.cookie('refresh_token', refreshToken, this.cookieOption());
+
+      res.status(200).json({
         success: true,
         message: '로그인에 성공하였습니다.',
-        data: { id: isExistUser.id, email: isExistUser.email, profile },
+        data: { id: isExistUser.id, username, profile },
+        error: null,
       });
     } catch (error) {
       logger.error('로그인 실패 : ', error);
       next(error);
     }
-  }) as RequestHandler;
+  };
+
+  logout: RequestHandler = async (req: Request, res: Response) => {
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+
+    res.status(200).json({ success: true, message: '로그아웃에 성공하였습니다.', data: {}, error: null });
+  };
+
+  fetchCurrentUser: RequestHandler = (req: Request, res: Response) => {
+    const { user } = req;
+    res.status(200).json({
+      success: true,
+      message: '프로필 조회에 성공하였습니다.',
+      data: { user },
+      error: null,
+    });
+  };
 }

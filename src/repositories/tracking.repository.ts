@@ -6,14 +6,14 @@ import { EventRequestDto } from '../types';
 export class TrackingRepository {
   constructor(private readonly pool: Pool) {}
 
-  async saveEvent(type: EventRequestDto, id: number) {
+  async createEvent(type: EventRequestDto, id: number) {
     try {
       const result = await this.pool.query(
         `
-        INSERT INTO user_event_tracking (type, user_id)
-        VALUES ($1, $2)
+        INSERT INTO tracking_usereventtracking (event_type, user_id, created_at)
+        VALUES ($1, $2, CURRENT_TIMESTAMP)
         RETURNING *;
-        `,
+      `,
         [type, id],
       );
       return result.rows[0];
@@ -22,11 +22,11 @@ export class TrackingRepository {
       throw new DBError('User Tracking 정보 저장 중 문제가 발생하였습니다.');
     }
   }
-  async saveStayTime(loadDate: Date, unloadDate: Date, userId: number) {
+  async createStayTime(loadDate: Date, unloadDate: Date, userId: number) {
     try {
       await this.pool.query(
         `
-        INSERT INTO page_visits (loaded_at, unloaded_at, user_id)
+        INSERT INTO tracking_userstaytime (loaded_at, unloaded_at, user_id)
         VALUES ($1, $2, $3)
         RETURNING *;
         `,

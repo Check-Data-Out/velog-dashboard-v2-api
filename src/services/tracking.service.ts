@@ -7,7 +7,7 @@ export class TrackingService {
   constructor(private trackingRepo: TrackingRepository) {}
 
   async tracking(type: EventRequestDto, id: number) {
-    return await this.trackingRepo.saveEvent(type, id);
+    return await this.trackingRepo.createEvent(type, id);
   }
   async stay(data: StayTimeRequestDto, userId: number) {
     try {
@@ -16,10 +16,10 @@ export class TrackingService {
         throw new BadRequestError('시간 정보가 올바르지 않습니다.');
       }
       const stayTime = new Date(unloadDate).getTime() - new Date(loadDate).getTime();
-      await this.trackingRepo.saveStayTime(loadDate, unloadDate, userId);
+      await this.trackingRepo.createStayTime(loadDate, unloadDate, userId);
       return stayTime;
     } catch (error) {
-      logger.error('체류 시간 처리 중 오류 발생 : ', error);
+      logger.error('Tracking Service stay error : ', error);
       throw error;
     }
   }

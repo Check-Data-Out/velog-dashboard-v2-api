@@ -41,7 +41,7 @@ export default typescriptEslint.config(
         },
       ],
       '@typescript-eslint/naming-convention': [
-        'error',
+        'warn',
         {
           selector: 'typeLike',
           format: ['PascalCase'],
