@@ -57,7 +57,20 @@ const fetchVelogApi = async (query: string, accessToken: string, refreshToken: s
     throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
   }
 };
+
+
+/**
+ * JWT 토큰에서 페이로드를 추출하고 디코딩하는 함수
+ * @param token - 디코딩할 JWT 토큰 문자열
+ * @returns JSON 객체로 디코딩된 페이로드
+ * @throws {Error} 토큰이 잘못되었거나 디코딩할 수 없는 경우
+ * @example
+ * const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
+ * const payload = extractPayload(token);
+ * // 반환값: { sub: "1234567890" }
+ */
 const extractPayload = (token: string) => JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
 /**
  *  Bearer 토큰을 검증한뒤 최초 로그인이라면 Velog 사용자를 인증을, 아니라면 기존 사용자를 인증하여 user정보를 Request 객체에 담는 함수
  * @param query - 사용자 정보를 조회할 GraphQL 쿼리
@@ -99,10 +112,11 @@ const verifyBearerTokens = (query?: string) => {
     }
   };
 };
+
 /**
  * 사용자 인증을 위한 미들웨어 모음
  * @property {Function} login - 최초 로그인 시 Velog API를 호출하는 인증 미들웨어
- *  @property {Function} verify - 기존 유저를 인증하는 미들웨어
+ * @property {Function} verify - 기존 유저를 인증하는 미들웨어
  */
 export const authMiddleware = {
   login: verifyBearerTokens(VELOG_QUERIES.LOGIN),
