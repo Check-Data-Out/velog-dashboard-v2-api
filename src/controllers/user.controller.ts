@@ -1,13 +1,26 @@
-import { NextFunction, Request, Response, RequestHandler } from 'express';
+import { NextFunction, Request, Response, RequestHandler, CookieOptions } from 'express';
 import logger from '../configs/logger.config';
 import { UserWithTokenDto } from '../types';
 import { UserService } from '../services/user.service';
-
 export class UserController {
-  constructor(private userService: UserService) { }
+  constructor(private userService: UserService) {}
 
-  // private cookieOption(): (res: Response) => object {
-  // }
+  private cookieOption(maxAge: number): CookieOptions {
+    const isProd = process.env.NODE_ENV === 'production';
+
+    const baseOptions: CookieOptions = {
+      httpOnly: isProd,
+      secure: isProd,
+      domain: process.env.COOKIE_DOMAIN || 'localhost',
+      maxAge,
+    };
+
+    if (isProd) {
+      baseOptions.sameSite = 'lax';
+    }
+
+    return baseOptions;
+  }
 
   login = (async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -17,36 +30,8 @@ export class UserController {
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
-      if (process.env.NODE_ENV === 'production') {
-        res.cookie('access_token', accessToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
-          domain: process.env.COOKIE_DOMAIN,
-          maxAge: 1 * 60 * 60 * 1000,
-        });
-
-        res.cookie('refresh_token', refreshToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
-          domain: process.env.COOKIE_DOMAIN,
-          maxAge: 14 * 24 * 60 * 60 * 1000,
-        });
-      }
-      else {
-        res.cookie('access_token', accessToken, {
-          secure: false,
-          domain: 'localhost',
-          maxAge: 1 * 60 * 60 * 1000,
-        });
-
-        res.cookie('refresh_token', refreshToken, {
-          secure: false,
-          domain: 'localhost',
-          maxAge: 14 * 24 * 60 * 60 * 1000,
-        });
-      }
+      res.cookie('access_token', accessToken, this.cookieOption(1 * 60 * 60 * 1000));
+      res.cookie('refrash_token', refreshToken, this.cookieOption(14 * 24 * 60 * 60 * 1000));
 
       return res.status(200).json({
         success: true,
