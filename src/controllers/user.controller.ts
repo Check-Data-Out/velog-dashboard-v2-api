@@ -5,14 +5,13 @@ import { UserService } from '../services/user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  private cookieOption(maxAge: number): CookieOptions {
+  private cookieOption(): CookieOptions {
     const isProd = process.env.NODE_ENV === 'production';
 
     const baseOptions: CookieOptions = {
       httpOnly: isProd,
       secure: isProd,
       domain: process.env.COOKIE_DOMAIN || 'localhost',
-      maxAge,
     };
 
     if (isProd) {
@@ -33,8 +32,8 @@ export class UserController {
       res.clearCookie('access_token');
       res.clearCookie('refresh_token');
 
-      res.cookie('access_token', accessToken, this.cookieOption(1 * 60 * 60 * 1000));
-      res.cookie('refresh_token', refreshToken, this.cookieOption(14 * 24 * 60 * 60 * 1000));
+      res.cookie('access_token', accessToken, this.cookieOption());
+      res.cookie('refresh_token', refreshToken, this.cookieOption());
 
       res.status(200).json({
         success: true,
