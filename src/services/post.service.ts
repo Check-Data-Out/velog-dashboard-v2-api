@@ -31,16 +31,14 @@ export class PostService {
   async getAllPostStatistics(userId: number) {
     try {
       const postsStatistics = await this.postRepo.getYesterdayAndTodayViewLikeStats(userId);
-      console.log('PostService ~ getAllPostStatistics ~ postsStatistics:', postsStatistics);
 
       const transformedStatistics = {
-        totalViews: postsStatistics.today_views,
-        totalLikes: postsStatistics.today_likes,
-        yesterdayViews: postsStatistics.yesterday_views,
-        yesterdayLikes: postsStatistics.yesterday_likes,
+        totalViews: parseInt(postsStatistics.daily_view_count),
+        totalLikes: parseInt(postsStatistics.daily_like_count),
+        yesterdayViews: parseInt(postsStatistics.yesterday_views),
+        yesterdayLikes: parseInt(postsStatistics.yesterday_likes),
         lastUpdatedDate: postsStatistics.last_updated_date,
       };
-      console.log('PostService ~ getAllPostStatistics ~ transformedStatistics:', transformedStatistics);
       return transformedStatistics;
     } catch (error) {
       logger.error('PostService getAllPostStatistics error : ', error);

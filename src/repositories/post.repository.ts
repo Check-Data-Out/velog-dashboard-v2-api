@@ -12,17 +12,20 @@ export class PostRepository {
           p.title,
           p.updated_at AS post_updated_at,
           p.created_at AS post_created_at,
-          today_stats.daily_view_count,
-          today_stats.daily_like_count,
-          yesterday_stats.daily_view_count AS yesterday_daily_view_count,
-          yesterday_stats.daily_like_count AS yesterday_daily_like_count,
-          today_stats.date
+          COALESCE(pds.daily_view_count, 0) AS daily_view_count,
+          COALESCE(pds.daily_like_count, 0) AS daily_like_count,
+          COALESCE(yesterday_stats.daily_view_count, 0) AS yesterday_daily_view_count,
+          COALESCE(yesterday_stats.daily_like_count, 0) AS yesterday_daily_like_count,
+          pds.date
         FROM posts_post p
         LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count, date
+          SELECT post_id,
+                 daily_view_count,
+                 daily_like_count,
+                 date
           FROM posts_postdailystatistics
           WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
-        ) today_stats ON p.id = today_stats.post_id
+        ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
@@ -64,17 +67,17 @@ export class PostRepository {
     try {
       const query = `
         SELECT
-          sum(today_stats.daily_view_count) AS today_views,
-          sum(today_stats.daily_like_count) AS today_likes,
+          sum(pds.daily_view_count) AS daily_view_count,
+          sum(pds.daily_like_count) AS daily_like_count,
           sum(yesterday_stats.daily_view_count) AS yesterday_views,
           sum(yesterday_stats.daily_like_count) AS yesterday_likes,
-          MAX(today_stats.date) AT TIME ZONE 'Asia/Seoul' AS last_updated_date
+          MAX(pds.date) AT TIME ZONE 'Asia/Seoul' AS last_updated_date
         FROM posts_post p
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
           WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
-        ) today_stats ON p.id = today_stats.post_id
+        ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count
           FROM posts_postdailystatistics
