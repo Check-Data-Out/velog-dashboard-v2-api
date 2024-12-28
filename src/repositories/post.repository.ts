@@ -80,12 +80,12 @@ export class PostRepository {
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul')::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count
           FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
       `;
