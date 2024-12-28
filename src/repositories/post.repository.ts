@@ -4,6 +4,7 @@ import { DBError } from '../exception';
 
 export class PostRepository {
   constructor(private pool: Pool) {}
+
   async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
       const query = `
@@ -25,12 +26,12 @@ export class PostRepository {
                  daily_like_count,
                  date
           FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul')::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
         AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
@@ -65,6 +66,7 @@ export class PostRepository {
       throw new DBError('전체 post 조회 갯수 조회 중 문제가 발생했습니다.');
     }
   }
+
   async getYesterdayAndTodayViewLikeStats(userId: number) {
     try {
       const query = `
