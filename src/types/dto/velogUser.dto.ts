@@ -4,8 +4,10 @@ import { Type } from 'class-transformer';
 export class VelogUserLoginDto {
   @IsUUID()
   id: string;
+
   @IsString()
   username: string;
+
   @IsEmail()
   email: string;
 

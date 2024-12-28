@@ -54,4 +54,14 @@ export class UserController {
 
     res.status(200).json({ success: true, message: '로그아웃에 성공하였습니다.', data: {}, error: null });
   };
+
+  fetchCurrentUser: RequestHandler = (req: Request, res: Response) => {
+    const { user } = req;
+    res.status(200).json({
+      success: true,
+      message: '프로필 조회에 성공하였습니다.',
+      data: { user },
+      error: null,
+    });
+  };
 }

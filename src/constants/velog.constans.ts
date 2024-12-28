@@ -11,5 +11,4 @@ export const VELOG_QUERIES = {
         }
       }
     }`,
-  ALL_POST: ``,
 };
