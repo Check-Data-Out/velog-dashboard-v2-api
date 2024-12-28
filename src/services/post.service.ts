@@ -2,7 +2,7 @@ import logger from '../configs/logger.config';
 import { PostRepository } from '../repositories/post.repository';
 
 export class PostService {
-  constructor(private postRepo: PostRepository) {}
+  constructor(private postRepo: PostRepository) { }
 
   async getAllposts(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
@@ -16,6 +16,7 @@ export class PostService {
         yesterdayViews: post.yesterday_daily_view_count,
         yesterdayLikes: post.yesterday_daily_like_count,
         createdAt: post.post_created_at,
+        releasedAt: post.post_released_at,
       }));
 
       return {

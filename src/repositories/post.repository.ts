@@ -12,6 +12,7 @@ export class PostRepository {
           p.title,
           p.updated_at AS post_updated_at,
           p.created_at AS post_created_at,
+          p.released_at AS post_released_at,
           COALESCE(pds.daily_view_count, 0) AS daily_view_count,
           COALESCE(pds.daily_like_count, 0) AS daily_like_count,
           COALESCE(yesterday_stats.daily_view_count, 0) AS yesterday_daily_view_count,

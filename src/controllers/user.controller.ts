@@ -6,6 +6,9 @@ import { UserService } from '../services/user.service';
 export class UserController {
   constructor(private userService: UserService) { }
 
+  // private cookieOption(): (res: Response) => object {
+  // }
+
   login = (async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id, email, profile, username } = req.user;
@@ -14,25 +17,36 @@ export class UserController {
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
-      res.cookie('access_token', accessToken, {
-        // httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
-        domain: process.env.NODE_ENV === 'production'
-          ? process.env.COOKIE_DOMAIN
-          : 'localhost',
-        maxAge: 1 * 60 * 60 * 1000,
-      });
+      if (process.env.NODE_ENV === 'production') {
+        res.cookie('access_token', accessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax',
+          domain: process.env.COOKIE_DOMAIN,
+          maxAge: 1 * 60 * 60 * 1000,
+        });
 
-      res.cookie('refresh_token', refreshToken, {
-        // httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
-        domain: process.env.NODE_ENV === 'production'
-          ? process.env.COOKIE_DOMAIN
-          : 'localhost',
-        maxAge: 14 * 24 * 60 * 60 * 1000,
-      });
+        res.cookie('refresh_token', refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax',
+          domain: process.env.COOKIE_DOMAIN,
+          maxAge: 14 * 24 * 60 * 60 * 1000,
+        });
+      }
+      else {
+        res.cookie('access_token', accessToken, {
+          secure: false,
+          domain: 'localhost',
+          maxAge: 1 * 60 * 60 * 1000,
+        });
+
+        res.cookie('refresh_token', refreshToken, {
+          secure: false,
+          domain: 'localhost',
+          maxAge: 14 * 24 * 60 * 60 * 1000,
+        });
+      }
 
       return res.status(200).json({
         success: true,

@@ -10,6 +10,7 @@ interface PostType {
   yesterdayViews: number;
   yesterdayLikes: number;
   createdAt: string;
+  releasedAt: string;
 }
 
 interface PostResponse {
@@ -29,7 +30,7 @@ interface GetAllPostsQuery {
 }
 
 export class PostController {
-  constructor(private postService: PostService) {}
+  constructor(private postService: PostService) { }
 
   private validateQueryParams(query: GetAllPostsQuery): {
     cursor: string | undefined;
