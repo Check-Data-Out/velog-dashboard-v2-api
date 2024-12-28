@@ -1,11 +1,12 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '../configs/logger.config';
 import { TrackingService } from '../services/tracking.service';
+import { TrackingResponse } from '../types';
 
 export class TrackingController {
   constructor(private trackingService: TrackingService) {}
 
-  event = (async (req: Request, res: Response, next: NextFunction) => {
+  event = (async (req: Request, res: Response<TrackingResponse>, next: NextFunction) => {
     try {
       const { type } = req.body;
       const { id } = req.user;
@@ -18,7 +19,7 @@ export class TrackingController {
     }
   }) as RequestHandler;
 
-  stay = (async (req: Request, res: Response, next: NextFunction) => {
+  stay = (async (req: Request, res: Response<TrackingResponse>, next: NextFunction) => {
     try {
       const { loadDate, unloadDate } = req.body;
       const { id } = req.user;

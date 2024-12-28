@@ -10,10 +10,10 @@ export class TrackingRepository {
     try {
       const result = await this.pool.query(
         `
-        INSERT INTO user_event_tracking (type, user_id)
-        VALUES ($1, $2)
+        INSERT INTO tracking_usereventtracking (event_type, user_id, created_at)
+        VALUES ($1, $2, CURRENT_TIMESTAMP)
         RETURNING *;
-        `,
+      `,
         [type, id],
       );
       return result.rows[0];
@@ -26,7 +26,7 @@ export class TrackingRepository {
     try {
       await this.pool.query(
         `
-        INSERT INTO page_visits (loaded_at, unloaded_at, user_id)
+        INSERT INTO tracking_userstaytime (loaded_at, unloaded_at, user_id)
         VALUES ($1, $2, $3)
         RETURNING *;
         `,

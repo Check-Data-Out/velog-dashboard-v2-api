@@ -9,3 +9,7 @@ export { VelogUserLoginDto } from './dto/velogUser.dto';
 export { StayTimeRequestDto } from './dto/stayTimeRequest.dto';
 export type { UserEventType } from './userEvent.type';
 export type { VelogUserLoginResponse } from './velog.type';
+export type { PostResponse } from './responses/postResponse.type';
+export type { LoginResponse } from './responses/loginResponse.type';
+export type { TrackingResponse } from './responses/trackingReponse.type';
+export type { GetAllPostsQuery } from './requests/getAllPostsQuery.type';

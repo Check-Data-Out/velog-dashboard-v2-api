@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, RequestHandler, CookieOptions } from 'express';
 import logger from '../configs/logger.config';
-import { UserWithTokenDto } from '../types';
+import { LoginResponse, UserWithTokenDto } from '../types';
 import { UserService } from '../services/user.service';
 export class UserController {
   constructor(private userService: UserService) {}
@@ -22,7 +22,7 @@ export class UserController {
     return baseOptions;
   }
 
-  login = (async (req: Request, res: Response, next: NextFunction) => {
+  login: RequestHandler = async (req: Request, res: Response<LoginResponse>, next: NextFunction): Promise<void> => {
     try {
       const { id, email, profile, username } = req.user;
       const { accessToken, refreshToken } = req.tokens;
@@ -33,7 +33,7 @@ export class UserController {
       res.cookie('access_token', accessToken, this.cookieOption(1 * 60 * 60 * 1000));
       res.cookie('refrash_token', refreshToken, this.cookieOption(14 * 24 * 60 * 60 * 1000));
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         message: '로그인에 성공하였습니다.',
         data: { id: isExistUser.id, username, profile },
@@ -43,5 +43,5 @@ export class UserController {
       logger.error('로그인 실패 : ', error);
       next(error);
     }
-  }) as RequestHandler;
+  };
 }
