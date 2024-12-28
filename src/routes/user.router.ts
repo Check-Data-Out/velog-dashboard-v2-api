@@ -16,5 +16,6 @@ const userService = new UserService(userRepository);
 const userController = new UserController(userService);
 
 router.post('/login', authMiddleware.login, validateDto(VelogUserLoginDto, 'user'), userController.login);
+router.post('/logout', authMiddleware.login, userController.logout);
 
 export default router;

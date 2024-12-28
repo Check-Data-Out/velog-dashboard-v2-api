@@ -31,7 +31,7 @@ export class UserController {
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
       res.cookie('access_token', accessToken, this.cookieOption(1 * 60 * 60 * 1000));
-      res.cookie('refrash_token', refreshToken, this.cookieOption(14 * 24 * 60 * 60 * 1000));
+      res.cookie('refresh_token', refreshToken, this.cookieOption(14 * 24 * 60 * 60 * 1000));
 
       res.status(200).json({
         success: true,
@@ -43,5 +43,12 @@ export class UserController {
       logger.error('로그인 실패 : ', error);
       next(error);
     }
+  };
+
+  logout: RequestHandler = async (req: Request, res: Response) => {
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+
+    res.status(200).json({ success: true, message: '로그아웃에 성공하였습니다.', data: {}, error: null });
   };
 }
