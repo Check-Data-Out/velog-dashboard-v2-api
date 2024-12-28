@@ -4,7 +4,7 @@ import { DBError } from '../exception';
 
 export class PostRepository {
   constructor(private pool: Pool) {}
-  async findPostsByUserId(id: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
+  async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
       const query = `
         SELECT
@@ -14,8 +14,8 @@ export class PostRepository {
           p.created_at AS post_created_at,
           today_stats.daily_view_count,
           today_stats.daily_like_count,
-          yesterday_stats.daily_view_count as yesterday_daily_view_count,
-          yesterday_stats.daily_like_count as yesterday_daily_like_count,
+          yesterday_stats.daily_view_count AS yesterday_daily_view_count,
+          yesterday_stats.daily_like_count AS yesterday_daily_like_count,
           today_stats.date
         FROM posts_post p
         LEFT JOIN (
@@ -34,7 +34,7 @@ export class PostRepository {
         LIMIT ${cursor ? '$3' : '$2'}
       `;
 
-      const params = cursor ? [id, cursor, limit] : [id, limit];
+      const params = cursor ? [userId, cursor, limit] : [userId, limit];
       const posts = await this.pool.query(query, params);
 
       const lastPost = posts.rows[posts.rows.length - 1];
@@ -50,7 +50,7 @@ export class PostRepository {
     }
   }
 
-  async getTotalCounts(id: number) {
+  async getTotalPostCounts(id: number) {
     try {
       const query = 'SELECT COUNT(*) FROM "posts_post" WHERE user_id = $1';
       const result = await this.pool.query(query, [id]);
@@ -58,6 +58,37 @@ export class PostRepository {
     } catch (error) {
       logger.error('Post Repo getTotalCounts error : ', error);
       throw new DBError('전체 post 조회 갯수 조회 중 문제가 발생했습니다.');
+    }
+  }
+  async getYesterdayAndTodayViewLikeStats(userId: number) {
+    try {
+      const query = `
+        SELECT
+          sum(today_stats.daily_view_count) AS today_views,
+          sum(today_stats.daily_like_count) AS today_likes,
+          sum(yesterday_stats.daily_view_count) AS yesterday_views,
+          sum(yesterday_stats.daily_like_count) AS yesterday_likes,
+          MAX(today_stats.date) AT TIME ZONE 'Asia/Seoul' AS last_updated_date
+        FROM posts_post p
+        LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count, date
+          FROM posts_postdailystatistics
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date
+        ) today_stats ON p.id = today_stats.post_id
+        LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count
+          FROM posts_postdailystatistics
+          WHERE date::date = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul' - INTERVAL '1 day')::date
+        ) yesterday_stats ON p.id = yesterday_stats.post_id
+        WHERE p.user_id = $1
+      `;
+      const values = [userId];
+
+      const result = await this.pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      logger.error('Post Repo getYesterdayAndTodayViewLikeStats error : ', error);
+      throw new DBError('전체 post 통계 조회 중 문제가 발생했습니다.');
     }
   }
 }

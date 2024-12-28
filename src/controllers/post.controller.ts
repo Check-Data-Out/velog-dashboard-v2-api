@@ -68,4 +68,22 @@ export class PostController {
       next(error);
     }
   };
+  getAllPostStatistics: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.user;
+
+      const result = await this.postService.getAllPostStatistics(id);
+      const totalPostCount = await this.postService.getTotalPostCounts(id);
+
+      res.status(200).json({
+        success: true,
+        message: 'post 전체 통계 조회에 성공하였습니다.',
+        data: { totalPostCount, stats: result },
+        error: null,
+      });
+    } catch (error) {
+      logger.error('전체 통계 조회 실패:', error);
+      next(error);
+    }
+  };
 }

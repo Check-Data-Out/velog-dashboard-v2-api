@@ -4,9 +4,9 @@ import { PostRepository } from '../repositories/post.repository';
 export class PostService {
   constructor(private postRepo: PostRepository) {}
 
-  async getAllposts(id: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
+  async getAllposts(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
-      const result = await this.postRepo.findPostsByUserId(id, cursor, sort, isAsc, limit);
+      const result = await this.postRepo.findPostsByUserId(userId, cursor, sort, isAsc, limit);
 
       const transformedPosts = result.posts.map((post) => ({
         id: post.id,
@@ -28,7 +28,26 @@ export class PostService {
     }
   }
 
-  async getTotalCount(id: number) {
-    return await this.postRepo.getTotalCounts(id);
+  async getAllPostStatistics(userId: number) {
+    try {
+      const postsStatistics = await this.postRepo.getYesterdayAndTodayViewLikeStats(userId);
+      console.log('PostService ~ getAllPostStatistics ~ postsStatistics:', postsStatistics);
+
+      const transformedStatistics = {
+        totalViews: postsStatistics.today_views,
+        totalLikes: postsStatistics.today_likes,
+        yesterdayViews: postsStatistics.yesterday_views,
+        yesterdayLikes: postsStatistics.yesterday_likes,
+        lastUpdatedDate: postsStatistics.last_updated_date,
+      };
+      console.log('PostService ~ getAllPostStatistics ~ transformedStatistics:', transformedStatistics);
+      return transformedStatistics;
+    } catch (error) {
+      logger.error('PostService getAllPostStatistics error : ', error);
+      throw error;
+    }
+  }
+  async getTotalPostCounts(id: number) {
+    return await this.postRepo.getTotalPostCounts(id);
   }
 }
