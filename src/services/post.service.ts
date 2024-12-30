@@ -52,8 +52,8 @@ export class PostService {
     return await this.postRepo.getTotalPostCounts(id);
   }
 
-  async getPost(postId: number, startDate?: string, endDate?: string) {
-    const post = await this.postRepo.findPostByPostId(postId, startDate, endDate);
+  async getPost(postId: number, start?: string, end?: string) {
+    const post = await this.postRepo.findPostByPostId(postId, start, end);
     return post;
   }
 }

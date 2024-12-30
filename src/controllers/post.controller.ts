@@ -19,12 +19,12 @@ export class PostController {
     };
   }
   private validateQueryParams2(query: Partial<GetPostQuery>): {
-    startDate: string;
-    endDate: string;
+    start: string;
+    end: string;
   } {
     return {
-      startDate: query.startDate || '',
-      endDate: query.endDate || '',
+      start: query.start || '',
+      end: query.end || '',
     };
   }
   getAllPost: RequestHandler = async (
@@ -75,8 +75,8 @@ export class PostController {
   getPost: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const postId = parseInt(req.params.postId);
-      const { startDate, endDate } = this.validateQueryParams2(req.query);
-      const post = await this.postService.getPost(postId, startDate, endDate);
+      const { start, end } = this.validateQueryParams2(req.query);
+      const post = await this.postService.getPost(postId, start, end);
       res.status(200).json({
         success: true,
         message: 'post 단건 조회에 성공하였습니다',

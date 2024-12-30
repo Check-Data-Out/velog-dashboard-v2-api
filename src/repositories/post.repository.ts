@@ -159,7 +159,7 @@ export class PostRepository {
     }
   }
 
-  async findPostByPostId(postId: number, startDate?: string, endDate?: string) {
+  async findPostByPostId(postId: number, start?: string, end?: string) {
     try {
       let query = `
       SELECT
@@ -172,10 +172,10 @@ export class PostRepository {
 
       const values: (number | string)[] = [postId];
 
-      if (startDate && endDate) {
+      if (start && end) {
         query += ` AND pds.date >= ($2 || ' 00:00:00 +09')::timestamptz
                    AND pds.date < ($3 || ' 00:00:00 +09')::timestamptz + interval '1 day'`;
-        values.push(startDate, endDate);
+        values.push(start, end);
       }
 
       const result = await this.pool.query(query, values);

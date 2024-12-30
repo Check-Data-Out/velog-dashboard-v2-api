@@ -1,4 +1,4 @@
 export interface GetPostQuery {
-  startDate: string;
-  endDate: string;
+  start: string;
+  end: string;
 }
