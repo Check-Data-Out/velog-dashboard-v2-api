@@ -47,7 +47,13 @@ export class PostService {
       throw error;
     }
   }
+
   async getTotalPostCounts(id: number) {
     return await this.postRepo.getTotalPostCounts(id);
+  }
+
+  async getPost(postId: number, startDate?: string, endDate?: string) {
+    const post = await this.postRepo.findPostByPostId(postId, startDate, endDate);
+    return post;
   }
 }

@@ -5,13 +5,7 @@ import { DBError } from '../exception';
 export class PostRepository {
   constructor(private pool: Pool) {}
 
-  async findPostsByUserId(
-    userId: number,
-    cursor?: string,
-    sort?: string, 
-    isAsc?: boolean,
-    limit: number = 15
-  ) {
+  async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
       // 1) 정렬 컬럼 매핑
       let sortCol = 'p.released_at';
@@ -108,6 +102,7 @@ export class PostRepository {
         sortValueForCursor = lastPost.daily_like_count;
       } else {
         sortValueForCursor = new Date(lastPost.post_released_at).toISOString();
+        console.log('PostRepository ~ findPostsByUserId ~ sortValueForCursor:', sortValueForCursor);
       }
       const nextCursor = `${sortValueForCursor},${lastPost.id}`;
 
@@ -133,7 +128,6 @@ export class PostRepository {
   }
 
   async getYesterdayAndTodayViewLikeStats(userId: number) {
-
     // pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
     try {
       const query = `
@@ -163,6 +157,33 @@ export class PostRepository {
     } catch (error) {
       logger.error('Post Repo getYesterdayAndTodayViewLikeStats error : ', error);
       throw new DBError('전체 post 통계 조회 중 문제가 발생했습니다.');
+    }
+  }
+
+  async findPostByPostId(postId: number, startDate?: string, endDate?: string) {
+    try {
+      let query = `
+      SELECT
+        pds.date,
+        pds.daily_view_count,
+        pds.daily_like_count
+      FROM posts_postdailystatistics pds
+      WHERE pds.post_id = $1
+      `;
+
+      const values: (number | string)[] = [postId];
+
+      if (startDate && endDate) {
+        query += ` AND pds.date >= ($2 || ' 00:00:00 +09')::timestamptz
+                   AND pds.date < ($3 || ' 00:00:00 +09')::timestamptz + interval '1 day'`;
+        values.push(startDate, endDate);
+      }
+
+      const result = await this.pool.query(query, values);
+      return result.rows;
+    } catch (error) {
+      logger.error('Post Repo findPostByPostId error : ', error);
+      throw new DBError('단건 post 조회 중 문제가 발생했습니다.');
     }
   }
 }

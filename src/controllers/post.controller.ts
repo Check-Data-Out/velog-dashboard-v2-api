@@ -2,6 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '../configs/logger.config';
 import { PostService } from '../services/post.service';
 import { GetAllPostsQuery, PostResponse } from '../types';
+import { GetPostQuery } from 'src/types/requests/getPostQuery.type';
 
 export class PostController {
   constructor(private postService: PostService) {}
@@ -17,7 +18,15 @@ export class PostController {
       isAsc: query.asc === 'true',
     };
   }
-
+  private validateQueryParams2(query: Partial<GetPostQuery>): {
+    startDate: string;
+    endDate: string;
+  } {
+    return {
+      startDate: query.startDate || '',
+      endDate: query.endDate || '',
+    };
+  }
   getAllPost: RequestHandler = async (
     req: Request<object, object, object, GetAllPostsQuery>,
     res: Response<PostResponse>,
@@ -43,6 +52,7 @@ export class PostController {
       next(error);
     }
   };
+
   getAllPostStatistics: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.user;
@@ -58,6 +68,26 @@ export class PostController {
       });
     } catch (error) {
       logger.error('전체 통계 조회 실패:', error);
+      next(error);
+    }
+  };
+
+  getPost: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      const { startDate, endDate } = this.validateQueryParams2(req.query);
+      console.log('PostController ~ getPost= ~ endDate:', endDate);
+      console.log('PostController ~ getPost= ~ startDate:', startDate);
+      console.log('PostController ~ getPost= ~ postId:', postId);
+      const post = await this.postService.getPost(postId, startDate, endDate);
+      res.status(200).json({
+        success: true,
+        message: 'post 단건 조회에 성공하였습니다',
+        data: { post },
+        error: null,
+      });
+    } catch (error) {
+      logger.error('단건 조회 실패 : ', error);
       next(error);
     }
   };
