@@ -76,9 +76,6 @@ export class PostController {
     try {
       const postId = parseInt(req.params.postId);
       const { startDate, endDate } = this.validateQueryParams2(req.query);
-      console.log('PostController ~ getPost= ~ endDate:', endDate);
-      console.log('PostController ~ getPost= ~ startDate:', startDate);
-      console.log('PostController ~ getPost= ~ postId:', postId);
       const post = await this.postService.getPost(postId, startDate, endDate);
       res.status(200).json({
         success: true,

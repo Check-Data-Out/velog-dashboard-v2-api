@@ -66,12 +66,12 @@ export class PostRepository {
                  daily_like_count,
                  date
           FROM posts_postdailystatistics
-          WHERE date::date = NOW()::date
+          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE date::date = (NOW() - INTERVAL '1 day')::date
+          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
           AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
@@ -102,7 +102,6 @@ export class PostRepository {
         sortValueForCursor = lastPost.daily_like_count;
       } else {
         sortValueForCursor = new Date(lastPost.post_released_at).toISOString();
-        console.log('PostRepository ~ findPostsByUserId ~ sortValueForCursor:', sortValueForCursor);
       }
       const nextCursor = `${sortValueForCursor},${lastPost.id}`;
 
@@ -141,12 +140,12 @@ export class PostRepository {
         LEFT JOIN (
             SELECT post_id, daily_view_count, daily_like_count, updated_at
             FROM posts_postdailystatistics
-            WHERE date::date = NOW()::date
+            WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
             SELECT post_id, daily_view_count, daily_like_count
             FROM posts_postdailystatistics
-            WHERE date::date = (NOW() - INTERVAL '1 day')::date
+          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
       `;
