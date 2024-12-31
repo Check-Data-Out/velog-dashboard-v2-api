@@ -1,7 +1,14 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '../configs/logger.config';
 import { PostService } from '../services/post.service';
-import { GetAllPostsQuery, PostsResponseDto, PostResponseDto, GetPostQuery, PostParam } from '../types';
+import {
+  GetAllPostsQuery,
+  PostsResponseDto,
+  PostResponseDto,
+  GetPostQuery,
+  PostParam,
+  PostStatisticsResponseDto,
+} from '../types';
 
 export class PostController {
   constructor(private postService: PostService) {}
@@ -17,7 +24,13 @@ export class PostController {
 
       const result = await this.postService.getAllposts(id, cursor, sort, asc);
 
-      const response = new PostsResponseDto(true, 'post 조회에 성공하였습니다.', result.nextCursor, result.posts, null);
+      const response = new PostsResponseDto(
+        true,
+        '전체 post 조회에 성공하였습니다.',
+        result.nextCursor,
+        result.posts,
+        null,
+      );
 
       res.status(200).json(response);
     } catch (error) {
@@ -26,19 +39,26 @@ export class PostController {
     }
   };
 
-  getAllPostStatistics: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
+  getAllPostStatistics: RequestHandler = async (
+    req: Request,
+    res: Response<PostStatisticsResponseDto>,
+    next: NextFunction,
+  ) => {
     try {
       const { id } = req.user;
 
       const result = await this.postService.getAllPostStatistics(id);
       const totalPostCount = await this.postService.getTotalPostCounts(id);
 
-      res.status(200).json({
-        success: true,
-        message: 'post 전체 통계 조회에 성공하였습니다.',
-        data: { totalPostCount, stats: result },
-        error: null,
-      });
+      const response = new PostStatisticsResponseDto(
+        true,
+        '전체 post 통계 조회에 성공하였습니다.',
+        totalPostCount,
+        result,
+        null,
+      );
+
+      res.status(200).json(response);
     } catch (error) {
       logger.error('전체 통계 조회 실패:', error);
       next(error);
@@ -56,7 +76,7 @@ export class PostController {
 
       const post = await this.postService.getPost(postId, start, end);
 
-      const response = new PostResponseDto(true, 'post 조회에 성공하였습니다.', post, null);
+      const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', post, null);
 
       res.status(200).json(response);
     } catch (error) {

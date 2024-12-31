@@ -10,10 +10,11 @@ export type { TrackingResponse } from './dto/responses/trackingReponse.type';
 export type { GetAllPostsQuery } from './dto/requests/getAllPostsQuery.type';
 export type { GetPostQuery, PostParam } from './dto/requests/getPostQuery.type';
 
-export { EventRequestDto } from './dto/eventRequest.dto';
+export { PostStatisticsResponseDto } from './dto/responses/postResponse.type';
+export { EventRequestDto } from './dto/requests/eventRequest.dto';
 export { UserWithTokenDto } from './dto/userWithToken.dto';
 export { VelogUserLoginDto } from './dto/velogUser.dto';
-export { StayTimeRequestDto } from './dto/stayTimeRequest.dto';
+export { StayTimeRequestDto } from './dto/requests/stayTimeRequest.dto';
 export { PostsResponseDto, PostResponseDto } from './dto/responses/postResponse.type';
 export { GetAllPostsQueryDto } from './dto/requests/getAllPostsQuery.type';
 export { GetPostQueryDto } from './dto/requests/getPostQuery.type';

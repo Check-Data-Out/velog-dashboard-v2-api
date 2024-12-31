@@ -1,4 +1,4 @@
-import { BaseResponse } from './baseResponse.type';
+import { BaseResponseDto } from './baseResponse.type';
 
 interface ProfileType {
   thumbnail: string;
@@ -10,4 +10,4 @@ interface LoginResponseData {
   profile: ProfileType;
 }
 
-export type LoginResponse = BaseResponse<LoginResponseData>;
+export type LoginResponse = BaseResponseDto<LoginResponseData>;

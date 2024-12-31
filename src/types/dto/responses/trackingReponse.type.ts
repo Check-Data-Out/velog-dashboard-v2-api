@@ -1,4 +1,4 @@
-import { BaseResponse } from './baseResponse.type';
+import { BaseResponseDto } from './baseResponse.type';
 
 type TrackingResponseData = Record<string, never>;
-export type TrackingResponse = BaseResponse<TrackingResponseData>;
+export type TrackingResponse = BaseResponseDto<TrackingResponseData>;

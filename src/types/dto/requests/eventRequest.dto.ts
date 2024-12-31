@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty } from 'class-validator';
-import { UserEventType } from '../userEvent.type';
+import { UserEventType } from '../../userEvent.type';
 
 export class EventRequestDto {
   @IsEnum(UserEventType)
