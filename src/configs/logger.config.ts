@@ -12,20 +12,26 @@ if (!fs.existsSync(errorLogDir)) {
   fs.mkdirSync(errorLogDir);
 }
 
+const jsonFormat = winston.format.printf((info) => {
+  return JSON.stringify({
+    timestamp: info.timestamp,
+    level: info.level.toUpperCase(),
+    logger: 'default',
+    message: info.message,
+  });
+});
+
 const logger = winston.createLogger({
   format: winston.format.combine(
     winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss',
+      format: 'YYYY-MM-DD HH:mm:ss.SSSZ',
     }),
-    winston.format.printf((info) => {
-      return `${info.timestamp} ${info.level}: ${info.message}`;
-    }),
+    jsonFormat,
   ),
   transports: [
     new winston.transports.Console({
       level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
     }),
-
     new winstonDaily({
       level: 'debug',
       datePattern: 'YYYY-MM-DD',
@@ -38,10 +44,11 @@ const logger = winston.createLogger({
       level: 'error',
       datePattern: 'YYYY-MM-DD',
       zippedArchive: true,
-      filename: `%DATE%error.log`,
+      filename: `%DATE%-error.log`,
       dirname: errorLogDir,
       maxFiles: '7d',
     }),
   ],
 });
+
 export default logger;

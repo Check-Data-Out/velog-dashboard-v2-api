@@ -47,7 +47,20 @@ export class PostService {
       throw error;
     }
   }
+
   async getTotalPostCounts(id: number) {
     return await this.postRepo.getTotalPostCounts(id);
+  }
+
+  async getPost(postId: number, start?: string, end?: string) {
+    const posts = await this.postRepo.findPostByPostId(postId, start, end);
+
+    const transformedPosts = posts.map((post) => ({
+      date: post.date,
+      dailyViewCount: parseInt(post.daily_view_count),
+      dailyLikeCount: parseInt(post.daily_like_count),
+    }));
+
+    return transformedPosts;
   }
 }

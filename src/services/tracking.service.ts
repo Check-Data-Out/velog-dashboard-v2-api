@@ -6,8 +6,8 @@ import { BadRequestError } from '../exception';
 export class TrackingService {
   constructor(private trackingRepo: TrackingRepository) {}
 
-  async tracking(type: EventRequestDto, id: number) {
-    return await this.trackingRepo.createEvent(type, id);
+  async tracking(eventType: EventRequestDto, id: number) {
+    return await this.trackingRepo.createEvent(eventType, id);
   }
   async stay(data: StayTimeRequestDto, userId: number) {
     try {
