@@ -4,9 +4,9 @@ import { UserEventType } from '../userEvent.type';
 export class EventRequestDto {
   @IsEnum(UserEventType)
   @IsNotEmpty()
-  type: UserEventType;
+  eventType: UserEventType;
 
-  constructor(type: UserEventType) {
-    this.type = type;
+  constructor(eventType: UserEventType) {
+    this.eventType = eventType;
   }
 }
