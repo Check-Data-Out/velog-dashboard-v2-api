@@ -163,7 +163,7 @@ export class PostRepository {
     try {
       let query = `
       SELECT
-        pds.date,
+        (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
         pds.daily_view_count,
         pds.daily_like_count
       FROM posts_postdailystatistics pds
@@ -173,8 +173,8 @@ export class PostRepository {
       const values: (number | string)[] = [postId];
 
       if (start && end) {
-        query += ` AND pds.date >= ($2 || ' 00:00:00 +09')::timestamptz
-                   AND pds.date < ($3 || ' 00:00:00 +09')::timestamptz + interval '1 day'`;
+        query += ` AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+                   AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date`;
         values.push(start, end);
       }
 
