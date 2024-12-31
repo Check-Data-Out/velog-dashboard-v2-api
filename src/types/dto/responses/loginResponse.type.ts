@@ -10,4 +10,16 @@ interface LoginResponseData {
   profile: ProfileType;
 }
 
-export type LoginResponse = BaseResponseDto<LoginResponseData>;
+export class LoginResponseDto extends BaseResponseDto<LoginResponseData> {
+  constructor(
+    success: boolean,
+    message: string,
+    id: number,
+    username: string,
+    profile: ProfileType,
+    error: string | null,
+  ) {
+    const data = { id, username, profile };
+    super(success, message, data, error);
+  }
+}

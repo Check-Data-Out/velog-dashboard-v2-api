@@ -29,6 +29,7 @@ export class PostsResponseDto extends BaseResponseDto<PostsResponseData> {
     super(success, message, data, error);
   }
 }
+
 // ------ 단건 조회 ------
 interface GetPostType {
   date: string;
@@ -46,17 +47,7 @@ export class PostResponseDto extends BaseResponseDto<PostResponseData> {
     super(success, message, data, error);
   }
 }
-/**
- *     "data": {
-        "totalPostCount": 90,
-        "stats": {
-            "totalViews": 1470,
-            "totalLikes": 11,
-            "yesterdayViews": 1469,
-            "yesterdayLikes": 11,
-            "lastUpdatedDate": "2024-12-31T00:15:23.704Z"
-        }
- */
+
 // ------ 전체 통계 ------
 interface PostStatisticsType {
   totalViews: number;
@@ -70,6 +61,7 @@ interface PostStatisticsData {
   totalPostCount: number;
   stats: PostStatisticsType;
 }
+
 export class PostStatisticsResponseDto extends BaseResponseDto<PostStatisticsData> {
   constructor(
     success: boolean,

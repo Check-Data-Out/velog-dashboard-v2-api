@@ -11,7 +11,7 @@ const pool = new Pool({
   user: process.env.POSTGRES_USER,
   host: process.env.POSTGRES_HOST,
   password: process.env.POSTGRES_PASSWORD,
-  port: parseInt(process.env.POSTGRES_PORT),
+  port: Number(process.env.DATA_PORT),
   ssl: {
     rejectUnauthorized: false,
   },

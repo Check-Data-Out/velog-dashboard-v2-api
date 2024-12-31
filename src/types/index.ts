@@ -5,11 +5,11 @@ export type { PostStatistics } from './models/PostStatistics.type';
 export type { UserEventTracking } from './models/UserEventTracking.type';
 export type { UserEventType } from './userEvent.type';
 export type { VelogUserLoginResponse } from './velog.type';
-export type { LoginResponse } from './dto/responses/loginResponse.type';
-export type { TrackingResponse } from './dto/responses/trackingReponse.type';
 export type { GetAllPostsQuery } from './dto/requests/getAllPostsQuery.type';
 export type { GetPostQuery, PostParam } from './dto/requests/getPostQuery.type';
 
+export { LoginResponseDto } from './dto/responses/loginResponse.type';
+export { EmptyResponseDto } from './dto/responses/emptyReponse.type';
 export { PostStatisticsResponseDto } from './dto/responses/postResponse.type';
 export { EventRequestDto } from './dto/requests/eventRequest.dto';
 export { UserWithTokenDto } from './dto/userWithToken.dto';
