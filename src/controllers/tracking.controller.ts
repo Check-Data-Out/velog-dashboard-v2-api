@@ -8,10 +8,10 @@ export class TrackingController {
 
   event = (async (req: Request, res: Response<TrackingResponse>, next: NextFunction) => {
     try {
-      const { type } = req.body;
+      const { eventType } = req.body;
       const { id } = req.user;
 
-      await this.trackingService.tracking(type, id);
+      await this.trackingService.tracking(eventType, id);
       return res.status(200).json({ success: true, message: '이벤트 데이터 저장완료', data: {}, error: null });
     } catch (error) {
       logger.error('user tracking 실패 : ', error);

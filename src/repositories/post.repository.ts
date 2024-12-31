@@ -5,13 +5,7 @@ import { DBError } from '../exception';
 export class PostRepository {
   constructor(private pool: Pool) {}
 
-  async findPostsByUserId(
-    userId: number,
-    cursor?: string,
-    sort?: string, 
-    isAsc?: boolean,
-    limit: number = 15
-  ) {
+  async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
       // 1) 정렬 컬럼 매핑
       let sortCol = 'p.released_at';
@@ -72,12 +66,12 @@ export class PostRepository {
                  daily_like_count,
                  date
           FROM posts_postdailystatistics
-          WHERE date::date = NOW()::date
+          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE date::date = (NOW() - INTERVAL '1 day')::date
+          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
           AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
@@ -133,7 +127,6 @@ export class PostRepository {
   }
 
   async getYesterdayAndTodayViewLikeStats(userId: number) {
-
     // pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
     try {
       const query = `
@@ -147,12 +140,12 @@ export class PostRepository {
         LEFT JOIN (
             SELECT post_id, daily_view_count, daily_like_count, updated_at
             FROM posts_postdailystatistics
-            WHERE date::date = NOW()::date
+            WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
             SELECT post_id, daily_view_count, daily_like_count
             FROM posts_postdailystatistics
-            WHERE date::date = (NOW() - INTERVAL '1 day')::date
+          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
       `;
@@ -163,6 +156,33 @@ export class PostRepository {
     } catch (error) {
       logger.error('Post Repo getYesterdayAndTodayViewLikeStats error : ', error);
       throw new DBError('전체 post 통계 조회 중 문제가 발생했습니다.');
+    }
+  }
+
+  async findPostByPostId(postId: number, start?: string, end?: string) {
+    try {
+      let query = `
+      SELECT
+        (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
+        pds.daily_view_count,
+        pds.daily_like_count
+      FROM posts_postdailystatistics pds
+      WHERE pds.post_id = $1
+      `;
+
+      const values: (number | string)[] = [postId];
+
+      if (start && end) {
+        query += ` AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+                   AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date`;
+        values.push(start, end);
+      }
+
+      const result = await this.pool.query(query, values);
+      return result.rows;
+    } catch (error) {
+      logger.error('Post Repo findPostByPostId error : ', error);
+      throw new DBError('단건 post 조회 중 문제가 발생했습니다.');
     }
   }
 }

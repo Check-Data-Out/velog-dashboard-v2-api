@@ -15,5 +15,6 @@ const postController = new PostController(postService);
 
 router.get('/posts', authMiddleware.verify, postController.getAllPost);
 router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStatistics);
+router.get('/post/:postId', authMiddleware.verify, postController.getPost);
 
 export default router;
