@@ -127,7 +127,7 @@ export class PostRepository {
   }
 
   async getYesterdayAndTodayViewLikeStats(userId: number) {
-    // pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
+    // ! pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
     try {
       const query = `
         SELECT

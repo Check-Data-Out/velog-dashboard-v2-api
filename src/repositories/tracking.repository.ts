@@ -22,6 +22,7 @@ export class TrackingRepository {
       throw new DBError('User Tracking 정보 저장 중 문제가 발생하였습니다.');
     }
   }
+
   async createStayTime(loadDate: Date, unloadDate: Date, userId: number) {
     try {
       await this.pool.query(
