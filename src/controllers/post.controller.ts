@@ -2,7 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '../configs/logger.config';
 import { PostService } from '../services/post.service';
 import { GetAllPostsQuery, PostResponse } from '../types';
-import { GetPostQuery } from 'src/types/requests/getPostQuery.type';
+import { GetPostQuery } from '../types/requests/getPostQuery.type';
 
 export class PostController {
   constructor(private postService: PostService) {}
