@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import logger from '../configs/logger.config';
+import logger from '@/configs/logger.config';
 
 type RequestKey = 'body' | 'user' | 'query';
 

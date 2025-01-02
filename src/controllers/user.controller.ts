@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, RequestHandler, CookieOptions } from 'express';
-import logger from '../configs/logger.config';
-import { EmptyResponseDto, LoginResponseDto, UserWithTokenDto } from '../types';
-import { UserService } from '../services/user.service';
+import logger from '@/configs/logger.config';
+import { EmptyResponseDto, LoginResponseDto, UserWithTokenDto } from '@/types';
+import { UserService } from '@/services/user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -35,7 +35,12 @@ export class UserController {
       res.cookie('access_token', accessToken, this.cookieOption());
       res.cookie('refresh_token', refreshToken, this.cookieOption());
 
-      const response = new LoginResponseDto(true, '로그인에 성공하였습니다.', isExistUser.id, username, profile, null);
+      const response = new LoginResponseDto(
+        true,
+        '로그인에 성공하였습니다.',
+        { id: isExistUser.id, username, profile },
+        null,
+      );
 
       res.status(200).json(response);
     } catch (error) {
@@ -48,7 +53,7 @@ export class UserController {
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
 
-    const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', null);
+    const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
 
     res.status(200).json(response);
   };
@@ -59,9 +64,7 @@ export class UserController {
     const response = new LoginResponseDto(
       true,
       '유저 정보 조회에 성공하였습니다.',
-      user.id,
-      user.username,
-      user.profile,
+      { id: user.id, username: user.username, profile: user.profile },
       null,
     );
 

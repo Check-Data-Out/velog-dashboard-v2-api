@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
-import logger from '../configs/logger.config';
-import { DBError } from '../exception';
-import { EventRequestDto } from '../types';
+import logger from '@/configs/logger.config';
+import { DBError } from '@/exception';
+import { EventRequestDto } from '@/types';
 
 export class TrackingRepository {
   constructor(private readonly pool: Pool) {}

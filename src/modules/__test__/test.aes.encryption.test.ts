@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import AESEncryption from '../token_encryption/aes_encryption';
+import AESEncryption from '@/modules/token_encryption/aes_encryption';
 
 describe('AESEncryption 클래스 테스트', () => {
   const validKey = crypto.randomBytes(32).toString('hex').slice(0, 32); // 32바이트 키 생성
@@ -14,9 +14,7 @@ describe('AESEncryption 클래스 테스트', () => {
   });
 
   test('잘못된 키 길이를 사용하면 오류가 발생해야 한다', () => {
-    expect(() => new AESEncryption(invalidKey)).toThrow(
-      '키는 256비트(32바이트)여야 합니다.'
-    );
+    expect(() => new AESEncryption(invalidKey)).toThrow('키는 256비트(32바이트)여야 합니다.');
   });
 
   test('암호화 결과는 base64 형식이어야 한다', () => {

@@ -1,12 +1,12 @@
 import express, { Router } from 'express';
-import { UserController } from '../controllers/user.controller';
-import { UserRepository } from '../repositories/user.repository';
-import { UserService } from '../services/user.service';
-import pool from '../configs/db.config';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { validateRequestDto } from '../middlewares/validation.middleware';
+import { UserController } from '@/controllers/user.controller';
+import { UserRepository } from '@/repositories/user.repository';
+import { UserService } from '@/services/user.service';
+import pool from '@/configs/db.config';
+import { authMiddleware } from '@/middlewares/auth.middleware';
+import { validateRequestDto } from '@/middlewares/validation.middleware';
 import dotenv from 'dotenv';
-import { VelogUserLoginDto } from '../types';
+import { VelogUserLoginDto } from '@/types';
 
 const router: Router = express.Router();
 dotenv.config();

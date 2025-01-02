@@ -1,12 +1,12 @@
 import express, { Router } from 'express';
-import pool from '../configs/db.config';
 import dotenv from 'dotenv';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { PostRepository } from '../repositories/post.repository';
-import { PostService } from '../services/post.service';
-import { PostController } from '../controllers/post.controller';
-import { validateRequestDto } from 'src/middlewares/validation.middleware';
-import { GetAllPostsQueryDto } from 'src/types/dto/requests/getAllPostsQuery.type';
+import pool from '@/configs/db.config';
+import { authMiddleware } from '@/middlewares/auth.middleware';
+import { PostRepository } from '@/repositories/post.repository';
+import { PostService } from '@/services/post.service';
+import { PostController } from '@/controllers/post.controller';
+import { validateRequestDto } from '@/middlewares/validation.middleware';
+import { GetAllPostsQueryDto } from '@/types/dto/requests/getAllPostsQuery.type';
 
 const router: Router = express.Router();
 dotenv.config();

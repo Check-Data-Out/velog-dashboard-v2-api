@@ -1,13 +1,13 @@
 import express, { Router } from 'express';
-import pool from '../configs/db.config';
+import pool from '@/configs/db.config';
 import dotenv from 'dotenv';
-import { TrackingRepository } from '../repositories/tracking.repository';
-import { TrackingService } from '../services/tracking.service';
-import { TrackingController } from '../controllers/tracking.controller';
-import { validateRequestDto } from '../middlewares/validation.middleware';
-import { EventRequestDto } from '../types';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { StayTimeRequestDto } from '../types';
+import { TrackingRepository } from '@/repositories/tracking.repository';
+import { TrackingService } from '@/services/tracking.service';
+import { TrackingController } from '@/controllers/tracking.controller';
+import { validateRequestDto } from '@/middlewares/validation.middleware';
+import { EventRequestDto } from '@/types';
+import { authMiddleware } from '@/middlewares/auth.middleware';
+import { StayTimeRequestDto } from '@/types';
 
 const router: Router = express.Router();
 dotenv.config();

@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
-import logger from '../configs/logger.config';
-import { User } from '../types';
-import { DBError } from '../exception';
+import logger from '@/configs/logger.config';
+import { User } from '@/types';
+import { DBError } from '@/exception';
 
 export class UserRepository {
   constructor(private readonly pool: Pool) {}

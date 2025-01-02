@@ -1,4 +1,4 @@
-import { BaseResponseDto } from './baseResponse.type';
+import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
 
 // ------ 전체 조회 ------
 interface GetAllPostType {
@@ -17,18 +17,7 @@ interface PostsResponseData {
   posts: GetAllPostType[];
 }
 
-export class PostsResponseDto extends BaseResponseDto<PostsResponseData> {
-  constructor(
-    success: boolean,
-    message: string,
-    nextCursor: string | null,
-    posts: GetAllPostType[],
-    error: string | null,
-  ) {
-    const data = { nextCursor, posts };
-    super(success, message, data, error);
-  }
-}
+export class PostsResponseDto extends BaseResponseDto<PostsResponseData> {}
 
 // ------ 단건 조회 ------
 interface GetPostType {
@@ -41,12 +30,7 @@ interface PostResponseData {
   post: GetPostType[];
 }
 
-export class PostResponseDto extends BaseResponseDto<PostResponseData> {
-  constructor(success: boolean, message: string, post: GetPostType[], error: string | null) {
-    const data = { post };
-    super(success, message, data, error);
-  }
-}
+export class PostResponseDto extends BaseResponseDto<PostResponseData> {}
 
 // ------ 전체 통계 ------
 interface PostStatisticsType {
@@ -62,15 +46,4 @@ interface PostStatisticsData {
   stats: PostStatisticsType;
 }
 
-export class PostStatisticsResponseDto extends BaseResponseDto<PostStatisticsData> {
-  constructor(
-    success: boolean,
-    message: string,
-    totalPostCount: number,
-    stats: PostStatisticsType,
-    error: string | null,
-  ) {
-    const data = { totalPostCount, stats };
-    super(success, message, data, error);
-  }
-}
+export class PostStatisticsResponseDto extends BaseResponseDto<PostStatisticsData> {}

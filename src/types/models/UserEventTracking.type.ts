@@ -1,4 +1,4 @@
-import { UserEventType } from '../userEvent.type';
+import { UserEventType } from '@/userEvent.type';
 
 export interface UserEventTracking {
   id: number;

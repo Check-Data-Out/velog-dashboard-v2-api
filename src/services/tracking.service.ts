@@ -1,7 +1,7 @@
-import { EventRequestDto, StayTimeRequestDto } from '../types';
-import { TrackingRepository } from '../repositories/tracking.repository';
-import logger from '../configs/logger.config';
-import { BadRequestError } from '../exception';
+import { EventRequestDto, StayTimeRequestDto } from '@/types';
+import { TrackingRepository } from '@/repositories/tracking.repository';
+import logger from '@/configs/logger.config';
+import { BadRequestError } from '@/exception';
 
 export class TrackingService {
   constructor(private trackingRepo: TrackingRepository) {}

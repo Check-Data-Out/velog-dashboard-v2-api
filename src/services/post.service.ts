@@ -1,5 +1,5 @@
-import logger from '../configs/logger.config';
-import { PostRepository } from '../repositories/post.repository';
+import logger from '@/configs/logger.config';
+import { PostRepository } from '@/repositories/post.repository';
 
 export class PostService {
   constructor(private postRepo: PostRepository) {}

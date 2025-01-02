@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
-import logger from '../configs/logger.config';
-import { DBError } from '../exception';
+import logger from '@/configs/logger.config';
+import { DBError } from '@/exception';
 
 export class PostRepository {
   constructor(private pool: Pool) {}
