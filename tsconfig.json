@@ -1,9 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "baseUrl": "./",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    },
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
@@ -15,10 +19,10 @@
     "skipLibCheck": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "moduleDetection": "force",
     "resolveJsonModule": true,
     "allowJs": true,
-    "typeRoots": ["./node_modules/@types", "./src/types/*"]
+    "allowSyntheticDefaultImports": true,
+    "plugins": []
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
