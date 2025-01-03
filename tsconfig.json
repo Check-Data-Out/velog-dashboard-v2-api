@@ -8,8 +8,8 @@
     "paths": {
       "@/*": ["*"]
     },
-    "outDir": "dist",
-    "rootDir": ".",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "declaration": true,
     "sourceMap": true,
     "removeComments": true,
@@ -24,6 +24,6 @@
     "allowSyntheticDefaultImports": true,
     "plugins": []
   },
-  "include": ["src/**/*", "jest.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "jest.config.ts"]
 }
