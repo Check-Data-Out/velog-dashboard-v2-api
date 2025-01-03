@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
-import logger from '../configs/logger.config';
-import { User } from '../types';
-import { DBError } from '../exception';
+import logger from '@/configs/logger.config';
+import { User } from '@/types';
+import { DBError } from '@/exception';
 
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
@@ -16,6 +16,7 @@ export class UserRepository {
       throw new DBError('유저 조회 중 문제가 발생했습니다.');
     }
   }
+
   async updateTokens(uuid: string, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
     try {
       const query = `
@@ -68,6 +69,7 @@ export class UserRepository {
       if (!result.rows[0]) {
         throw new DBError('유저 생성에 실패했습니다.');
       }
+
       return result.rows[0];
     } catch (error) {
       logger.error('User Repo createUser Error : ', error);

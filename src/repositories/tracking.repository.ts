@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
-import logger from '../configs/logger.config';
-import { DBError } from '../exception';
-import { EventRequestDto } from '../types';
+import logger from '@/configs/logger.config';
+import { DBError } from '@/exception';
+import { EventRequestDto } from '@/types';
 
 export class TrackingRepository {
   constructor(private readonly pool: Pool) {}
@@ -22,6 +22,7 @@ export class TrackingRepository {
       throw new DBError('User Tracking 정보 저장 중 문제가 발생하였습니다.');
     }
   }
+
   async createStayTime(loadDate: Date, unloadDate: Date, userId: number) {
     try {
       await this.pool.query(

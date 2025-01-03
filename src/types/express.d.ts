@@ -1,4 +1,4 @@
-import { VelogUserLoginResponse } from '../velog.type';
+import { VelogUserLoginResponse } from '@/velog.type';
 
 declare global {
   namespace Express {

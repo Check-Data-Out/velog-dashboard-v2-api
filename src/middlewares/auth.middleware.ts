@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import axios from 'axios';
 import { isUUID } from 'class-validator';
-import logger from '../configs/logger.config';
-import pool from '../configs/db.config';
-import { DBError, InvalidTokenError } from '../exception';
-import { VELOG_API_URL, VELOG_QUERIES } from '../constants/velog.constans';
+import logger from '@/configs/logger.config';
+import pool from '@/configs/db.config';
+import { DBError, InvalidTokenError } from '@/exception';
+import { VELOG_API_URL, VELOG_QUERIES } from '@/constants/velog.constans';
 
 /**
  * 요청에서 토큰을 추출하는 함수
@@ -57,7 +57,6 @@ const fetchVelogApi = async (query: string, accessToken: string, refreshToken: s
     throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
   }
 };
-
 
 /**
  * JWT 토큰에서 페이로드를 추출하고 디코딩하는 함수

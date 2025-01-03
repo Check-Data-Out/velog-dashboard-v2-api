@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, RequestHandler, CookieOptions } from 'express';
-import logger from '../configs/logger.config';
-import { LoginResponse, UserWithTokenDto } from '../types';
-import { UserService } from '../services/user.service';
+import logger from '@/configs/logger.config';
+import { EmptyResponseDto, LoginResponseDto, UserWithTokenDto } from '@/types';
+import { UserService } from '@/services/user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -21,7 +21,7 @@ export class UserController {
     return baseOptions;
   }
 
-  login: RequestHandler = async (req: Request, res: Response<LoginResponse>, next: NextFunction): Promise<void> => {
+  login: RequestHandler = async (req: Request, res: Response<LoginResponseDto>, next: NextFunction): Promise<void> => {
     try {
       const { id, email, profile, username } = req.user;
       const { accessToken, refreshToken } = req.tokens;
@@ -35,32 +35,39 @@ export class UserController {
       res.cookie('access_token', accessToken, this.cookieOption());
       res.cookie('refresh_token', refreshToken, this.cookieOption());
 
-      res.status(200).json({
-        success: true,
-        message: '로그인에 성공하였습니다.',
-        data: { id: isExistUser.id, username, profile },
-        error: null,
-      });
+      const response = new LoginResponseDto(
+        true,
+        '로그인에 성공하였습니다.',
+        { id: isExistUser.id, username, profile },
+        null,
+      );
+
+      res.status(200).json(response);
     } catch (error) {
       logger.error('로그인 실패 : ', error);
       next(error);
     }
   };
 
-  logout: RequestHandler = async (req: Request, res: Response) => {
+  logout: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>) => {
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
 
-    res.status(200).json({ success: true, message: '로그아웃에 성공하였습니다.', data: {}, error: null });
+    const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
+
+    res.status(200).json(response);
   };
 
-  fetchCurrentUser: RequestHandler = (req: Request, res: Response) => {
+  fetchCurrentUser: RequestHandler = (req: Request, res: Response<LoginResponseDto>) => {
     const { user } = req;
-    res.status(200).json({
-      success: true,
-      message: '프로필 조회에 성공하였습니다.',
-      data: { user },
-      error: null,
-    });
+
+    const response = new LoginResponseDto(
+      true,
+      '유저 정보 조회에 성공하였습니다.',
+      { id: user.id, username: user.username, profile: user.profile },
+      null,
+    );
+
+    res.status(200).json(response);
   };
 }

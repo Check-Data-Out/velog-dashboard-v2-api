@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { CustomError } from '../exception';
-import logger from '../configs/logger.config';
+import { CustomError } from '@/exception';
+import logger from '@/configs/logger.config';
 
 export const errorHandlingMiddleware = ((err: CustomError, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof CustomError) {

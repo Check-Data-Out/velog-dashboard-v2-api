@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import logger from '../configs/logger.config';
+import logger from '@/configs/logger.config';
 
-type RequestKey = 'body' | 'user';
+type RequestKey = 'body' | 'user' | 'query';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const validateDto = <T extends object>(dtoClass: new (...args: any) => T, key: RequestKey) => {
+export const validateRequestDto = <T extends object>(dtoClass: new (...args: any) => T, key: RequestKey) => {
   return (async (req: Request, res: Response, next: NextFunction) => {
     try {
       const value = plainToInstance(dtoClass, req[key]);

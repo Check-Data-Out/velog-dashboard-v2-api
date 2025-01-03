@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
-import logger from '../configs/logger.config';
-import { DBError } from '../exception';
+import logger from '@/configs/logger.config';
+import { DBError } from '@/exception';
 
 export class PostRepository {
   constructor(private pool: Pool) {}
@@ -10,10 +10,10 @@ export class PostRepository {
       // 1) 정렬 컬럼 매핑
       let sortCol = 'p.released_at';
       switch (sort) {
-        case 'daily_view_count':
+        case 'dailyViewCount':
           sortCol = 'pds.daily_view_count';
           break;
-        case 'daily_like_count':
+        case 'dailyLikeCount':
           sortCol = 'pds.daily_like_count';
           break;
         default:
@@ -96,9 +96,9 @@ export class PostRepository {
       // nextCursor = `${정렬 컬럼 값},${p.id}`
       // 예: 만약 sortCol이 p.title인 경우, lastPost.title + ',' + lastPost.id
       let sortValueForCursor = '';
-      if (sort === 'daily_view_count') {
+      if (sort === 'dailyViewCount') {
         sortValueForCursor = lastPost.daily_view_count;
-      } else if (sort === 'daily_like_count') {
+      } else if (sort === 'dailyLikeCount') {
         sortValueForCursor = lastPost.daily_like_count;
       } else {
         sortValueForCursor = new Date(lastPost.post_released_at).toISOString();
@@ -127,7 +127,7 @@ export class PostRepository {
   }
 
   async getYesterdayAndTodayViewLikeStats(userId: number) {
-    // pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
+    // ! pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
     try {
       const query = `
         SELECT
