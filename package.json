@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias -p tsconfig.json",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write src/**/*.ts",
@@ -54,6 +54,7 @@
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
+    "tsc-alias": "^1.8.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.15.0",
