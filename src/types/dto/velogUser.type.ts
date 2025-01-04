@@ -1,6 +1,15 @@
 import { IsEmail, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
+class ProfileDTO {
+  @IsString()
+  thumbnail: string;
+
+  constructor(thumbnail: string) {
+    this.thumbnail = thumbnail;
+  }
+}
+
 export class VelogUserLoginDto {
   @IsUUID()
   id: string;
@@ -20,13 +29,5 @@ export class VelogUserLoginDto {
     this.username = username;
     this.email = email;
     this.profile = profile;
-  }
-}
-class ProfileDTO {
-  @IsString()
-  thumbnail: string;
-
-  constructor(thumbnail: string) {
-    this.thumbnail = thumbnail;
   }
 }
