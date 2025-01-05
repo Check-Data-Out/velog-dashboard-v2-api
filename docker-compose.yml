@@ -12,10 +12,13 @@ services:
     container_name: velog-dashboard-v2-api
     ports:
       - "8080:8080"
+    volumes:
+      - ./logs:/usr/src/app/logs
     env_file:
       - .env
     environment:
       NODE_ENV: production
+      TZ: Asia/Seoul
     restart: unless-stopped
 
   fe:
@@ -26,6 +29,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
+      TZ: Asia/Seoul
     restart: unless-stopped
     depends_on:
       - api
@@ -40,7 +44,9 @@ services:
     volumes:
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/logs:/var/log/nginx
+      - ./logs/nginx:/var/log/nginx
+    environment:
+      TZ: Asia/Seoul
     restart: unless-stopped
     depends_on:
       - api
