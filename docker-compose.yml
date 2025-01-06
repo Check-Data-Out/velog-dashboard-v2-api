@@ -13,7 +13,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./logs:/usr/src/app/logs
+      - ./logs/api:/usr/src/app/logs
     env_file:
       - .env
     environment:
@@ -27,6 +27,8 @@ services:
     container_name: velog-dashboard-v2-fe
     ports:
       - "3000:3000"
+    volumes:
+      - ./logs/fe:/usr/src/app/logs
     environment:
       NODE_ENV: production
       TZ: Asia/Seoul
