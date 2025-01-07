@@ -23,5 +23,6 @@ router.get(
 );
 router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStatistics);
 router.get('/post/:postId', authMiddleware.verify, postController.getPost);
+router.get('/post/velog/:postId', authMiddleware.verify, postController.getPost);
 
 export default router;

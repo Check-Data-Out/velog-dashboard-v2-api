@@ -52,7 +52,7 @@ export class PostService {
     return await this.postRepo.getTotalPostCounts(id);
   }
 
-  async getPost(postId: number, start?: string, end?: string) {
+  async getPost(postId: string, start?: string, end?: string) {
     try {
       const posts = await this.postRepo.findPostByPostId(postId, start, end);
 

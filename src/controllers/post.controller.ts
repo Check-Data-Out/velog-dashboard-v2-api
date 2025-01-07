@@ -9,6 +9,7 @@ import {
   PostParam,
   PostStatisticsResponseDto,
 } from '@/types';
+import { BadRequestError } from '@/exception';
 
 export class PostController {
   constructor(private postService: PostService) {}
@@ -69,9 +70,12 @@ export class PostController {
     next: NextFunction,
   ) => {
     try {
-      const postId = Number(req.params.postId);
+      const postId = req.params.postId;
       const { start, end } = req.query;
 
+      if (!postId) {
+        throw new BadRequestError('Post ID는 필수입니다.');
+      }
       const post = await this.postService.getPost(postId, start, end);
 
       const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', { post }, null);

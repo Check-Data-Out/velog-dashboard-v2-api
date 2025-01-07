@@ -159,7 +159,7 @@ export class PostRepository {
     }
   }
 
-  async findPostByPostId(postId: number, start?: string, end?: string) {
+  async findPostByPostId(postId: string, start?: string, end?: string) {
     try {
       let query = `
       SELECT
