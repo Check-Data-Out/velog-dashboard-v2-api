@@ -4,17 +4,17 @@ import { DBError } from '@/exception';
 import { EventRequestDto } from '@/types';
 
 export class TrackingRepository {
-  constructor(private readonly pool: Pool) {}
+  constructor(private readonly pool: Pool) { }
 
-  async createEvent(type: EventRequestDto, id: number) {
+  async createEvent(type: EventRequestDto, id: number, req_headers: object) {
     try {
       const result = await this.pool.query(
         `
-        INSERT INTO tracking_usereventtracking (event_type, user_id, created_at)
-        VALUES ($1, $2, CURRENT_TIMESTAMP)
+        INSERT INTO tracking_usereventtracking (event_type, user_id, request_header, created_at)
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
         RETURNING *;
       `,
-        [type, id],
+        [type, id, req_headers],
       );
       return result.rows[0];
     } catch (error) {

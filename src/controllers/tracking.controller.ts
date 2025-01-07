@@ -4,14 +4,14 @@ import { TrackingService } from '@/services/tracking.service';
 import { EmptyResponseDto } from '@/types';
 
 export class TrackingController {
-  constructor(private trackingService: TrackingService) {}
+  constructor(private trackingService: TrackingService) { }
 
   event: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
     try {
       const { eventType } = req.body;
       const { id } = req.user;
 
-      await this.trackingService.tracking(eventType, id);
+      await this.trackingService.tracking(eventType, id, req.headers);
 
       const response = new EmptyResponseDto(true, '이벤트 데이터 저장완료', {}, null);
 
