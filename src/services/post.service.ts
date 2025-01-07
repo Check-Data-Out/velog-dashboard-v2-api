@@ -81,7 +81,7 @@ export class PostService {
 
       return transformedPosts;
     } catch (error) {
-      logger.error('PostService getPost error : ', error);
+      logger.error('PostService getPostByPostUUID error : ', error);
       throw error;
     }
   }
