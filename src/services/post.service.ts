@@ -1,4 +1,5 @@
 import logger from '@/configs/logger.config';
+import { BadRequestError } from '@/exception';
 import { PostRepository } from '@/repositories/post.repository';
 
 export class PostService {
@@ -54,8 +55,18 @@ export class PostService {
 
   async getPost(postId: string, start?: string, end?: string) {
     try {
-      const posts = await this.postRepo.findPostByPostId(postId, start, end);
+      let posts;
 
+      const isUUID = postId.length === 36 && postId.split('-').length === 5;
+
+      if (isUUID) {
+        if (!start || !end) {
+          throw new BadRequestError('올바르지 않은 요청입니다.');
+        }
+        posts = await this.postRepo.findPostByUUID(postId, start, end);
+      } else {
+        posts = await this.postRepo.findPostByPostId(postId, start, end);
+      }
       const transformedPosts = posts.map((post) => ({
         date: post.date,
         dailyViewCount: parseInt(post.daily_view_count),
@@ -64,7 +75,7 @@ export class PostService {
 
       return transformedPosts;
     } catch (error) {
-      logger.error('PostService getTotalPostCounts error : ', error);
+      logger.error('PostService getPost error : ', error);
       throw error;
     }
   }

@@ -71,11 +71,26 @@ export class PostController {
   ) => {
     try {
       const postId = req.params.postId;
-      const { start, end } = req.query;
+      let { start, end } = req.query;
 
       if (!postId) {
         throw new BadRequestError('Post ID는 필수입니다.');
       }
+
+      // velog 경로일 경우 7일치 데이터 반환
+      const isVelogPath = req.path.includes('/velog/');
+
+      if (isVelogPath) {
+        if (isVelogPath) {
+          const seoulNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+          const sevenDaysAgo = new Date(seoulNow);
+
+          end = seoulNow.toISOString().split('T')[0];
+          sevenDaysAgo.setDate(seoulNow.getDate() - 6);
+          start = sevenDaysAgo.toISOString().split('T')[0];
+        }
+      }
+
       const post = await this.postService.getPost(postId, start, end);
 
       const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', { post }, null);
