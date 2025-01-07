@@ -4,13 +4,13 @@ export const options = {
     info: {
       title: 'V.D Project API',
       version: '1.0.0',
-      description: 'API 문서화',
+      description: '모든 API는 로그인 후 진행이 가능합니다.',
     },
     servers: [
       {
-        url: 'http://localhost:8080',
+        url: 'http://localhost:8080/api',
       },
     ],
   },
-  apis: ['./src/routes/*.ts'],
+  apis: ['./src/routes/*.ts', './src/types/**/*.ts'],
 };

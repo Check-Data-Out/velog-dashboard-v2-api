@@ -10,6 +10,24 @@ export interface GetPostQuery {
   end?: string;
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     GetPostQueryDto:
+ *       type: object
+ *       properties:
+ *         start:
+ *           type: string
+ *           format: date
+ *           description: 조회 시작 날짜
+ *           nullable: true
+ *         end:
+ *           type: string
+ *           format: date
+ *           description: 조회 종료 날짜
+ *           nullable: true
+ */
 export class GetPostQueryDto {
   @IsOptional()
   @IsDate()
