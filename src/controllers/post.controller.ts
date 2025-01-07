@@ -9,7 +9,6 @@ import {
   PostParam,
   PostStatisticsResponseDto,
 } from '@/types';
-import { BadRequestError } from '@/exception';
 
 export class PostController {
   constructor(private postService: PostService) {}
@@ -64,36 +63,37 @@ export class PostController {
     }
   };
 
-  getPost: RequestHandler = async (
+  getPostByPostId: RequestHandler<PostParam> = async (
     req: Request<PostParam, object, object, GetPostQuery>,
     res: Response<PostResponseDto>,
     next: NextFunction,
   ) => {
     try {
-      const postId = req.params.postId;
-      let { start, end } = req.query;
+      const postId = Number(req.params.postId);
+      const { start, end } = req.query;
 
-      if (!postId) {
-        throw new BadRequestError('Post ID는 필수입니다.');
-      }
-
-      // velog 경로일 경우 7일치 데이터 반환
-      const isVelogPath = req.path.includes('/velog/');
-
-      if (isVelogPath) {
-        if (isVelogPath) {
-          const seoulNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
-          const sevenDaysAgo = new Date(seoulNow);
-
-          end = seoulNow.toISOString().split('T')[0];
-          sevenDaysAgo.setDate(seoulNow.getDate() - 6);
-          start = sevenDaysAgo.toISOString().split('T')[0];
-        }
-      }
-
-      const post = await this.postService.getPost(postId, start, end);
+      const post = await this.postService.getPostByPostId(postId, start, end);
 
       const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', { post }, null);
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('단건 조회 실패 : ', error);
+      next(error);
+    }
+  };
+
+  getPostByUUID: RequestHandler<PostParam> = async (
+    req: Request<PostParam>,
+    res: Response<PostResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      const postId = req.params.postId as string;
+
+      const post = await this.postService.getPostByPostUUID(postId);
+
+      const response = new PostResponseDto(true, 'uuid로 post 조회에 성공하였습니다.', { post }, null);
 
       res.status(200).json(response);
     } catch (error) {

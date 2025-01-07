@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { IsDate, IsOptional } from 'class-validator';
 
 export interface PostParam {
-  postId?: string;
+  postId: string;
 }
 
 export interface GetPostQuery {

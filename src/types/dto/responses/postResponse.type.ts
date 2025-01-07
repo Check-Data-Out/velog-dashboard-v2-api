@@ -26,6 +26,11 @@ interface GetPostType {
   dailyLikeCount: number;
 }
 
+export interface RawPostType {
+  date: string;
+  daily_view_count: number;
+  daily_like_count: number;
+}
 interface PostResponseData {
   post: GetPostType[];
 }

@@ -5,6 +5,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import router from './routes';
 import { errorHandlingMiddleware } from './middlewares/errorHandling.middleware';
+import { NotFoundError } from './exception';
 
 dotenv.config();
 
@@ -21,10 +22,14 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use('/api', router);
 app.get('/', (req, res) => {
   res.send('Hello, V.D.!');
 });
 app.use(errorHandlingMiddleware);
+app.use((req) => {
+  throw new NotFoundError(`${req.url} not found`);
+});
 
 export default app;

@@ -22,7 +22,7 @@ router.get(
   postController.getAllPost,
 );
 router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStatistics);
-router.get('/post/:postId', authMiddleware.verify, postController.getPost);
-router.get('/post/velog/:postId', authMiddleware.verify, postController.getPost);
+router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostByUUID);
+router.get('/post/:postId', authMiddleware.verify, postController.getPostByPostId);
 
 export default router;

@@ -12,7 +12,12 @@ export { GetAllPostsQueryDto } from '@/types/dto/requests/getAllPostsQuery.type'
 export { GetPostQueryDto } from '@/types/dto/requests/getPostQuery.type';
 export { LoginResponseDto } from '@/types/dto/responses/loginResponse.type';
 export { EmptyResponseDto } from '@/types/dto/responses/emptyReponse.type';
-export { PostsResponseDto, PostResponseDto, PostStatisticsResponseDto } from '@/types/dto/responses/postResponse.type';
+export {
+  PostsResponseDto,
+  PostResponseDto,
+  PostStatisticsResponseDto,
+  RawPostType,
+} from '@/types/dto/responses/postResponse.type';
 export { EventRequestDto } from '@/types/dto/requests/eventRequest.type';
 export { UserWithTokenDto } from '@/types/dto/userWithToken.type';
 export { VelogUserLoginDto } from '@/types/dto/velogUser.type';
