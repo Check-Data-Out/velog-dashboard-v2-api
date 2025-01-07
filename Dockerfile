@@ -35,6 +35,6 @@ RUN pnpm install --prod --frozen-lockfile
 COPY --from=builder /usr/src/app/dist ./dist
 COPY ecosystem.config.js .
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD ["pm2-runtime", "start", "ecosystem.config.js"]
