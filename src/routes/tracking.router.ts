@@ -30,12 +30,16 @@ const trackingController = new TrackingController(trackingService);
  *           schema:
  *             $ref: '#/components/schemas/EventRequestDto'
  *     responses:
- *       200:
+ *       '200':
  *         description: 성공
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/EmptyResponseDto'
+ *       '400':
+ *         description: DTO 검증 실패 / BadRequestError
+ *       '500':
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.post('/event', authMiddleware.verify, validateRequestDto(EventRequestDto, 'body'), trackingController.event);
 
@@ -53,12 +57,16 @@ router.post('/event', authMiddleware.verify, validateRequestDto(EventRequestDto,
  *           schema:
  *             $ref: '#/components/schemas/StayTimeRequestDto'
  *     responses:
- *       200:
+ *       '200':
  *         description: 성공
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/EmptyResponseDto'
+ *       '400':
+ *         description: DTO 검증 실패
+ *       '500':
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.post('/stay', authMiddleware.verify, validateRequestDto(StayTimeRequestDto, 'body'), trackingController.stay);
 

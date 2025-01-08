@@ -37,11 +37,13 @@ const postController = new PostController(postService);
  *           $ref: '#/components/schemas/GetAllPostsQueryDto/properties/asc'
  *     responses:
  *       '200':
- *         description: 성공
+ *         description: 게시물 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/PostsResponseDto'
+ *       '500':
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.get(
   '/posts',
@@ -59,11 +61,13 @@ router.get(
  *       - Post
  *     responses:
  *       '200':
- *         description: 성공
+ *         description: 게시물 전체 통계 조회 성공
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/PostStatisticsResponseDto'
+ *       '500':
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStatistics);
 
@@ -91,11 +95,15 @@ router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStati
  *           $ref: '#/components/schemas/GetPostQueryDto/properties/end'
  *     responses:
  *       '200':
- *         description: 성공
+ *         description: 게시물 상세 조회 성공
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/PostResponseDto'
+ *       '401':
+ *         description: Post조회 실패 / Unauthorized
+ *       '500':
+ *         description: 서버 오류
  */
 router.get('/post/:postId', authMiddleware.verify, postController.getPost);
 

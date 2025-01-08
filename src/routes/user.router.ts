@@ -38,6 +38,12 @@ const userController = new UserController(userService);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/LoginResponseDto'
+ *       '400':
+ *         description: DTO 검증 실패
+ *       '401':
+ *         description: 로그인 실패 / 그룹 id 조회 실패 / 유효하지 않은 토큰
+ *       '500':
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.post('/login', authMiddleware.login, validateRequestDto(VelogUserLoginDto, 'user'), userController.login);
 
@@ -50,13 +56,13 @@ router.post('/login', authMiddleware.login, validateRequestDto(VelogUserLoginDto
  *     summary: 사용자 로그아웃
  *     responses:
  *       '200':
- *         description: 성공적으로 로그아웃하고 모든 쿠키가 삭제됨
+ *         description: 쿠키가 삭제되며 성공적으로 로그아웃함
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/EmptyResponseDto'
  */
-router.post('/logout', authMiddleware.login, userController.logout);
+router.post('/logout', userController.logout);
 
 /**
  * @swagger
