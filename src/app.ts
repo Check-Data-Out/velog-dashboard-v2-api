@@ -24,14 +24,6 @@ app.use(
 );
 
 app.use('/api', router);
-app.get('/', (req, res) => {
-  res.send('Hello, V.D.!');
-});
-app.use(errorHandlingMiddleware);
-app.use('/api', router);
-app.get('/', (req, res) => {
-  res.send('Hello, V.D.!');
-});
 app.use((req) => {
   throw new NotFoundError(`${req.url} not found`);
 });
