@@ -21,13 +21,13 @@ export class PostsResponseDto extends BaseResponseDto<PostsResponseData> {}
 
 // ------ 단건 조회 ------
 interface GetPostType {
-  date: string;
+  date: Date;
   dailyViewCount: number;
   dailyLikeCount: number;
 }
 
 export interface RawPostType {
-  date: string;
+  date: Date;
   daily_view_count: number;
   daily_like_count: number;
 }

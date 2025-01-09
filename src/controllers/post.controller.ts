@@ -89,7 +89,7 @@ export class PostController {
     next: NextFunction,
   ) => {
     try {
-      const postId = req.params.postId as string;
+      const postId = req.params.postId;
 
       const post = await this.postService.getPostByPostUUID(postId);
 
