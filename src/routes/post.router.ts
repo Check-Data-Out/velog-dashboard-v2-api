@@ -73,9 +73,37 @@ router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStati
 
 /**
  * @swagger
+ * /post/velog/{postId}:
+ *   get:
+ *     summary: UUID를 통한 게시물 상세 조회
+ *     tags:
+ *       - Post
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 조회할 게시물 UUID
+ *     responses:
+ *       '200':
+ *         description: 게시물 상세 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PostResponseDto'
+ *       '401':
+ *         description: Post조회 실패 / Unauthorized
+ *       '500':
+ *         description: 서버 오류
+ */
+router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostByUUID);
+
+/**
+ * @swagger
  * /post/{postId}:
  *   get:
- *     summary: 게시물 상세 조회
+ *     summary: post id를 통한 게시물 상세 조회
  *     tags:
  *       - Post
  *     parameters:
@@ -105,7 +133,6 @@ router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStati
  *       '500':
  *         description: 서버 오류
  */
-router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostByUUID);
 router.get('/post/:postId', authMiddleware.verify, postController.getPostByPostId);
 
 export default router;
