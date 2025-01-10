@@ -95,7 +95,7 @@ router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStati
  *       '401':
  *         description: Post조회 실패 / Unauthorized
  *       '500':
- *         description: 서버 오류
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostByUUID);
 
@@ -131,7 +131,7 @@ router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostB
  *       '401':
  *         description: Post조회 실패 / Unauthorized
  *       '500':
- *         description: 서버 오류
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
 router.get('/post/:postId', authMiddleware.verify, postController.getPostByPostId);
 
