@@ -185,4 +185,29 @@ export class PostRepository {
       throw new DBError('단건 post 조회 중 문제가 발생했습니다.');
     }
   }
+
+  async findPostByPostUUID(postId: string, start: string, end: string) {
+    try {
+      const query = `
+      SELECT
+        (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
+        pds.daily_view_count,
+        pds.daily_like_count
+      FROM posts_post p
+      JOIN posts_postdailystatistics pds ON p.id = pds.post_id
+      WHERE p.post_uuid = $1
+        AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+        AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+      ORDER BY pds.date ASC
+      `;
+
+      const values = [postId, start, end];
+
+      const result = await this.pool.query(query, values);
+      return result.rows;
+    } catch (error) {
+      logger.error('Post Repo findPostByUUID error : ', error);
+      throw new DBError('통계 데이터 조회 중 문제가 발생했습니다.');
+    }
+  }
 }
