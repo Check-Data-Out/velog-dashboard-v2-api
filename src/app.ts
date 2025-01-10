@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import { options } from '@/configs/swagger.config';
 import { errorHandlingMiddleware } from './middlewares/errorHandling.middleware';
+import { NotFoundError } from './exception';
 
 dotenv.config();
 
@@ -25,10 +26,11 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', router);
-app.get('/', (req, res) => {
-  res.send('Hello, V.D.!');
+app.use((req) => {
+  throw new NotFoundError(`${req.url} not found`);
 });
 app.use(errorHandlingMiddleware);
 

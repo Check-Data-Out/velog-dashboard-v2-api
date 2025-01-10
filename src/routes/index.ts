@@ -5,6 +5,10 @@ import PostRouter from './post.router';
 
 const router: Router = express.Router();
 
+router.use('/ping', (req, res) => {
+  res.send('pong');
+});
+
 router.use('/', UserRouter);
 router.use('/', TrackingRouter);
 router.use('/', PostRouter);

@@ -1,16 +1,55 @@
 # docker-compose.yml
+name: velog-dashboard-v2-app
 version: '3.9'
 
 services:
-  app:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
+    image: velog-dashboard-v2-api
+    hostname: velog-dashboard-v2-api
     container_name: velog-dashboard-v2-api
     ports:
       - "8080:8080"
+    volumes:
+      - ./logs/api:/usr/src/app/logs
     env_file:
       - .env
     environment:
       NODE_ENV: production
+      TZ: Asia/Seoul
     restart: unless-stopped
+
+  fe:
+    image: nuung/velog-dashboard-v2-fe:latest
+    hostname: velog-dashboard-v2-fe
+    container_name: velog-dashboard-v2-fe
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./logs/fe:/usr/src/app/logs
+    environment:
+      NODE_ENV: production
+      TZ: Asia/Seoul
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  nginx:
+    image: nginx:alpine
+    hostname: velog-dashboard-v2-nginx
+    container_name: velog-dashboard-v2-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./logs/nginx:/var/log/nginx
+    environment:
+      TZ: Asia/Seoul
+    restart: unless-stopped
+    depends_on:
+      - api
+      - fe

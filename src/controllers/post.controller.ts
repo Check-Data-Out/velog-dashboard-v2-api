@@ -63,7 +63,7 @@ export class PostController {
     }
   };
 
-  getPost: RequestHandler = async (
+  getPostByPostId: RequestHandler<PostParam> = async (
     req: Request<PostParam, object, object, GetPostQuery>,
     res: Response<PostResponseDto>,
     next: NextFunction,
@@ -72,9 +72,28 @@ export class PostController {
       const postId = Number(req.params.postId);
       const { start, end } = req.query;
 
-      const post = await this.postService.getPost(postId, start, end);
+      const post = await this.postService.getPostByPostId(postId, start, end);
 
       const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', { post }, null);
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('단건 조회 실패 : ', error);
+      next(error);
+    }
+  };
+
+  getPostByUUID: RequestHandler<PostParam> = async (
+    req: Request<PostParam>,
+    res: Response<PostResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      const postId = req.params.postId;
+
+      const post = await this.postService.getPostByPostUUID(postId);
+
+      const response = new PostResponseDto(true, 'uuid로 post 조회에 성공하였습니다.', { post }, null);
 
       res.status(200).json(response);
     } catch (error) {

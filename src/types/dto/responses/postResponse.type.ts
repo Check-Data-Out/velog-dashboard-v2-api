@@ -102,7 +102,7 @@ export class PostsResponseDto extends BaseResponseDto<PostsResponseData> {}
  *           description: 일일 좋아요수
  */
 interface GetPostType {
-  date: string;
+  date: Date;
   dailyViewCount: number;
   dailyLikeCount: number;
 }
@@ -121,6 +121,11 @@ interface GetPostType {
  *           items:
  *             $ref: '#/components/schemas/GetPostType'
  */
+export interface RawPostType {
+  date: Date;
+  daily_view_count: number;
+  daily_like_count: number;
+}
 interface PostResponseData {
   post: GetPostType[];
 }

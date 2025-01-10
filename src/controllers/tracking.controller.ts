@@ -11,7 +11,7 @@ export class TrackingController {
       const { eventType } = req.body;
       const { id } = req.user;
 
-      await this.trackingService.tracking(eventType, id);
+      await this.trackingService.tracking(eventType, id, req.headers);
 
       const response = new EmptyResponseDto(true, '이벤트 데이터 저장완료', {}, null);
 

@@ -105,6 +105,7 @@ router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStati
  *       '500':
  *         description: 서버 오류
  */
-router.get('/post/:postId', authMiddleware.verify, postController.getPost);
+router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostByUUID);
+router.get('/post/:postId', authMiddleware.verify, postController.getPostByPostId);
 
 export default router;
