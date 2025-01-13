@@ -49,7 +49,7 @@ router.post('/event', authMiddleware.verify, validateRequestDto(EventRequestDto,
  *   post:
  *     tags:
  *       - Tracking
- *     summary: 사용자 이벤트 등록
+ *     summary: 사용자 체류 시간 등록
  *     requestBody:
  *       required: true
  *       content:

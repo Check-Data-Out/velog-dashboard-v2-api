@@ -11,11 +11,13 @@ export class UserController {
     const baseOptions: CookieOptions = {
       httpOnly: isProd,
       secure: isProd,
-      domain: process.env.COOKIE_DOMAIN || 'localhost',
     };
 
     if (isProd) {
       baseOptions.sameSite = 'lax';
+      baseOptions.domain = process.env.ALLOWED_ORIGINS;
+    } else {
+      baseOptions.domain = 'localhost';
     }
 
     return baseOptions;

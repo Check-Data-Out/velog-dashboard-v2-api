@@ -20,6 +20,7 @@ const userController = new UserController(userService);
  *     tags:
  *       - User
  *     summary: 사용자 로그인
+ *     security: []
  *     requestBody:
  *       required: false
  *       content:
@@ -62,7 +63,7 @@ router.post('/login', authMiddleware.login, validateRequestDto(VelogUserLoginDto
  *             schema:
  *               $ref: '#/components/schemas/EmptyResponseDto'
  */
-router.post('/logout', userController.logout);
+router.post('/logout', authMiddleware.verify, userController.logout);
 
 /**
  * @swagger
