@@ -4,7 +4,7 @@ import { DBError } from '@/exception';
 import { EventRequestDto } from '@/types';
 
 export class TrackingRepository {
-  constructor(private readonly pool: Pool) { }
+  constructor(private readonly pool: Pool) {}
 
   async createEvent(type: EventRequestDto, id: number, req_headers: object) {
     try {

@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsDate, IsOptional } from 'class-validator';
 
-export interface PostParam {
+export interface PostParam extends Record<string, string> {
   postId: string;
 }
 
@@ -10,6 +10,24 @@ export interface GetPostQuery {
   end?: string;
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     GetPostQueryDto:
+ *       type: object
+ *       properties:
+ *         start:
+ *           type: string
+ *           format: date
+ *           description: 조회 시작 날짜
+ *           nullable: true
+ *         end:
+ *           type: string
+ *           format: date
+ *           description: 조회 종료 날짜
+ *           nullable: true
+ */
 export class GetPostQueryDto {
   @IsOptional()
   @IsDate()

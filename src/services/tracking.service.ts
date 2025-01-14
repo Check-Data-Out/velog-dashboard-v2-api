@@ -4,7 +4,7 @@ import logger from '@/configs/logger.config';
 import { BadRequestError } from '@/exception';
 
 export class TrackingService {
-  constructor(private trackingRepo: TrackingRepository) { }
+  constructor(private trackingRepo: TrackingRepository) {}
 
   async tracking(eventType: EventRequestDto, id: number, req_headers: object) {
     return await this.trackingRepo.createEvent(eventType, id, req_headers);

@@ -4,12 +4,16 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import router from './routes';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJSDoc from 'swagger-jsdoc';
+import { options } from '@/configs/swagger.config';
 import { errorHandlingMiddleware } from './middlewares/errorHandling.middleware';
 import { NotFoundError } from './exception';
 
 dotenv.config();
 
 const app: Application = express();
+const swaggerSpec = swaggerJSDoc(options);
 
 app.use(cookieParser());
 app.use(express.json());
@@ -23,6 +27,7 @@ app.use(
   }),
 );
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', router);
 app.use((req) => {
   throw new NotFoundError(`${req.url} not found`);

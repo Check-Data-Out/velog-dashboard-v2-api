@@ -4,7 +4,7 @@ import { TrackingService } from '@/services/tracking.service';
 import { EmptyResponseDto } from '@/types';
 
 export class TrackingController {
-  constructor(private trackingService: TrackingService) { }
+  constructor(private trackingService: TrackingService) {}
 
   event: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
     try {
