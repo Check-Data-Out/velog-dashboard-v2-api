@@ -15,7 +15,7 @@ export class UserController {
 
     if (isProd) {
       baseOptions.sameSite = 'lax';
-      baseOptions.domain = process.env.ALLOWED_ORIGINS;
+      baseOptions.domain = "velog-dashboard.kro.kr";
     } else {
       baseOptions.domain = 'localhost';
     }
