@@ -16,10 +16,10 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *           description: 게시물 제목
  *         slug:
  *           type: string
- *           description: 게시물 제목
+ *           description: 게시물 url slug 값
  *         views:
  *           type: integer
- *           description: 게시물 url slug 값
+ *           description: 총 조회수
  *         likes:
  *           type: integer
  *           description: 총 좋아요수
