@@ -38,6 +38,7 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
 interface GetAllPostType {
   id: number;
   title: string;
+  slug: string;
   views: number;
   likes: number;
   yesterdayViews: number;
