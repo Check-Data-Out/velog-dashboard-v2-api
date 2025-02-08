@@ -1,5 +1,5 @@
 import logger from '@/configs/logger.config';
-import { TokenError } from '@/exception/';
+import { NotFoundError, TokenError } from '@/exception/';
 import { getKeyByGroup } from '@/utils/key.util';
 import AESEncryption from '@/modules/token_encryption/aes_encryption';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
@@ -86,6 +86,10 @@ export class UserService {
 
   async findSampleUser(): Promise<SampleUser> {
     const user = await this.userRepo.findSampleUser();
+    if (!user) {
+      throw new NotFoundError('샘플 유저 정보를 찾을 수 없습니다.');
+    }
+
     const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
       user.group_id,
       user.access_token,
@@ -106,7 +110,12 @@ export class UserService {
     );
 
     // 신규 유저 웹훅 알림
-    await sendSlackMessage(`새로운 유저 등록: ${userData.id}, ${userData.email}`);
+    try {
+      await sendSlackMessage(`새로운 유저 등록: ${userData.id}, ${userData.email}`);
+    } catch (error) {
+      // Slack 알림 실패는 사용자 생성에 영향을 주지 않도록
+      logger.error('Slack 알림 전송 실패:', error);
+    }
     return newUser;
   }
 
