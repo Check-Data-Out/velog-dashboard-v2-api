@@ -4,7 +4,7 @@ import { User } from '@/types';
 import { DBError } from '@/exception';
 
 export class UserRepository {
-  constructor(private readonly pool: Pool) {}
+  constructor(private readonly pool: Pool) { }
 
   async findByUserVelogUUID(uuid: string): Promise<User> {
     try {
@@ -14,6 +14,21 @@ export class UserRepository {
     } catch (error) {
       logger.error('Velog UUID로 유저를 조회 중 오류 : ', error);
       throw new DBError('유저 조회 중 문제가 발생했습니다.');
+    }
+  }
+
+  async findSampleUser(): Promise<User> {
+    try {
+      const query = `
+        SELECT * FROM "users_user"
+        WHERE velog_uuid = '8f561807-8304-4006-84a5-ee3fa8b46d23';
+      `;
+
+      const result = await this.pool.query(query);
+      return result.rows[0];
+    } catch (error) {
+      logger.error('User Repo findSampleUser Error : ', error);
+      throw new DBError('샘플 유저 조회 중 문제가 발생했습니다.');
     }
   }
 
