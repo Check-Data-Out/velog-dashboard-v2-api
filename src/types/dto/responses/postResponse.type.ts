@@ -13,7 +13,10 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *           description: 게시물 ID
  *         title:
  *           type: string
- *           description: 게시물 제목`
+ *           description: 게시물 제목
+ *         slug:
+ *           type: string
+ *           description: 게시물 url slug 값
  *         views:
  *           type: integer
  *           description: 총 조회수
@@ -38,6 +41,7 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
 interface GetAllPostType {
   id: number;
   title: string;
+  slug: string;
   views: number;
   likes: number;
   yesterdayViews: number;

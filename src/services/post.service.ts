@@ -12,6 +12,7 @@ export class PostService {
       const transformedPosts = result.posts.map((post) => ({
         id: post.id,
         title: post.title,
+        slug: post.slug,
         views: post.daily_view_count,
         likes: post.daily_like_count,
         yesterdayViews: post.yesterday_daily_view_count,

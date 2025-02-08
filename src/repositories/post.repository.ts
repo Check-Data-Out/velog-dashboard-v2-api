@@ -52,6 +52,7 @@ export class PostRepository {
         SELECT
           p.id,
           p.title,
+          p.slug,
           p.created_at AS post_created_at,
           p.released_at AS post_released_at,
           COALESCE(pds.daily_view_count, 0) AS daily_view_count,
