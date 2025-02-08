@@ -4,8 +4,8 @@ import { UserController } from '@/controllers/user.controller';
 import { UserRepository } from '@/repositories/user.repository';
 import { UserService } from '@/services/user.service';
 import { authMiddleware } from '@/middlewares/auth.middleware';
-import { validateRequestDto } from '@/middlewares/validation.middleware';
-import { VelogUserLoginDto } from '@/types';
+// import { validateRequestDto } from '@/middlewares/validation.middleware';
+// import { VelogUserLoginDto } from '@/types';
 
 const router: Router = express.Router();
 
@@ -46,7 +46,8 @@ const userController = new UserController(userService);
  *       '500':
  *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
-router.post('/login', authMiddleware.login, validateRequestDto(VelogUserLoginDto, 'user'), userController.login);
+router.post('/login', authMiddleware.login, userController.login);
+//  router.post('/login', authMiddleware.login, validateRequestDto(VelogUserLoginDto, 'user'), userController.login);
 
 /**
  * @swagger

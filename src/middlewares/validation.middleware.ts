@@ -16,6 +16,7 @@ export const validateRequestDto = <T extends object>(
       const errors = await validate(value);
 
       if (errors.length > 0) {
+        logger.error(`API 입력 검증 실패, errors: ${errors}`);
         res.status(400).json({
           success: false,
           message: '검증에 실패하였습니다. 입력값을 다시 확인해주세요.',
