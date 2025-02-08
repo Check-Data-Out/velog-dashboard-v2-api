@@ -22,7 +22,7 @@ const userController = new UserController(userService);
  *     summary: 사용자 로그인
  *     security: []
  *     requestBody:
- *       required: false
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
@@ -48,6 +48,38 @@ const userController = new UserController(userService);
  */
 router.post('/login', authMiddleware.login, userController.login);
 //  router.post('/login', authMiddleware.login, validateRequestDto(VelogUserLoginDto, 'user'), userController.login);
+
+/**
+ * @swagger
+ * /login-sample:
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: 샘플 사용자 로그인
+ *     security: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: 비어있는 request body
+ *     responses:
+ *       '200':
+ *         description: 성공
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: 인증 쿠키
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponseDto'
+ *       '500':
+ *         description: 서버 오류 / 데이터 베이스 조회 오류
+ */
+router.post('/login-sample', userController.sampleLogin);
 
 /**
  * @swagger

@@ -1,4 +1,4 @@
-export type { User } from '@/types/models/User.type';
+export type { User, SampleUser } from '@/types/models/User.type';
 export type { Post } from '@/types/models/Post.type';
 export type { PostDailyStatistics } from '@/types/models/PostDailyStatistics.type';
 export type { PostStatistics } from '@/types/models/PostStatistics.type';
