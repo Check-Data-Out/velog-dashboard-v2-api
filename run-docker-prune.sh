@@ -31,29 +31,30 @@ check_docker() {
     fi
 }
 
-# 서비스 중지
-stop_services() {
-    print_step "0. 현재 사용 중 이미지 stop, down"
-    docker compose stop || true
-    docker compose down || true
+# 사용자 확인
+confirm_action() {
+    echo -e "${RED}Warning: This will remove all unused Docker images and system resources.${NC}"
+    echo -e "${YELLOW}Are you sure you want to continue? (y/N)${NC}"
+    read -r response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo "Operation cancelled."
+        exit 0
+    fi
 }
 
-# 이미지 업데이트
-update_images() {
-    print_step "1. 외부 이미지 업데이트 (fe, nginx)..."
-    docker compose pull fe nginx
-}
-
-# API 빌드
-build_api() {
-    print_step "2. 로컬 이미지 빌드 (api)..."
-    docker compose build api
-}
-
-# 서비스 시작
-start_services() {
-    print_step "3. 서비스 재시작..."
-    docker compose up -d
+# Docker 정리 작업 수행
+perform_cleanup() {
+    print_step "1. Removing all unused Docker images..."
+    docker image prune -af
+    
+    print_step "2. Performing system cleanup..."
+    docker system prune -af --volumes
+    
+    print_step "Cleanup completed successfully!"
+    
+    # 정리 후 상태 표시
+    echo -e "\n${GREEN}Current Docker status:${NC}"
+    docker system df
 }
 
 # 메인 실행 로직
@@ -61,14 +62,8 @@ main() {
     set -e  # 스크립트 실행 중 오류 발생 시 종료
     
     check_docker
-    stop_services
-    update_images
-    build_api
-    start_services
-
-    print_step "모든 작업이 완료되었습니다! 로그 모니터링을 시작합니다."
-    sleep 1
-    docker compose logs -f
+    confirm_action
+    perform_cleanup
 }
 
 # 스크립트 실행
