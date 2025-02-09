@@ -31,8 +31,8 @@ export class UserController {
       const userWithToken: UserWithTokenDto = { id, email, accessToken, refreshToken };
       const isExistUser = await this.userService.handleUserTokensByVelogUUID(userWithToken);
 
-      res.clearCookie('access_token');
-      res.clearCookie('refresh_token');
+      res.clearCookie('access_token', this.cookieOption());
+      res.clearCookie('refresh_token', this.cookieOption());
 
       res.cookie('access_token', accessToken, this.cookieOption());
       res.cookie('refresh_token', refreshToken, this.cookieOption());
@@ -55,8 +55,8 @@ export class UserController {
     try {
       const sampleUser = await this.userService.findSampleUser();
 
-      res.clearCookie('access_token');
-      res.clearCookie('refresh_token');
+      res.clearCookie('access_token', this.cookieOption());
+      res.clearCookie('refresh_token', this.cookieOption());
 
       res.cookie('access_token', sampleUser.decryptedAccessToken, this.cookieOption());
       res.cookie('refresh_token', sampleUser.decryptedRefreshToken, this.cookieOption());
@@ -82,8 +82,8 @@ export class UserController {
   }
 
   logout: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>) => {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    res.clearCookie('access_token', this.cookieOption());
+    res.clearCookie('refresh_token', this.cookieOption());
 
     const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
 
