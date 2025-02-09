@@ -95,7 +95,7 @@ export class UserService {
       user.access_token,
       user.refresh_token
     );
-
+    logger.info('샘플 유저 로그인');
     return { user, decryptedAccessToken, decryptedRefreshToken };
   }
 
