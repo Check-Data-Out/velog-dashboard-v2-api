@@ -56,7 +56,7 @@ export class UserRepository {
 
   async createUser(
     uuid: string,
-    email: string,
+    email: string | undefined,
     encryptedAccessToken: string,
     encryptedRefreshToken: string,
     groupId: number,
