@@ -4,7 +4,7 @@ export interface User {
   access_token: string;
   refresh_token: string;
   group_id: number;
-  email: string;
+  email?: string;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;

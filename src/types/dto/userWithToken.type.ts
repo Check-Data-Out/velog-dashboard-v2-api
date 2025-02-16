@@ -5,7 +5,6 @@ export class UserWithTokenDto {
   @IsUUID()
   id: string;
 
-  @IsNotEmpty()
   @IsEmail()
   email: string;
 

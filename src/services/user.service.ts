@@ -56,7 +56,7 @@ export class UserService {
       if (!user) {
         user = await this.createUser({
           id,
-          email,
+          email,  // undefined도 그대로 전달
           accessToken,
           refreshToken,
         });
@@ -111,7 +111,7 @@ export class UserService {
 
     // 신규 유저 웹훅 알림
     try {
-      await sendSlackMessage(`새로운 유저 등록: ${userData.id}, ${userData.email}`);
+      await sendSlackMessage(`새로운 유저 등록: ${userData.id}${userData.email ? `, ${userData.email}` : ''}`);
     } catch (error) {
       // Slack 알림 실패는 사용자 생성에 영향을 주지 않도록
       logger.error('Slack 알림 전송 실패:', error);
