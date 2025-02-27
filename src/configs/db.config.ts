@@ -6,16 +6,22 @@ const { Pool } = pg;
 
 dotenv.config();
 
-const pool = new Pool({
+// local 세팅 및 접근시 SSL 은 기본 X, production 에서만 추가
+const poolConfig: pg.PoolConfig = {
   database: process.env.DATABASE_NAME,
   user: process.env.POSTGRES_USER,
   host: process.env.POSTGRES_HOST,
   password: process.env.POSTGRES_PASSWORD,
   port: Number(process.env.POSTGRES_PORT),
-  ssl: {
+};
+
+if (process.env.NODE_ENV === 'production') {
+  poolConfig.ssl = {
     rejectUnauthorized: false,
-  },
-});
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 (async () => {
   const client = await pool.connect();

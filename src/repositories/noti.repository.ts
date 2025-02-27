@@ -5,17 +5,18 @@ import { DBError } from '@/exception';
 export class NotiRepository {
   constructor(private pool: Pool) { }
 
-  async getAllNotiPosts() {
+  async getAllNotiPosts(limit: number = 5) {
     try {
       const query = `
         SELECT
           n.id,
           n.title,
           n.content,
-          n.created_at,
-        FROM "noti_notipost" n
+          n.created_at
+        FROM noti_notipost n
         WHERE n.is_active = true
-        ORDER BY n.id DESC;
+        ORDER BY n.id DESC
+        LIMIT ${limit};
       `;
 
       const result = await this.pool.query(query);
