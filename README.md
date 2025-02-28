@@ -10,7 +10,7 @@
 
 ```bash
 pnpm install
-NODE_ENV=development pnpm install  # devDpe 설치 위해
+NODE_ENV=development pnpm install  # devDependencies 설치 위해
 
 # 만약 pnpm 이 없다면
 brew install pnpm
@@ -36,6 +36,9 @@ pnpm dev  # 개발 서버 실행
 pnpm test  # 테스트 실행
 pnpm lint  # 린트 검사
 pnpm lint:fix  # 린트 자동 수정
+
+pnpm build # 프로젝트 빌드
+pnpm start # 빌드된 프로젝트 시작
 ```
 
 ## Project Structure
@@ -44,9 +47,15 @@ pnpm lint:fix  # 린트 자동 수정
 ├── src/
 ├── __test__/       # 테스트 파일
 ├── configs/        # 설정 파일 (DB 등)
+├── constants/      # 상수 데이터 파일
 ├── controllers/    # API 컨트롤러
-├── models/         # 데이터 모델
+├── exception/      # 커스텀 에러 파일
+├── middlewares/    # 각종 미들웨어 (인증, 에러, 데이터 검증 등)
+├── modules/        # 모듈 파일 (슬랙 등)
 ├── repositories/   # 데이터 액세스 레이어
 ├── routers/        # API 라우트 정의
-└── services/       # 비즈니스 로직
+├── services/       # 비즈니스 로직
+├┬── types/         # Enum, DTO 등 데이터 타입 정의
+│└── models/        # 데이터 모델
+└── utils/          # 편의성 함수 정의
 ```
