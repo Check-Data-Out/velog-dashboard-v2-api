@@ -13,6 +13,9 @@ const poolConfig: pg.PoolConfig = {
   host: process.env.POSTGRES_HOST,
   password: process.env.POSTGRES_PASSWORD,
   port: Number(process.env.POSTGRES_PORT),
+  max: 10, // 최대 연결 수
+  idleTimeoutMillis: 30000, // 연결 유휴 시간 (30초)
+  connectionTimeoutMillis: 5000, // 연결 시간 초과 (5초)
 };
 
 if (process.env.NODE_ENV === 'production') {
