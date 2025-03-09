@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 19, 20, 21, 22, 23]
+        node-version: [20, 21, 22, 23]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,8 +24,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
 
+      - name: Enable Corepack (for pnpm)
+        run: corepack enable
+
       - name: Install pnpm
         run: npm install -g pnpm
+
+      - name: Verify pnpm installation
+        run: pnpm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

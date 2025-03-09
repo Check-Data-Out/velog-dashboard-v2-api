@@ -1,6 +1,7 @@
 # Velog Dashboard Project
 
-- 백엔드 API 서버
+- Velog dashboard V2 백엔드, API 서버
+- ***`node 20+`***
 
 ## Project Setup Guide
 
