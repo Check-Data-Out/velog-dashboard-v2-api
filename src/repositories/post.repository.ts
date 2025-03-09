@@ -169,6 +169,7 @@ export class PostRepository {
         pds.daily_like_count
       FROM posts_postdailystatistics pds
       WHERE pds.post_id = $1
+      ORDER BY pds.date ASC
       `;
 
       const values: (number | string)[] = [postId];
