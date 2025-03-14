@@ -1,6 +1,7 @@
 import { PostService } from '@/services/post.service';
 import { PostRepository } from '@/repositories/post.repository';
 import { DBError } from '@/exception';
+import { Pool } from 'pg';
 
 jest.mock('@/repositories/post.repository');
 
@@ -8,11 +9,10 @@ jest.mock('@/repositories/post.repository');
 describe('PostService', () => {
   let postService: PostService;
   let postRepo: jest.Mocked<PostRepository>;
-  let mockPool: any;
+  let mockPool: jest.Mocked<Pool>;
 
   beforeEach(() => {
-    mockPool = {};
-
+    mockPool = {} as jest.Mocked<Pool>;
     postRepo = new PostRepository(mockPool) as jest.Mocked<PostRepository>;
     postService = new PostService(postRepo);
   });
@@ -50,7 +50,7 @@ describe('PostService', () => {
       postRepo.findPostsByUserId.mockResolvedValue(mockPosts);
 
       const result = await postService.getAllposts(1);
-      console.log(result);
+
       expect(result.posts).toEqual([
         {
           id: '519211',
