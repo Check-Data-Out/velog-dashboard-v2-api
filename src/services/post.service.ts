@@ -36,10 +36,10 @@ export class PostService {
       const postsStatistics = await this.postRepo.getYesterdayAndTodayViewLikeStats(userId);
 
       const transformedStatistics = {
-        totalViews: parseInt(postsStatistics.daily_view_count),
-        totalLikes: parseInt(postsStatistics.daily_like_count),
-        yesterdayViews: parseInt(postsStatistics.yesterday_views),
-        yesterdayLikes: parseInt(postsStatistics.yesterday_likes),
+        totalViews: parseInt(postsStatistics.daily_view_count) || 0,
+        totalLikes: parseInt(postsStatistics.daily_like_count) || 0,
+        yesterdayViews: parseInt(postsStatistics.yesterday_views) || 0,
+        yesterdayLikes: parseInt(postsStatistics.yesterday_likes) || 0,
         lastUpdatedDate: postsStatistics.last_updated_date,
       };
 
