@@ -199,7 +199,7 @@ export class PostRepository {
     }
   }
 
-  async findPostByPostUUID(postId: string, start: string, end: string) {
+  async findPostByPostUUID(postUUUID: string, start: string, end: string) {
     try {
       const query = `
       SELECT
@@ -214,7 +214,7 @@ export class PostRepository {
       ORDER BY pds.date ASC
       `;
 
-      const values = [postId, start, end];
+      const values = [postUUUID, start, end];
 
       const result = await this.pool.query(query, values);
       return result.rows;

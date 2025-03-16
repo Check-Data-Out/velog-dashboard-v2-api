@@ -12,6 +12,7 @@ describe('PostService', () => {
   let mockPool: jest.Mocked<Pool>;
 
   beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     mockPool = {} as jest.Mocked<Pool>;
     postRepo = new PostRepository(mockPool) as jest.Mocked<PostRepository>;
     postService = new PostService(postRepo);
@@ -98,7 +99,7 @@ describe('PostService', () => {
 
       postRepo.getYesterdayAndTodayViewLikeStats.mockResolvedValue(mockStatistics);
 
-      const result = await postService.getAllPostStatistics(1);
+      const result = await postService.getAllPostsStatistics(1);
 
       expect(result).toEqual({
         totalViews: 355,
@@ -113,7 +114,7 @@ describe('PostService', () => {
       const errorMessage = '통계 조회 중 문제가 발생했습니다.';
       postRepo.getYesterdayAndTodayViewLikeStats.mockRejectedValue(new DBError(errorMessage));
 
-      await expect(postService.getAllPostStatistics(1)).rejects.toThrow(errorMessage);
+      await expect(postService.getAllPostsStatistics(1)).rejects.toThrow(errorMessage);
     });
   });
 

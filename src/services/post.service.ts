@@ -3,7 +3,7 @@ import { PostRepository } from '@/repositories/post.repository';
 import { RawPostType } from '@/types';
 
 export class PostService {
-  constructor(private postRepo: PostRepository) {}
+  constructor(private postRepo: PostRepository) { }
 
   async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
@@ -67,7 +67,7 @@ export class PostService {
     }
   }
 
-  async getPostByPostUUID(postId: string) {
+  async getPostByPostUUID(postUUUID: string) {
     try {
       const seoulNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
       const sevenDaysAgo = new Date(seoulNow);
@@ -76,7 +76,7 @@ export class PostService {
       sevenDaysAgo.setDate(seoulNow.getDate() - 6);
       const start = sevenDaysAgo.toISOString().split('T')[0];
 
-      const posts = await this.postRepo.findPostByPostUUID(postId, start, end);
+      const posts = await this.postRepo.findPostByPostUUID(postUUUID, start, end);
 
       const transformedPosts = this.transformPosts(posts);
 
