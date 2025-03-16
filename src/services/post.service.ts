@@ -3,7 +3,7 @@ import { PostRepository } from '@/repositories/post.repository';
 import { RawPostType } from '@/types';
 
 export class PostService {
-  constructor(private postRepo: PostRepository) {}
+  constructor(private postRepo: PostRepository) { }
 
   async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
@@ -26,26 +26,26 @@ export class PostService {
         nextCursor: result.nextCursor,
       };
     } catch (error) {
-      logger.error('PostService getAllpost error : ', error);
+      logger.error('PostService getAllposts error : ', error);
       throw error;
     }
   }
 
-  async getAllPostStatistics(userId: number) {
+  async getAllPostsStatistics(userId: number) {
     try {
       const postsStatistics = await this.postRepo.getYesterdayAndTodayViewLikeStats(userId);
 
       const transformedStatistics = {
-        totalViews: parseInt(postsStatistics.daily_view_count),
-        totalLikes: parseInt(postsStatistics.daily_like_count),
-        yesterdayViews: parseInt(postsStatistics.yesterday_views),
-        yesterdayLikes: parseInt(postsStatistics.yesterday_likes),
+        totalViews: parseInt(postsStatistics.daily_view_count) || 0,
+        totalLikes: parseInt(postsStatistics.daily_like_count) || 0,
+        yesterdayViews: parseInt(postsStatistics.yesterday_views) || 0,
+        yesterdayLikes: parseInt(postsStatistics.yesterday_likes) || 0,
         lastUpdatedDate: postsStatistics.last_updated_date,
       };
 
       return transformedStatistics;
     } catch (error) {
-      logger.error('PostService getAllPostStatistics error : ', error);
+      logger.error('PostService getAllPostsStatistics error : ', error);
       throw error;
     }
   }
@@ -67,7 +67,7 @@ export class PostService {
     }
   }
 
-  async getPostByPostUUID(postId: string) {
+  async getPostByPostUUID(postUUUID: string) {
     try {
       const seoulNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
       const sevenDaysAgo = new Date(seoulNow);
@@ -76,7 +76,7 @@ export class PostService {
       sevenDaysAgo.setDate(seoulNow.getDate() - 6);
       const start = sevenDaysAgo.toISOString().split('T')[0];
 
-      const posts = await this.postRepo.findPostByPostUUID(postId, start, end);
+      const posts = await this.postRepo.findPostByPostUUID(postUUUID, start, end);
 
       const transformedPosts = this.transformPosts(posts);
 

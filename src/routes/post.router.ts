@@ -49,7 +49,7 @@ router.get(
   '/posts',
   authMiddleware.verify,
   validateRequestDto(GetAllPostsQueryDto, 'query'),
-  postController.getAllPost,
+  postController.getAllPosts,
 );
 
 /**
@@ -69,7 +69,7 @@ router.get(
  *       '500':
  *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
-router.get('/posts-stats', authMiddleware.verify, postController.getAllPostStatistics);
+router.get('/posts-stats', authMiddleware.verify, postController.getAllPostsStatistics);
 
 /**
  * @swagger

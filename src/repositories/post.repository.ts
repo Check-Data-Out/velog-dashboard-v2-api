@@ -3,7 +3,7 @@ import logger from '@/configs/logger.config';
 import { DBError } from '@/exception';
 
 export class PostRepository {
-  constructor(private pool: Pool) {}
+  constructor(private pool: Pool) { }
 
   async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
     try {
@@ -162,33 +162,44 @@ export class PostRepository {
 
   async findPostByPostId(postId: number, start?: string, end?: string) {
     try {
-      let query = `
-      SELECT
-        (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
-        pds.daily_view_count,
-        pds.daily_like_count
-      FROM posts_postdailystatistics pds
-      WHERE pds.post_id = $1
-      ORDER BY pds.date ASC
+      // 기본 쿼리 부분
+      const baseQuery = `
+        SELECT
+          (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
+          pds.daily_view_count,
+          pds.daily_like_count
+        FROM posts_postdailystatistics pds
+        WHERE pds.post_id = $1
       `;
 
-      const values: (number | string)[] = [postId];
+      // 날짜 필터링 조건 구성
+      const dateFilterQuery = (start && end)
+        ? `
+          AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+          AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+        `
+        : '';
 
-      if (start && end) {
-        query += ` AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
-                   AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date`;
-        values.push(start, end);
-      }
+      // 정렬 조건 추가
+      const orderByQuery = `ORDER BY pds.date ASC`;
 
-      const result = await this.pool.query(query, values);
+      // 최종 쿼리 조합
+      const fullQuery = [baseQuery, dateFilterQuery, orderByQuery].join(' ');
+
+      // 파라미터 배열 구성
+      const queryParams: Array<number | string> = [postId];
+      if (start && end) queryParams.push(start, end);
+
+      // 쿼리 실행
+      const result = await this.pool.query(fullQuery, queryParams);
       return result.rows;
     } catch (error) {
-      logger.error('Post Repo findPostByPostId error : ', error);
+      logger.error('Post Repo findPostByPostId error:', error);
       throw new DBError('단건 post 조회 중 문제가 발생했습니다.');
     }
   }
 
-  async findPostByPostUUID(postId: string, start: string, end: string) {
+  async findPostByPostUUID(postUUUID: string, start: string, end: string) {
     try {
       const query = `
       SELECT
@@ -203,7 +214,7 @@ export class PostRepository {
       ORDER BY pds.date ASC
       `;
 
-      const values = [postId, start, end];
+      const values = [postUUUID, start, end];
 
       const result = await this.pool.query(query, values);
       return result.rows;
