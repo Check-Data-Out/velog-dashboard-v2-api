@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         node-version: [20, 21, 22, 23]
-      fail-fast: false  # 한 버전 실패 시 전체 중단 방지
+      fail-fast: false # 한 버전 실패 시 전체 중단 방지
 
     steps:
       - name: Checkout repository
@@ -49,6 +49,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
 
       - name: Run lint
         run: pnpm run lint

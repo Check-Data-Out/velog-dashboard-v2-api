@@ -90,11 +90,6 @@ describe('PostRepository 통합 테스트', () => {
       // 모든 쿼리 완료 대기
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 모든 연결 종료 시도
-      // if (client) {
-      //   client.release(true);
-      // }
-
       // 풀 완전 종료
       if (testPool) {
         // 강제 종료: 모든 활성 쿼리와 연결 중지
