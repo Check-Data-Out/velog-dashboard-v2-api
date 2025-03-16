@@ -13,7 +13,7 @@ import {
 export class PostController {
   constructor(private postService: PostService) {}
 
-  getAllPost: RequestHandler = async (
+  getAllPosts: RequestHandler = async (
     req: Request<object, object, object, GetAllPostsQuery>,
     res: Response<PostsResponseDto>,
     next: NextFunction,
@@ -38,7 +38,7 @@ export class PostController {
     }
   };
 
-  getAllPostStatistics: RequestHandler = async (
+  getAllPostsStatistics: RequestHandler = async (
     req: Request,
     res: Response<PostStatisticsResponseDto>,
     next: NextFunction,
@@ -46,7 +46,7 @@ export class PostController {
     try {
       const { id } = req.user;
 
-      const stats = await this.postService.getAllPostStatistics(id);
+      const stats = await this.postService.getAllPostsStatistics(id);
       const totalPostCount = await this.postService.getTotalPostCounts(id);
 
       const response = new PostStatisticsResponseDto(

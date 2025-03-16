@@ -26,12 +26,12 @@ export class PostService {
         nextCursor: result.nextCursor,
       };
     } catch (error) {
-      logger.error('PostService getAllpost error : ', error);
+      logger.error('PostService getAllposts error : ', error);
       throw error;
     }
   }
 
-  async getAllPostStatistics(userId: number) {
+  async getAllPostsStatistics(userId: number) {
     try {
       const postsStatistics = await this.postRepo.getYesterdayAndTodayViewLikeStats(userId);
 
@@ -45,7 +45,7 @@ export class PostService {
 
       return transformedStatistics;
     } catch (error) {
-      logger.error('PostService getAllPostStatistics error : ', error);
+      logger.error('PostService getAllPostsStatistics error : ', error);
       throw error;
     }
   }
