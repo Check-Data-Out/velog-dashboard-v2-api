@@ -58,6 +58,107 @@ describe('PostRepository', () => {
     });
   });
 
+  describe('findPostsByUserIdWithGrowthMetrics', () => {
+    it('트래픽 성장률 데이터를 포함한 게시글 목록을 반환해야 한다', async () => {
+      const mockPosts = [
+        {
+          id: 1,
+          post_released_at: '2025-03-01T00:00:00Z',
+          daily_view_count: 30,
+          yesterday_daily_view_count: 10,
+          view_growth: 20,
+          like_growth: 5
+        },
+        {
+          id: 2,
+          post_released_at: '2025-03-02T00:00:00Z',
+          daily_view_count: 25,
+          yesterday_daily_view_count: 15,
+          view_growth: 10,
+          like_growth: 3
+        },
+      ];
+
+      mockPool.query.mockResolvedValue({
+        rows: mockPosts,
+        rowCount: mockPosts.length,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(1);
+
+      expect(result.posts).toEqual(mockPosts);
+      expect(result).toHaveProperty('nextCursor');
+      expect(result.posts[0]).toHaveProperty('view_growth');
+      expect(result.posts[0]).toHaveProperty('like_growth');
+    });
+
+    it('트래픽 성장률을 기준으로 내림차순 정렬해야 한다', async () => {
+      const mockPosts = [
+        {
+          id: 1,
+          post_released_at: '2025-03-01T00:00:00Z',
+          daily_view_count: 30,
+          yesterday_daily_view_count: 10,
+          view_growth: 20
+        },
+        {
+          id: 2,
+          post_released_at: '2025-03-02T00:00:00Z',
+          daily_view_count: 25,
+          yesterday_daily_view_count: 15,
+          view_growth: 10
+        },
+      ];
+
+      mockPool.query.mockResolvedValue({
+        rows: mockPosts,
+        rowCount: mockPosts.length,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(1, undefined, false);
+      expect(result.posts).toEqual(mockPosts);
+      expect(result.posts[0].view_growth).toBeGreaterThan(result.posts[1].view_growth);
+    });
+
+    it('커서 기반 페이지네이션이 트래픽 성장률 기준으로 작동해야 한다', async () => {
+      const mockPosts = [
+        {
+          id: 3,
+          post_released_at: '2025-03-03T00:00:00Z',
+          daily_view_count: 20,
+          yesterday_daily_view_count: 15,
+          view_growth: 5
+        },
+      ];
+
+      mockPool.query.mockResolvedValue({
+        rows: mockPosts,
+        rowCount: mockPosts.length,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(1, "10,2", false);
+      expect(result.posts).toEqual(mockPosts);
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("(COALESCE(pds.daily_view_count, 0) - COALESCE(yesterday_stats.daily_view_count, 0)) < $2"),
+        expect.arrayContaining([1, "10", "2", expect.anything()])
+      );
+    });
+
+    it('에러 발생 시 DBError를 던져야 한다', async () => {
+      mockPool.query.mockRejectedValue(new Error('DB connection failed'));
+      await expect(repo.findPostsByUserIdWithGrowthMetrics(1)).rejects.toThrow(DBError);
+    });
+  });
+
   describe('getTotalPostCounts', () => {
     it('사용자의 총 게시글 수를 반환해야 한다', async () => {
       mockPool.query.mockResolvedValue({
