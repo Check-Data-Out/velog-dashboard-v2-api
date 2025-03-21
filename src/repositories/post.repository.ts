@@ -5,7 +5,13 @@ import { DBError } from '@/exception';
 export class PostRepository {
   constructor(private pool: Pool) { }
 
-  async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc?: boolean, limit: number = 15) {
+  async findPostsByUserId(
+    userId: number,
+    cursor?: string,
+    sort?: string,
+    isAsc: boolean = false,
+    limit: number = 15
+  ) {
     try {
       // 1) 정렬 컬럼 매핑
       let sortCol = 'p.released_at';
@@ -62,10 +68,7 @@ export class PostRepository {
           pds.date
         FROM posts_post p
         LEFT JOIN (
-          SELECT post_id,
-                 daily_view_count,
-                 daily_like_count,
-                 date
+          SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
           WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
         ) pds ON p.id = pds.post_id
@@ -113,6 +116,98 @@ export class PostRepository {
     } catch (error) {
       logger.error('Post Repo findPostsByUserId error: ', error);
       throw new DBError('전체 post 조회 중 문제가 발생했습니다.');
+    }
+  }
+
+  // findPostsByUserId 와 동일
+  // view_growth, like_growth 컬럼 추가 연산
+  async findPostsByUserIdWithGrowthMetrics(
+    userId: number,
+    cursor?: string,
+    isAsc: boolean = false,
+    limit: number = 15
+  ) {
+    try {
+      const selectFields = `
+        p.id,
+        p.title,
+        p.slug,
+        p.created_at AS post_created_at,
+        p.released_at AS post_released_at,
+        COALESCE(pds.daily_view_count, 0) AS daily_view_count,
+        COALESCE(pds.daily_like_count, 0) AS daily_like_count,
+        COALESCE(yesterday_stats.daily_view_count, 0) AS yesterday_daily_view_count,
+        COALESCE(yesterday_stats.daily_like_count, 0) AS yesterday_daily_like_count,
+        pds.date,
+        (COALESCE(pds.daily_view_count, 0) - COALESCE(yesterday_stats.daily_view_count, 0)) AS view_growth,
+        (COALESCE(pds.daily_like_count, 0) - COALESCE(yesterday_stats.daily_like_count, 0)) AS like_growth
+      `;
+
+      const direction = isAsc ? 'ASC' : 'DESC';
+      const orderByExpression = `view_growth ${direction}, p.id ${direction}`;
+
+      // 커서 처리
+      let cursorCondition = '';
+      let params: unknown[] = [];
+
+      if (cursor) {
+        const [cursorSortValue, cursorId] = cursor.split(',');
+
+        cursorCondition = `
+        AND (
+          (COALESCE(pds.daily_view_count, 0) - COALESCE(yesterday_stats.daily_view_count, 0)) ${isAsc ? '>' : '<'} $2
+          OR (
+            (COALESCE(pds.daily_view_count, 0) - COALESCE(yesterday_stats.daily_view_count, 0)) = $2
+            AND p.id ${isAsc ? '>' : '<'} $3
+          )
+        )
+      `;
+
+        params = [userId, cursorSortValue, cursorId, limit];
+      } else {
+        params = [userId, limit];
+      }
+
+      const query = `
+      SELECT ${selectFields}
+      FROM posts_post p
+      LEFT JOIN (
+        SELECT post_id, daily_view_count, daily_like_count, date
+        FROM posts_postdailystatistics
+        WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
+      ) pds ON p.id = pds.post_id
+      LEFT JOIN (
+        SELECT post_id, daily_view_count, daily_like_count, date
+        FROM posts_postdailystatistics
+        WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
+      ) yesterday_stats ON p.id = yesterday_stats.post_id
+      WHERE p.user_id = $1
+        AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
+        ${cursorCondition}
+      ORDER BY ${orderByExpression}
+      LIMIT ${cursor ? '$4' : '$2'}
+    `;
+
+      const posts = await this.pool.query(query, params);
+
+      if (posts.rows.length === 0) {
+        return {
+          posts: [],
+          nextCursor: null,
+        };
+      }
+
+      // 다음 커서 생성
+      const lastPost = posts.rows[posts.rows.length - 1];
+      const nextCursor = `${lastPost.view_growth},${lastPost.id}`;
+
+      return {
+        posts: posts.rows,
+        nextCursor,
+      };
+    } catch (error) {
+      logger.error('Post Repo findPostsByUserIdWithGrowthMetrics error: ', error);
+      throw new DBError('트래픽 성장률 기준 post 조회 중 문제가 발생했습니다.');
     }
   }
 

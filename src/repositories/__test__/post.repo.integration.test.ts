@@ -262,6 +262,87 @@ describe('PostRepository 통합 테스트', () => {
     });
   });
 
+  /**
+   * findPostsByUserIdWithGrowthMetrics 테스트
+   */
+  describe('findPostsByUserIdWithGrowthMetrics', () => {
+    it('트래픽 성장률 데이터를 포함한 게시물 목록을 조회할 수 있어야 한다', async () => {
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(TEST_DATA.USER_ID);
+
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty('posts');
+      expect(result).toHaveProperty('nextCursor');
+      expect(Array.isArray(result.posts)).toBe(true);
+      expect(result.posts[0]).toHaveProperty('view_growth');
+      expect(result.posts[0]).toHaveProperty('like_growth');
+    });
+
+    it('트래픽 성장률을 기준으로 내림차순 정렬해야 한다', async () => {
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(TEST_DATA.USER_ID);
+
+      // 결과가 2개 이상인 경우만 의미 있는 검증 가능
+      if (result.posts.length < 2) {
+        logger.info('트래픽 성장률 정렬 테스트를 위한 충분한 데이터가 없습니다.');
+        return;
+      }
+
+      // 내림차순 정렬 확인
+      const isSortedByGrowth = result.posts.every((post, index) => {
+        if (index === 0) return true;
+        return post.view_growth <= result.posts[index - 1].view_growth;
+      });
+      expect(isSortedByGrowth).toBe(true);
+    });
+
+    it('오름차순 정렬이 제대로 동작해야 한다', async () => {
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(TEST_DATA.USER_ID, undefined, true);
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result.posts)).toBe(true);
+
+      // 결과가 2개 이상인 경우에만 검증
+      if (result.posts.length >= 2) {
+        const isSortedAsc = result.posts.every((post, index) => {
+          if (index === 0) return true;
+          return post.view_growth >= result.posts[index - 1].view_growth;
+        });
+
+        // eslint-disable-next-line jest/no-conditional-expect
+        expect(isSortedAsc).toBe(true);
+      }
+    });
+
+    it('페이지네이션을 위한 nextCursor를 제공해야 한다', async () => {
+      // 먼저 제한된 수의 결과를 가져옴
+      const limitedResult = await repo.findPostsByUserIdWithGrowthMetrics(TEST_DATA.USER_ID, undefined, false, 1);
+
+      // 최소 2개 이상의 게시물이 있으면 nextCursor가 있어야 함
+      const totalCount = await repo.getTotalPostCounts(TEST_DATA.USER_ID);
+
+      if (totalCount <= 1 || limitedResult.posts.length !== 1) {
+        logger.info('트래픽 성장률 페이지네이션 테스트를 위한 충분한 데이터가 없습니다.');
+        return;
+      }
+
+      expect(limitedResult.nextCursor).toBeTruthy();
+
+      // nextCursor를 사용한 두 번째 쿼리
+      const secondPage = await repo.findPostsByUserIdWithGrowthMetrics(
+        TEST_DATA.USER_ID,
+        limitedResult.nextCursor || undefined
+      );
+
+      expect(secondPage.posts).toBeDefined();
+      expect(Array.isArray(secondPage.posts)).toBe(true);
+
+      // 첫 페이지와 두 번째 페이지의 항목은 중복되지 않아야 함
+      const page1Ids = limitedResult.posts.map(post => post.id);
+      const page2Ids = secondPage.posts.map(post => post.id);
+
+      const hasDuplicates = page1Ids.some(id => page2Ids.includes(id));
+      expect(hasDuplicates).toBe(false);
+    });
+  });
 
   /**
    * getTotalPostCounts 테스트

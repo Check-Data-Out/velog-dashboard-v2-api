@@ -7,7 +7,13 @@ export class PostService {
 
   async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
-      const result = await this.postRepo.findPostsByUserId(userId, cursor, sort, isAsc, limit);
+      let result = null;
+      if (sort === "viewGrowth") {
+        result = await this.postRepo.findPostsByUserIdWithGrowthMetrics(userId, cursor, isAsc, limit);
+      }
+      else {
+        result = await this.postRepo.findPostsByUserId(userId, cursor, sort, isAsc, limit);
+      }
 
       const transformedPosts = result.posts.map((post) => ({
         id: post.id,

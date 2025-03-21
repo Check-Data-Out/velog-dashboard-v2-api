@@ -7,15 +7,16 @@ import { IsBoolean, IsOptional, IsString } from 'class-validator';
  *   schemas:
  *     PostSortType:
  *       type: string
- *       enum: ['', 'dailyViewCount', 'dailyLikeCount']
+ *       enum: ['', 'dailyViewCount', 'dailyLikeCount', 'viewGrowth']
  *       description: |
  *         포스트 정렬 기준
  *         * '' - 작성일
  *         * 'dailyViewCount' - 조회수
  *         * 'dailyLikeCount' - 좋아요수
+ *         * 'viewGrowth' - 조회수 증가량
  *       default: ''
  */
-export type PostSortType = '' | 'dailyViewCount' | 'dailyLikeCount';
+export type PostSortType = '' | 'dailyViewCount' | 'dailyLikeCount' | 'viewGrowth';
 
 export interface GetAllPostsQuery {
   cursor?: string;
