@@ -78,6 +78,7 @@ export class PostRepository {
           WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
+          AND p.is_active = TRUE
           AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
           ${cursorCondition}
         ORDER BY ${orderBy}
@@ -182,6 +183,7 @@ export class PostRepository {
         WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
       ) yesterday_stats ON p.id = yesterday_stats.post_id
       WHERE p.user_id = $1
+        AND p.is_active = TRUE
         AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
         ${cursorCondition}
       ORDER BY ${orderByExpression}
@@ -213,7 +215,7 @@ export class PostRepository {
 
   async getTotalPostCounts(id: number) {
     try {
-      const query = 'SELECT COUNT(*) FROM "posts_post" WHERE user_id = $1';
+      const query = 'SELECT COUNT(*) FROM "posts_post" WHERE user_id = $1 AND is_active = TRUE';
       const result = await this.pool.query(query, [id]);
       return parseInt(result.rows[0].count, 10);
     } catch (error) {
@@ -244,6 +246,7 @@ export class PostRepository {
           WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
+        AND p.is_active = TRUE
       `;
       const values = [userId];
 
@@ -304,6 +307,7 @@ export class PostRepository {
       FROM posts_post p
       JOIN posts_postdailystatistics pds ON p.id = pds.post_id
       WHERE p.post_uuid = $1
+        AND p.is_active = TRUE
         AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
         AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
       ORDER BY pds.date ASC

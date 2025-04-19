@@ -56,6 +56,28 @@ describe('PostRepository', () => {
       expect(result.posts).toEqual(mockPosts);
       expect(result.posts[0].id).toBeGreaterThan(result.posts[1].id);
     });
+
+    it('쿼리에 is_active = TRUE 조건이 포함되어야 한다', async () => {
+      const mockPosts = [
+        { id: 1, post_released_at: '2025-03-01T00:00:00Z', daily_view_count: 10, daily_like_count: 5 },
+      ];
+
+      mockPool.query.mockResolvedValue({
+        rows: mockPosts,
+        rowCount: mockPosts.length,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      await repo.findPostsByUserId(1);
+
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("p.is_active = TRUE"),
+        expect.anything()
+      );
+    });
   });
 
   describe('findPostsByUserIdWithGrowthMetrics', () => {
@@ -157,6 +179,28 @@ describe('PostRepository', () => {
       mockPool.query.mockRejectedValue(new Error('DB connection failed'));
       await expect(repo.findPostsByUserIdWithGrowthMetrics(1)).rejects.toThrow(DBError);
     });
+
+    it('쿼리에 is_active = TRUE 조건이 포함되어야 한다', async () => {
+      const mockPosts = [
+        { id: 1, view_growth: 20, like_growth: 5 },
+      ];
+
+      mockPool.query.mockResolvedValue({
+        rows: mockPosts,
+        rowCount: mockPosts.length,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      await repo.findPostsByUserIdWithGrowthMetrics(1);
+
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("p.is_active = TRUE"),
+        expect.anything()
+      );
+    });
   });
 
   describe('getTotalPostCounts', () => {
@@ -171,6 +215,24 @@ describe('PostRepository', () => {
 
       const count = await repo.getTotalPostCounts(1);
       expect(count).toBe(10);
+    });
+
+    it('is_active = TRUE인 게시물만 카운트해야 한다', async () => {
+      mockPool.query.mockResolvedValue({
+        rows: [{ count: '5' }],
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+    
+      await repo.getTotalPostCounts(1);
+    
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("is_active = TRUE"),
+        expect.anything()
+      );
     });
   });
 
@@ -204,6 +266,24 @@ describe('PostRepository', () => {
       const result = await repo.getYesterdayAndTodayViewLikeStats(1);
       expect(result).toEqual(mockStats);
     });
+
+    it('is_active = TRUE인 게시물의 통계만 반환해야 한다', async () => {
+      mockPool.query.mockResolvedValue({
+        rows: [{ daily_view_count: 20, daily_like_count: 15 }],
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+    
+      await repo.getYesterdayAndTodayViewLikeStats(1);
+    
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("p.is_active = TRUE"),
+        expect.anything()
+      );
+    });    
   });
 
   describe('findPostByPostId', () => {
