@@ -6,7 +6,7 @@ import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 export class QRLoginTokenRepository {
     constructor(private pool: Pool) { }
 
-    async createQRLoginToken(token: String, userId: number, ip: string, userAgent: string): Promise<void> {
+    async createQRLoginToken(token: string, userId: number, ip: string, userAgent: string): Promise<void> {
         try {
             const query = `
                 INSERT INTO qr_login_tokens (token, user_id, created_at, expires_at, is_used, ip_address, user_agent)

@@ -21,7 +21,7 @@ const qrController = new QRLoginController(qrService);
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       201:
+ *       200:
  *         description: QR 로그인 토큰 생성 성공
  */
 router.post('/qr-login', authMiddleware.login, qrController.createToken);
