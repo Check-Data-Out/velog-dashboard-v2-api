@@ -19,7 +19,7 @@ export class LeaderboardRepository {
       return values.rows;
     } catch (error) {
       logger.error(`Leaderboard Repo getLeaderboard error:`, error);
-      throw new DBError(`${type === 'user' ? '유저' : '게시글'} 리더보드 조회 중 문제가 발생했습니다.`);
+      throw new DBError(`${type === 'post' ? '게시글' : '유저'} 리더보드 조회 중 문제가 발생했습니다.`);
     }
   }
 
