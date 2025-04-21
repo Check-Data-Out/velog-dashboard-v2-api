@@ -148,6 +148,13 @@ describe('LeaderboardService', () => {
       expect(repo.getLeaderboard).toHaveBeenCalledWith('user', 'viewCount', 30, 10);
     });
 
+    it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
+      repo.getLeaderboard.mockResolvedValue([]);
+      const result = await service.getLeaderboard();
+
+      expect(result).toEqual({ users: [], posts: null });
+    });
+
     it('쿼리 오류 발생 시 예외를 그대로 전파한다', async () => {
       const errorMessage = '유저 리더보드 조회 중 문제가 발생했습니다.';
       const dbError = new DBError(errorMessage);
