@@ -1,11 +1,12 @@
 import logger from '@/configs/logger.config';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
-import { LeaderboardSortType, LeaderboardType } from '@/types/dto/requests/getLeaderboardQuery.type';
 import {
-  LeaderboardPostType,
   LeaderboardResponseData,
-  LeaderboardUserType,
-} from '@/types/dto/responses/leaderboardResponse.type';
+  LeaderboardType,
+  LeaderboardSortType,
+  LeaderboardUserTypeData,
+  LeaderboardPostTypeData,
+} from '@/types/index';
 
 export class LeaderboardService {
   constructor(private leaderboardRepo: LeaderboardRepository) {}
@@ -35,7 +36,7 @@ export class LeaderboardService {
 
     if (type === 'post') {
       result.posts = (rawResult as RawPostResult[]).map(
-        (post): LeaderboardPostType => ({
+        (post): LeaderboardPostTypeData => ({
           id: post.id,
           title: post.title,
           slug: post.slug,
@@ -48,7 +49,7 @@ export class LeaderboardService {
       );
     } else {
       result.users = (rawResult as RawUserResult[]).map(
-        (user): LeaderboardUserType => ({
+        (user): LeaderboardUserTypeData => ({
           id: user.id,
           email: user.email,
           totalViews: user.total_views,

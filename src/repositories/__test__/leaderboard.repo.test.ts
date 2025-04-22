@@ -1,6 +1,6 @@
+import { Pool, QueryResult } from 'pg';
 import { DBError } from '@/exception';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
-import { Pool, QueryResult } from 'pg';
 
 jest.mock('pg');
 

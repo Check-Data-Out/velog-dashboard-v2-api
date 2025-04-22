@@ -1,8 +1,7 @@
 import logger from '@/configs/logger.config';
-import { LeaderboardService } from '@/services/leaderboard.service';
-import { GetLeaderboardQuery } from '@/types/dto/requests/getLeaderboardQuery.type';
-import { LeaderboardResponseDto } from '@/types/dto/responses/leaderboardResponse.type';
 import { NextFunction, RequestHandler, Request, Response } from 'express';
+import { LeaderboardService } from '@/services/leaderboard.service';
+import { GetLeaderboardQuery, LeaderboardResponseDto } from '@/types/index';
 
 export class LeaderboardController {
   constructor(private leaderboardService: LeaderboardService) {}

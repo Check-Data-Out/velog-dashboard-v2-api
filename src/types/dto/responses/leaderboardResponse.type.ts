@@ -32,7 +32,7 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *           type: integer
  *           description: 구간 게시물 수 상승값
  */
-export interface LeaderboardUserType {
+export interface LeaderboardUserTypeData {
   id: number;
   email: string;
   totalViews: number;
@@ -76,7 +76,7 @@ export interface LeaderboardUserType {
  *           format: date-time
  *           description: 게시물 업로드 일시
  */
-export interface LeaderboardPostType {
+export interface LeaderboardPostTypeData {
   id: number;
   title: string;
   slug: string;
@@ -106,8 +106,8 @@ export interface LeaderboardPostType {
  *             $ref: '#/components/schemas/LeaderboardUserType'
  */
 export interface LeaderboardResponseData {
-  users: LeaderboardUserType[] | null;
-  posts: LeaderboardPostType[] | null;
+  users: LeaderboardUserTypeData[] | null;
+  posts: LeaderboardPostTypeData[] | null;
 }
 
 /**

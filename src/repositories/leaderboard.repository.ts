@@ -1,7 +1,7 @@
-import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
+import { Pool } from 'pg';
 import { DBError } from '@/exception';
-import { LeaderboardSortType, LeaderboardType } from '@/types/dto/requests/getLeaderboardQuery.type';
+import { LeaderboardSortType, LeaderboardType } from '@/types/index';
 
 export class LeaderboardRepository {
   constructor(private pool: Pool) {}
