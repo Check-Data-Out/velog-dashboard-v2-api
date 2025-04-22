@@ -1,5 +1,6 @@
 import logger from '@/configs/logger.config';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
+import { LeaderboardSortType, LeaderboardType } from '@/types/dto/requests/getLeaderboardQuery.type';
 import {
   LeaderboardPostType,
   LeaderboardResponseData,
@@ -10,8 +11,8 @@ export class LeaderboardService {
   constructor(private leaderboardRepo: LeaderboardRepository) {}
 
   async getLeaderboard(
-    type: string = 'user',
-    sort: string = 'viewCount',
+    type: LeaderboardType = 'user',
+    sort: LeaderboardSortType = 'viewCount',
     dateRange: number = 30,
     limit: number = 10,
   ): Promise<LeaderboardResponseData> {
@@ -26,7 +27,10 @@ export class LeaderboardService {
     }
   }
 
-  private mapRawResultToLeaderboardResponseData(rawResult: unknown[], type: string): LeaderboardResponseData {
+  private mapRawResultToLeaderboardResponseData(
+    rawResult: RawPostResult[] | RawUserResult[],
+    type: LeaderboardType,
+  ): LeaderboardResponseData {
     const result: LeaderboardResponseData = { posts: null, users: null };
 
     if (type === 'post') {
@@ -60,7 +64,6 @@ export class LeaderboardService {
     return result;
   }
 }
-
 interface RawPostResult {
   id: number;
   title: string;

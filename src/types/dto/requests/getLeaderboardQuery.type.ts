@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, Max, Min } from 'class-validator';
 
 /**
  * @swagger
@@ -68,11 +68,13 @@ export interface GetLeaderboardQuery {
  */
 export class GetLeaderboardQueryDto {
   @IsOptional()
-  @IsString()
+  @IsEnum(['user', 'post'])
+  @Transform(({ value }) => (value === '' ? 'user' : value))
   type?: LeaderboardType;
 
   @IsOptional()
-  @IsString()
+  @IsEnum(['viewCount', 'likeCount', 'postCount'])
+  @Transform(({ value }) => (value === '' ? 'viewCount' : value))
   sort?: LeaderboardSortType;
 
   @IsOptional()

@@ -1,11 +1,12 @@
 import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
 import { DBError } from '@/exception';
+import { LeaderboardSortType, LeaderboardType } from '@/types/dto/requests/getLeaderboardQuery.type';
 
 export class LeaderboardRepository {
   constructor(private pool: Pool) {}
 
-  async getLeaderboard(type: string, sort: string, dateRange: number, limit: number) {
+  async getLeaderboard(type: LeaderboardType, sort: LeaderboardSortType, dateRange: number, limit: number) {
     try {
       const cteQuery = this.buildLeaderboardCteQuery();
       const selectQuery = this.buildLeaderboardSelectQuery(type);
@@ -49,7 +50,7 @@ export class LeaderboardRepository {
   }
 
   // 메인 연산을 포함하는 SELECT 절 빌드
-  private buildLeaderboardSelectQuery(type: string) {
+  private buildLeaderboardSelectQuery(type: LeaderboardType) {
     if (type === 'post') {
       return `
         SELECT
@@ -98,7 +99,7 @@ export class LeaderboardRepository {
   }
 
   // CTE 테이블 조인 및 WHERE 절을 포함하는 FROM 절 빌드
-  private buildLeaderboardFromClause(type: string) {
+  private buildLeaderboardFromClause(type: LeaderboardType) {
     if (type === 'post') {
       return `
         FROM posts_post p
@@ -118,7 +119,7 @@ export class LeaderboardRepository {
   }
 
   // sort 매개변수를 정렬 컬럼으로 매핑
-  private mapSortColByType(sort: string, type: string) {
+  private mapSortColByType(sort: LeaderboardSortType, type: LeaderboardType) {
     let sortCol = '';
 
     switch (sort) {
@@ -138,7 +139,7 @@ export class LeaderboardRepository {
   }
 
   // 매핑된 정렬 컬럼으로 ORDER BY 절 및 LIMIT 절 빌드
-  private buildLeaderboardGroupOrderClause(sortCol: string, type: string) {
+  private buildLeaderboardGroupOrderClause(sortCol: string, type: LeaderboardType) {
     if (type === 'post') {
       return `
         ORDER BY ${sortCol} DESC
@@ -146,7 +147,7 @@ export class LeaderboardRepository {
       `;
     } else {
       return `
-        GROUP BY u.id
+        GROUP BY u.id, u.email
         ORDER BY ${sortCol} DESC
         LIMIT $2;
       `;

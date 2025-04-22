@@ -194,7 +194,7 @@ describe('LeaderboardRepository', () => {
 
       await repo.getLeaderboard('user', 'viewCount', 30, 10);
 
-      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('GROUP BY u.id'), expect.anything());
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('GROUP BY u.id, u.email'), expect.anything());
     });
 
     it('post 타입에는 GROUP BY 절이 포함되지 않아야 한다', async () => {
@@ -223,33 +223,6 @@ describe('LeaderboardRepository', () => {
         expect.stringContaining('$1::int'),
         expect.arrayContaining([testDateRange, expect.anything()]),
       );
-    });
-
-    it('유효하지 않은 sort 값이 전달되면 기본값(view_diff)을 사용해야 한다', async () => {
-      const mockResult = [{ view_diff: 10 }];
-
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      await repo.getLeaderboard('user', 'invalidSort', 30, 10);
-
-      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('view_diff DESC'), expect.anything());
-    });
-
-    it('유효하지 않은 type 값이 전달되면 기본값(user)을 사용해야 한다', async () => {
-      const mockResult = [{ view_diff: 10 }];
-
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getLeaderboard('invalidType', 'viewCount', 30, 10);
-
-      expect(result).toEqual(mockResult);
-      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM users_user u'), expect.anything());
     });
 
     it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
