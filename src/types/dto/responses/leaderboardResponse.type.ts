@@ -4,7 +4,7 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  * @swagger
  * components:
  *   schemas:
- *     LeaderboardUserType:
+ *     LeaderboardUser:
  *       type: object
  *       properties:
  *         id:
@@ -32,7 +32,7 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *           type: integer
  *           description: 구간 게시물 수 상승값
  */
-export interface LeaderboardUserTypeData {
+interface LeaderboardUser {
   id: number;
   email: string;
   totalViews: number;
@@ -47,7 +47,38 @@ export interface LeaderboardUserTypeData {
  * @swagger
  * components:
  *   schemas:
- *     LeaderboardPostType:
+ *     UserLeaderboardData:
+ *       type: object
+ *       properties:
+ *         users:
+ *           type: array
+ *           nullable: true
+ *           items:
+ *             $ref: '#/components/schemas/LeaderboardUser'
+ */
+export interface UserLeaderboardData {
+  users: LeaderboardUser[];
+}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserLeaderboardResponseDto:
+ *       allOf:
+ *         - $ref: '#/components/schemas/BaseResponseDto'
+ *         - type: object
+ *           properties:
+ *             data:
+ *               $ref: '#/components/schemas/UserLeaderboardData'
+ */
+export class UserLeaderboardResponseDto extends BaseResponseDto<UserLeaderboardData> {}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     LeaderboardPost:
  *       type: object
  *       properties:
  *         id:
@@ -76,7 +107,7 @@ export interface LeaderboardUserTypeData {
  *           format: date-time
  *           description: 게시물 업로드 일시
  */
-export interface LeaderboardPostTypeData {
+interface LeaderboardPost {
   id: number;
   title: string;
   slug: string;
@@ -91,35 +122,29 @@ export interface LeaderboardPostTypeData {
  * @swagger
  * components:
  *   schemas:
- *     LeaderboardResponseData:
+ *     PostLeaderboardData:
  *       type: object
  *       properties:
  *         posts:
  *           type: array
  *           nullable: true
  *           items:
- *             $ref: '#/components/schemas/LeaderboardPostType'
- *         users:
- *           type: array
- *           nullable: true
- *           items:
- *             $ref: '#/components/schemas/LeaderboardUserType'
+ *             $ref: '#/components/schemas/LeaderboardPost'
  */
-export interface LeaderboardResponseData {
-  users: LeaderboardUserTypeData[] | null;
-  posts: LeaderboardPostTypeData[] | null;
+export interface PostLeaderboardData {
+  posts: LeaderboardPost[];
 }
 
 /**
  * @swagger
  * components:
  *   schemas:
- *     LeaderboardResponseDto:
+ *     PostLeaderboardResponseDto:
  *       allOf:
  *         - $ref: '#/components/schemas/BaseResponseDto'
  *         - type: object
  *           properties:
  *             data:
- *               $ref: '#/components/schemas/LeaderboardResponseData'
+ *               $ref: '#/components/schemas/PostLeaderboardData'
  */
-export class LeaderboardResponseDto extends BaseResponseDto<LeaderboardResponseData> {}
+export class PostLeaderboardResponseDto extends BaseResponseDto<PostLeaderboardData> {}

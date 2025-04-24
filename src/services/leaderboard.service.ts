@@ -1,70 +1,74 @@
 import logger from '@/configs/logger.config';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import {
-  LeaderboardResponseData,
-  LeaderboardType,
-  LeaderboardSortType,
-  LeaderboardUserTypeData,
-  LeaderboardPostTypeData,
+  UserLeaderboardSortType,
+  PostLeaderboardSortType,
+  UserLeaderboardData,
+  PostLeaderboardData,
 } from '@/types/index';
 
 export class LeaderboardService {
   constructor(private leaderboardRepo: LeaderboardRepository) {}
 
-  async getLeaderboard(
-    type: LeaderboardType = 'user',
-    sort: LeaderboardSortType = 'viewCount',
+  async getUserLeaderboard(
+    sort: UserLeaderboardSortType = 'viewCount',
     dateRange: number = 30,
     limit: number = 10,
-  ): Promise<LeaderboardResponseData> {
+  ): Promise<UserLeaderboardData> {
     try {
-      const rawResult = await this.leaderboardRepo.getLeaderboard(type, sort, dateRange, limit);
-      const result = this.mapRawResultToLeaderboardResponseData(rawResult, type);
-
-      return result;
+      const rawResult = await this.leaderboardRepo.getUserLeaderboard(sort, dateRange, limit);
+      return this.mapRawUserResult(rawResult);
     } catch (error) {
-      logger.error('LeaderboardService getLeaderboard error : ', error);
+      logger.error('LeaderboardService getUserLeaderboard error : ', error);
       throw error;
     }
   }
 
-  private mapRawResultToLeaderboardResponseData(
-    rawResult: RawPostResult[] | RawUserResult[],
-    type: LeaderboardType,
-  ): LeaderboardResponseData {
-    const result: LeaderboardResponseData = { posts: null, users: null };
-
-    if (type === 'post') {
-      result.posts = (rawResult as RawPostResult[]).map(
-        (post): LeaderboardPostTypeData => ({
-          id: post.id,
-          title: post.title,
-          slug: post.slug,
-          totalViews: post.total_views,
-          totalLikes: post.total_likes,
-          viewDiff: post.view_diff,
-          likeDiff: post.like_diff,
-          releasedAt: post.released_at,
-        }),
-      );
-    } else {
-      result.users = (rawResult as RawUserResult[]).map(
-        (user): LeaderboardUserTypeData => ({
-          id: user.id,
-          email: user.email,
-          totalViews: user.total_views,
-          totalLikes: user.total_likes,
-          totalPosts: user.total_posts,
-          viewDiff: user.view_diff,
-          likeDiff: user.like_diff,
-          postDiff: user.post_diff,
-        }),
-      );
+  async getPostLeaderboard(
+    sort: PostLeaderboardSortType = 'viewCount',
+    dateRange: number = 30,
+    limit: number = 10,
+  ): Promise<PostLeaderboardData> {
+    try {
+      const rawResult = await this.leaderboardRepo.getPostLeaderboard(sort, dateRange, limit);
+      return this.mapRawPostResult(rawResult);
+    } catch (error) {
+      logger.error('LeaderboardService getPostLeaderboard error : ', error);
+      throw error;
     }
+  }
 
-    return result;
+  private mapRawUserResult(rawResult: RawUserResult[]): UserLeaderboardData {
+    const users = rawResult.map((user) => ({
+      id: user.id,
+      email: user.email,
+      totalViews: user.total_views,
+      totalLikes: user.total_likes,
+      totalPosts: user.total_posts,
+      viewDiff: user.view_diff,
+      likeDiff: user.like_diff,
+      postDiff: user.post_diff,
+    }));
+
+    return { users };
+  }
+
+  private mapRawPostResult(rawResult: RawPostResult[]): PostLeaderboardData {
+    const posts = rawResult.map((post) => ({
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      totalViews: post.total_views,
+      totalLikes: post.total_likes,
+      viewDiff: post.view_diff,
+      likeDiff: post.like_diff,
+      releasedAt: post.released_at,
+    }));
+
+    return { posts };
   }
 }
+
 interface RawPostResult {
   id: number;
   title: string;

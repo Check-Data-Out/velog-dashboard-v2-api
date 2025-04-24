@@ -17,43 +17,8 @@ describe('LeaderboardRepository', () => {
     repo = new LeaderboardRepository(mockPool as unknown as Pool);
   });
 
-  describe('getLeaderboard', () => {
-    it('type이 post인 경우 post 데이터를 반환해야 한다.', async () => {
-      const mockResult = [
-        {
-          id: 2,
-          title: 'test2',
-          slug: 'test2',
-          total_views: 200,
-          total_likes: 100,
-          view_diff: 20,
-          like_diff: 10,
-          released_at: '2025-01-02',
-        },
-        {
-          id: 1,
-          title: 'test',
-          slug: 'test',
-          total_views: 100,
-          total_likes: 50,
-          view_diff: 10,
-          like_diff: 5,
-          released_at: '2025-01-01',
-        },
-      ];
-
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getLeaderboard('post', 'viewCount', 30, 10);
-
-      expect(result).toEqual(mockResult);
-      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM posts_post p'), expect.anything());
-    });
-
-    it('type이 user인 경우 user 데이터를 반환해야 한다.', async () => {
+  describe('getUserLeaderboard', () => {
+    it('사용자 리더보드를 조회할 수 있어야 한다', async () => {
       const mockResult = [
         {
           id: 1,
@@ -82,7 +47,7 @@ describe('LeaderboardRepository', () => {
         rowCount: mockResult.length,
       } as unknown as QueryResult);
 
-      const result = await repo.getLeaderboard('user', 'viewCount', 30, 10);
+      const result = await repo.getUserLeaderboard('viewCount', 30, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM users_user u'), expect.anything());
       expect(result).toEqual(mockResult);
@@ -99,7 +64,7 @@ describe('LeaderboardRepository', () => {
         rowCount: mockResult.length,
       } as unknown as QueryResult);
 
-      const result = await repo.getLeaderboard('user', 'viewCount', 30, 10);
+      const result = await repo.getUserLeaderboard('viewCount', 30, 10);
 
       expect(result).toEqual(mockResult);
       expect(result[0].view_diff).toBeGreaterThan(result[1].view_diff);
@@ -116,7 +81,7 @@ describe('LeaderboardRepository', () => {
         rowCount: mockResult.length,
       } as unknown as QueryResult);
 
-      const result = await repo.getLeaderboard('user', 'likeCount', 30, 10);
+      const result = await repo.getUserLeaderboard('likeCount', 30, 10);
 
       expect(result).toEqual(mockResult);
       expect(result[0].like_diff).toBeGreaterThan(result[1].like_diff);
@@ -133,7 +98,7 @@ describe('LeaderboardRepository', () => {
         rowCount: mockResult.length,
       } as unknown as QueryResult);
 
-      const result = await repo.getLeaderboard('user', 'postCount', 30, 10);
+      const result = await repo.getUserLeaderboard('postCount', 30, 10);
 
       expect(result).toEqual(mockResult);
       expect(result[0].post_diff).toBeGreaterThan(result[1].post_diff);
@@ -154,7 +119,7 @@ describe('LeaderboardRepository', () => {
         rowCount: mockData.length,
       } as unknown as QueryResult);
 
-      const result = await repo.getLeaderboard('post', 'viewCount', 30, mockLimit);
+      const result = await repo.getUserLeaderboard('viewCount', 30, mockLimit);
 
       expect(result).toEqual(mockData);
       expect(result.length).toEqual(mockLimit);
@@ -165,47 +130,15 @@ describe('LeaderboardRepository', () => {
       );
     });
 
-    it('type이 post이고 sort가 게시물 수인 경우 조회수를 기준으로 정렬해야 한다.', async () => {
-      const mockResult = [
-        { total_views: 200, total_likes: 5, view_diff: 20, like_diff: 0 },
-        { total_views: 100, total_likes: 50, view_diff: 10, like_diff: 5 },
-      ];
-
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getLeaderboard('post', 'postCount', 30, 10);
-
-      expect(result).toEqual(mockResult);
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY view_diff DESC'),
-        expect.anything(),
-      );
-      expect(result[0].view_diff).toBeGreaterThan(result[1].view_diff);
-    });
-
-    it('user 타입에는 GROUP BY 절이 포함되어야 한다', async () => {
+    it('GROUP BY 절이 포함되어야 한다', async () => {
       mockPool.query.mockResolvedValue({
         rows: [],
         rowCount: 0,
       } as unknown as QueryResult);
 
-      await repo.getLeaderboard('user', 'viewCount', 30, 10);
+      await repo.getUserLeaderboard('viewCount', 30, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('GROUP BY u.id, u.email'), expect.anything());
-    });
-
-    it('post 타입에는 GROUP BY 절이 포함되지 않아야 한다', async () => {
-      mockPool.query.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as unknown as QueryResult);
-
-      await repo.getLeaderboard('post', 'viewCount', 30, 10);
-
-      expect(mockPool.query).toHaveBeenCalledWith(expect.not.stringContaining('GROUP BY'), expect.anything());
     });
 
     it('dateRange 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
@@ -217,7 +150,7 @@ describe('LeaderboardRepository', () => {
         rowCount: mockResult.length,
       } as unknown as QueryResult);
 
-      await repo.getLeaderboard('user', 'viewCount', testDateRange, 10);
+      await repo.getUserLeaderboard('viewCount', testDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('$1::int'),
@@ -231,14 +164,95 @@ describe('LeaderboardRepository', () => {
         rowCount: 0,
       } as unknown as QueryResult);
 
-      const result = await repo.getLeaderboard('user', 'viewCount', 30, 10);
+      const result = await repo.getUserLeaderboard('viewCount', 30, 10);
 
       expect(result).toEqual([]);
     });
 
     it('에러 발생 시 DBError를 던져야 한다', async () => {
       mockPool.query.mockRejectedValue(new Error('DB connection failed'));
-      await expect(repo.getLeaderboard('post', 'postCount', 30, 10)).rejects.toThrow(DBError);
+      await expect(repo.getUserLeaderboard('viewCount', 30, 10)).rejects.toThrow(DBError);
+    });
+  });
+
+  describe('getPostLeaderboard', () => {
+    it('게시물 리더보드를 조회할 수 있어야 한다', async () => {
+      const mockResult = [
+        {
+          id: 2,
+          title: 'test2',
+          slug: 'test2',
+          total_views: 200,
+          total_likes: 100,
+          view_diff: 20,
+          like_diff: 10,
+          released_at: '2025-01-02',
+        },
+        {
+          id: 1,
+          title: 'test',
+          slug: 'test',
+          total_views: 100,
+          total_likes: 50,
+          view_diff: 10,
+          like_diff: 5,
+          released_at: '2025-01-01',
+        },
+      ];
+
+      mockPool.query.mockResolvedValue({
+        rows: mockResult,
+        rowCount: mockResult.length,
+      } as unknown as QueryResult);
+
+      const result = await repo.getPostLeaderboard('viewCount', 30, 10);
+
+      expect(result).toEqual(mockResult);
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM posts_post p'), expect.anything());
+    });
+
+    it('GROUP BY 절이 포함되지 않아야 한다', async () => {
+      mockPool.query.mockResolvedValue({
+        rows: [],
+        rowCount: 0,
+      } as unknown as QueryResult);
+
+      await repo.getPostLeaderboard('viewCount', 30, 10);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.not.stringContaining('GROUP BY'), expect.anything());
+    });
+
+    it('dateRange 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
+      const mockResult = [{ id: 1 }];
+      const testDateRange = 30;
+
+      mockPool.query.mockResolvedValue({
+        rows: mockResult,
+        rowCount: mockResult.length,
+      } as unknown as QueryResult);
+
+      await repo.getPostLeaderboard('viewCount', testDateRange, 10);
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('$1::int'),
+        expect.arrayContaining([testDateRange, expect.anything()]),
+      );
+    });
+
+    it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
+      mockPool.query.mockResolvedValue({
+        rows: [],
+        rowCount: 0,
+      } as unknown as QueryResult);
+
+      const result = await repo.getPostLeaderboard('viewCount', 30, 10);
+
+      expect(result).toEqual([]);
+    });
+
+    it('에러 발생 시 DBError를 던져야 한다', async () => {
+      mockPool.query.mockRejectedValue(new Error('DB connection failed'));
+      await expect(repo.getPostLeaderboard('viewCount', 30, 10)).rejects.toThrow(DBError);
     });
   });
 });

@@ -24,8 +24,8 @@ describe('LeaderboardService', () => {
     jest.clearAllMocks();
   });
 
-  describe('getLeaderboard', () => {
-    it('type이 user인 경우 posts는 null이고, users는 응답 형식에 맞게 변환되어야 한다', async () => {
+  describe('getUserLeaderboard', () => {
+    it('응답 형식에 맞게 변환된 사용자 리더보드 데이터를 반환해야 한다', async () => {
       const mockRawResult = [
         {
           id: 1,
@@ -75,15 +75,38 @@ describe('LeaderboardService', () => {
         ],
       };
 
-      repo.getLeaderboard.mockResolvedValue(mockRawResult);
+      repo.getUserLeaderboard.mockResolvedValue(mockRawResult);
+      const result = await service.getUserLeaderboard();
 
-      const result = await service.getLeaderboard('user');
-
-      expect(result.posts).toBeNull();
       expect(result.users).toEqual(mockResult.users);
     });
 
-    it('type이 post인 경우 users는 null이고, posts는 응답 형식에 맞게 변환되어야 한다', async () => {
+    it('쿼리 파라미터가 입력되지 않은 경우 기본값으로 처리되어야 한다', async () => {
+      repo.getUserLeaderboard.mockResolvedValue([]);
+      await service.getUserLeaderboard();
+
+      expect(repo.getUserLeaderboard).toHaveBeenCalledWith('viewCount', 30, 10);
+    });
+
+    it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
+      repo.getUserLeaderboard.mockResolvedValue([]);
+      const result = await service.getUserLeaderboard();
+
+      expect(result).toEqual({ users: [] });
+    });
+
+    it('쿼리 오류 발생 시 예외를 그대로 전파한다', async () => {
+      const errorMessage = '사용자 리더보드 조회 중 문제가 발생했습니다.';
+      const dbError = new DBError(errorMessage);
+      repo.getUserLeaderboard.mockRejectedValue(dbError);
+
+      await expect(service.getUserLeaderboard()).rejects.toThrow(errorMessage);
+      expect(repo.getUserLeaderboard).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getPostLeaderboard', () => {
+    it('응답 형식에 맞게 변환된 게시물 리더보드 데이터를 반환해야 한다', async () => {
       const mockRawResult = [
         {
           id: 1,
@@ -133,35 +156,33 @@ describe('LeaderboardService', () => {
         users: null,
       };
 
-      repo.getLeaderboard.mockResolvedValue(mockRawResult);
+      repo.getPostLeaderboard.mockResolvedValue(mockRawResult);
+      const result = await service.getPostLeaderboard();
 
-      const result = await service.getLeaderboard('post');
-
-      expect(result.users).toBeNull();
       expect(result.posts).toEqual(mockResult.posts);
     });
 
     it('쿼리 파라미터가 입력되지 않은 경우 기본값으로 처리되어야 한다', async () => {
-      repo.getLeaderboard.mockResolvedValue([]);
-      await service.getLeaderboard();
+      repo.getPostLeaderboard.mockResolvedValue([]);
+      await service.getPostLeaderboard();
 
-      expect(repo.getLeaderboard).toHaveBeenCalledWith('user', 'viewCount', 30, 10);
+      expect(repo.getPostLeaderboard).toHaveBeenCalledWith('viewCount', 30, 10);
     });
 
     it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
-      repo.getLeaderboard.mockResolvedValue([]);
-      const result = await service.getLeaderboard();
+      repo.getPostLeaderboard.mockResolvedValue([]);
+      const result = await service.getPostLeaderboard();
 
-      expect(result).toEqual({ users: [], posts: null });
+      expect(result).toEqual({ posts: [] });
     });
 
     it('쿼리 오류 발생 시 예외를 그대로 전파한다', async () => {
-      const errorMessage = '유저 리더보드 조회 중 문제가 발생했습니다.';
+      const errorMessage = '게시물 리더보드 조회 중 문제가 발생했습니다.';
       const dbError = new DBError(errorMessage);
-      repo.getLeaderboard.mockRejectedValue(dbError);
+      repo.getPostLeaderboard.mockRejectedValue(dbError);
 
-      await expect(service.getLeaderboard()).rejects.toThrow(errorMessage);
-      expect(repo.getLeaderboard).toHaveBeenCalledTimes(1);
+      await expect(service.getPostLeaderboard()).rejects.toThrow(errorMessage);
+      expect(repo.getPostLeaderboard).toHaveBeenCalledTimes(1);
     });
   });
 });

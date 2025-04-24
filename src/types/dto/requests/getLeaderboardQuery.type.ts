@@ -5,33 +5,39 @@ import { IsEnum, IsNumber, IsOptional, Max, Min } from 'class-validator';
  * @swagger
  * components:
  *   schemas:
- *     LeaderboardType:
+ *     UserLeaderboardSortType:
  *       type: string
- *       description: 리더보드 조회 타입
+ *       description: 사용자 리더보드 정렬 기준
  *       nullable: true
- *       enum: ['user', 'post']
- *       default: 'user'
+ *       enum: ['viewCount', 'likeCount', 'postCount']
+ *       default: 'viewCount'
  */
-export type LeaderboardType = 'user' | 'post';
+export type UserLeaderboardSortType = 'viewCount' | 'likeCount' | 'postCount';
 
 /**
  * @swagger
  * components:
  *   schemas:
- *     LeaderboardSortType:
+ *     PostLeaderboardSortType:
  *       type: string
- *       description: 리더보드 정렬 기준
+ *       description: 게시물 리더보드 정렬 기준
  *       nullable: true
- *       enum: ['viewCount', 'likeCount', 'postCount']
+ *       enum: ['viewCount', 'likeCount']
  *       default: 'viewCount'
  */
-export type LeaderboardSortType = 'viewCount' | 'likeCount' | 'postCount';
+export type PostLeaderboardSortType = 'viewCount' | 'likeCount';
 
-export interface GetLeaderboardQuery {
-  type?: LeaderboardType;
-  sort?: LeaderboardSortType;
+interface GetLeaderboardQuery {
   dateRange?: number;
   limit?: number;
+}
+
+export interface GetUserLeaderboardQuery extends GetLeaderboardQuery {
+  sort?: UserLeaderboardSortType;
+}
+
+export interface GetPostLeaderboardQuery extends GetLeaderboardQuery {
+  sort?: PostLeaderboardSortType;
 }
 
 /**
@@ -41,16 +47,6 @@ export interface GetLeaderboardQuery {
  *     GetLeaderboardQueryDto:
  *       type: object
  *       properties:
- *         type:
- *           $ref: '#/components/schemas/LeaderboardType'
- *           description: 리더보드 조회 타입
- *           nullable: true
- *           default: 'user'
- *         sort:
- *           $ref: '#/components/schemas/LeaderboardSortType'
- *           description: 리더보드 정렬 기준
- *           nullable: true
- *           default: 'viewCount'
  *         dateRange:
  *           type: number
  *           description: 리더보드 조회 기간 (일수)
@@ -66,35 +62,75 @@ export interface GetLeaderboardQuery {
  *           minimum: 1
  *           maximum: 30
  */
-export class GetLeaderboardQueryDto {
-  @IsOptional()
-  @IsEnum(['user', 'post'])
-  @Transform(({ value }) => (value === '' ? 'user' : value))
-  type?: LeaderboardType;
-
-  @IsOptional()
-  @IsEnum(['viewCount', 'likeCount', 'postCount'])
-  @Transform(({ value }) => (value === '' ? 'viewCount' : value))
-  sort?: LeaderboardSortType;
-
+class GetLeaderboardQueryDto {
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => Number(value))
+  @Transform(({ value }) => (value === '' ? 30 : Number(value)))
   @Min(1)
   @Max(30)
   dateRange?: number;
 
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => Number(value))
+  @Transform(({ value }) => (value === '' ? 10 : Number(value)))
   @Min(1)
   @Max(30)
   limit?: number;
 
-  constructor(type?: LeaderboardType, sort?: LeaderboardSortType, dateRange?: number, limit?: number) {
-    this.type = type;
-    this.sort = sort;
+  constructor(dateRange?: number, limit?: number) {
     this.dateRange = dateRange;
     this.limit = limit;
+  }
+}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     GetUserLeaderboardQueryDto:
+ *       type: object
+ *       properties:
+ *         sort:
+ *           type: string
+ *           description: 사용자 리더보드 정렬 기준
+ *           nullable: true
+ *           enum: ['viewCount', 'likeCount', 'postCount']
+ *           default: 'viewCount'
+ */
+export class GetUserLeaderboardQueryDto extends GetLeaderboardQueryDto {
+  @IsOptional()
+  @IsEnum(['viewCount', 'likeCount', 'postCount'])
+  @Transform(({ value }) => (value === '' ? 'viewCount' : value))
+  sort?: UserLeaderboardSortType;
+
+  constructor(sort?: UserLeaderboardSortType) {
+    super();
+    this.sort = sort;
+  }
+}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     GetPostLeaderboardQueryDto:
+ *       type: object
+ *       properties:
+ *         sort:
+ *           type: string
+ *           description: 게시물 리더보드 정렬 기준
+ *           nullable: true
+ *           enum: ['viewCount', 'likeCount']
+ *           default: 'viewCount'
+ */
+export class GetPostLeaderboardQueryDto extends GetLeaderboardQueryDto {
+  @IsOptional()
+  @IsEnum(['viewCount', 'likeCount'])
+  @Transform(({ value }) => (value === '' ? 'viewCount' : value))
+  sort?: PostLeaderboardSortType;
+
+  constructor(sort?: PostLeaderboardSortType) {
+    super();
+    this.sort = sort;
   }
 }
