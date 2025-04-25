@@ -52,7 +52,6 @@ interface LeaderboardUser {
  *       properties:
  *         users:
  *           type: array
- *           nullable: true
  *           items:
  *             $ref: '#/components/schemas/LeaderboardUser'
  */
@@ -127,7 +126,6 @@ interface LeaderboardPost {
  *       properties:
  *         posts:
  *           type: array
- *           nullable: true
  *           items:
  *             $ref: '#/components/schemas/LeaderboardPost'
  */
