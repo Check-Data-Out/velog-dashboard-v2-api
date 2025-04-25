@@ -122,4 +122,8 @@ export class UserService {
   async updateUserTokens(userData: UserWithTokenDto) {
     return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
   }
+
+  public getDecryptedTokens(userId: number, accessToken: string, refreshToken: string) {  
+    return this.decryptTokens(userId, accessToken, refreshToken);  
+  }
 }

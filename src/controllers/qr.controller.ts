@@ -7,7 +7,6 @@ import { UserService } from '@/services/user.service';
 import { NotFoundError } from '@/exception';
 import { CookieOptions } from 'express';
 
-// TODO: randomUUID() 기반으로 길이 36
 type Token32 = string & { __lengthBrand: 32 };
 
 export class QRLoginController {
@@ -75,10 +74,10 @@ export class QRLoginController {
       const user = await this.userService.findByVelogUUID(found.user.toString());
       if (!user) throw new NotFoundError('유저를 찾을 수 없습니다.');
 
-      const { decryptedAccessToken, decryptedRefreshToken } = this.userService['decryptTokens'](
-        user.group_id,
-        user.access_token,
-        user.refresh_token
+      const { decryptedAccessToken, decryptedRefreshToken } = this.userService.getDecryptedTokens(  
+        user.group_id,  
+        user.access_token,  
+        user.refresh_token  
       );
 
       res.clearCookie('access_token', this.cookieOption());
