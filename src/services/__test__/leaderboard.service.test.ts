@@ -28,7 +28,7 @@ describe('LeaderboardService', () => {
     it('응답 형식에 맞게 변환된 사용자 리더보드 데이터를 반환해야 한다', async () => {
       const mockRawResult = [
         {
-          id: 1,
+          id: '1',
           email: 'test@test.com',
           total_views: 100,
           total_likes: 50,
@@ -38,7 +38,7 @@ describe('LeaderboardService', () => {
           post_diff: 1,
         },
         {
-          id: 2,
+          id: '2',
           email: 'test2@test.com',
           total_views: 200,
           total_likes: 100,
@@ -52,7 +52,7 @@ describe('LeaderboardService', () => {
       const mockResult = {
         users: [
           {
-            id: 1,
+            id: '1',
             email: 'test@test.com',
             totalViews: 100,
             totalLikes: 50,
@@ -62,7 +62,7 @@ describe('LeaderboardService', () => {
             postDiff: 1,
           },
           {
-            id: 2,
+            id: '2',
             email: 'test2@test.com',
             totalViews: 200,
             totalLikes: 100,
@@ -118,7 +118,7 @@ describe('LeaderboardService', () => {
     it('응답 형식에 맞게 변환된 게시물 리더보드 데이터를 반환해야 한다', async () => {
       const mockRawResult = [
         {
-          id: 1,
+          id: '1',
           title: 'test',
           slug: 'test-slug',
           total_views: 100,
@@ -128,7 +128,7 @@ describe('LeaderboardService', () => {
           released_at: '2025-01-01',
         },
         {
-          id: 2,
+          id: '2',
           title: 'test2',
           slug: 'test2-slug',
           total_views: 200,
@@ -142,7 +142,7 @@ describe('LeaderboardService', () => {
       const mockResult = {
         posts: [
           {
-            id: 1,
+            id: '1',
             title: 'test',
             slug: 'test-slug',
             totalViews: 100,
@@ -152,7 +152,7 @@ describe('LeaderboardService', () => {
             releasedAt: '2025-01-01',
           },
           {
-            id: 2,
+            id: '2',
             title: 'test2',
             slug: 'test2-slug',
             totalViews: 200,

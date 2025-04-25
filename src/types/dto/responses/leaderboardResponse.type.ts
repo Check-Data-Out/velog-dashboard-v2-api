@@ -8,8 +8,8 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *       type: object
  *       properties:
  *         id:
- *           type: integer
- *           description: 사용자 ID
+ *           type: string
+ *           description: 사용자 PK
  *         email:
  *           type: string
  *           description: 사용자 이메일
@@ -33,7 +33,7 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *           description: 구간 게시물 수 상승값
  */
 interface LeaderboardUser {
-  id: number;
+  id: string;
   email: string;
   totalViews: number;
   totalLikes: number;
@@ -81,8 +81,8 @@ export class UserLeaderboardResponseDto extends BaseResponseDto<UserLeaderboardD
  *       type: object
  *       properties:
  *         id:
- *           type: integer
- *           description: 게시물 ID
+ *           type: string
+ *           description: 게시물 PK
  *         title:
  *           type: string
  *           description: 게시물 제목
@@ -107,7 +107,7 @@ export class UserLeaderboardResponseDto extends BaseResponseDto<UserLeaderboardD
  *           description: 게시물 업로드 일시
  */
 interface LeaderboardPost {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   totalViews: number;

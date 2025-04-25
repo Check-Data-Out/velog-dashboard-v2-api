@@ -32,7 +32,7 @@ describe('LeaderboardRepository', () => {
     it('사용자 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
       const mockResult = [
         {
-          id: 1,
+          id: '1',
           email: 'test@test.com',
           total_views: 100,
           total_likes: 50,
@@ -42,7 +42,7 @@ describe('LeaderboardRepository', () => {
           post_diff: 1,
         },
         {
-          id: 2,
+          id: '2',
           email: 'test2@test.com',
           total_views: 200,
           total_likes: 100,
@@ -119,7 +119,7 @@ describe('LeaderboardRepository', () => {
     it('게시물 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
       const mockResult = [
         {
-          id: 2,
+          id: '2',
           title: 'test2',
           slug: 'test2',
           total_views: 200,
@@ -129,7 +129,7 @@ describe('LeaderboardRepository', () => {
           released_at: '2025-01-02',
         },
         {
-          id: 1,
+          id: '1',
           title: 'test',
           slug: 'test',
           total_views: 100,

@@ -70,7 +70,7 @@ export class LeaderboardService {
 }
 
 interface RawPostResult {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   total_views: number;
@@ -81,7 +81,7 @@ interface RawPostResult {
 }
 
 interface RawUserResult {
-  id: number;
+  id: string;
   email: string;
   total_views: number;
   total_likes: number;
