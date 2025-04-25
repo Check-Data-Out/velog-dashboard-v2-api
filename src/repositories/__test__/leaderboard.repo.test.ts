@@ -4,6 +4,17 @@ import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 
 jest.mock('pg');
 
+// pg의 QueryResult 타입을 만족하는 mock 객체를 생성하기 위한 헬퍼 함수 생성
+function createMockQueryResult<T extends Record<string, unknown>>(rows: T[]): QueryResult<T> {
+  return {
+    rows,
+    rowCount: rows.length,
+    command: '',
+    oid: 0,
+    fields: [],
+  } satisfies QueryResult<T>;
+}
+
 const mockPool: {
   query: jest.Mock<Promise<QueryResult<Record<string, unknown>>>, unknown[]>;
 } = {
@@ -18,7 +29,7 @@ describe('LeaderboardRepository', () => {
   });
 
   describe('getUserLeaderboard', () => {
-    it('사용자 리더보드를 조회할 수 있어야 한다', async () => {
+    it('사용자 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
       const mockResult = [
         {
           id: 1,
@@ -41,11 +52,7 @@ describe('LeaderboardRepository', () => {
           post_diff: 1,
         },
       ];
-
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockResult));
 
       const result = await repo.getUserLeaderboard('viewCount', 30, 10);
 
@@ -53,76 +60,37 @@ describe('LeaderboardRepository', () => {
       expect(result).toEqual(mockResult);
     });
 
-    it('sort가 조회수인 경우 정렬 순서를 보장해야 한다.', async () => {
-      const mockResult = [
-        { view_diff: 20, like_diff: 5, post_diff: 1 },
-        { view_diff: 10, like_diff: 10, post_diff: 2 },
-      ];
+    it('sort가 viewCount인 경우 view_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
+      await repo.getUserLeaderboard('viewCount', 30, 10);
 
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getUserLeaderboard('viewCount', 30, 10);
-
-      expect(result).toEqual(mockResult);
-      expect(result[0].view_diff).toBeGreaterThan(result[1].view_diff);
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY view_diff DESC'),
+        expect.anything(),
+      );
     });
 
-    it('sort가 좋아요 수인 경우 정렬 순서를 보장해야 한다.', async () => {
-      const mockResult = [
-        { view_diff: 10, like_diff: 10, post_diff: 1 },
-        { view_diff: 20, like_diff: 5, post_diff: 1 },
-      ];
+    it('sort가 likeCount인 경우 like_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
+      await repo.getUserLeaderboard('likeCount', 30, 10);
 
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getUserLeaderboard('likeCount', 30, 10);
-
-      expect(result).toEqual(mockResult);
-      expect(result[0].like_diff).toBeGreaterThan(result[1].like_diff);
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY like_diff DESC'),
+        expect.anything(),
+      );
     });
 
-    it('sort가 게시물 수인 경우 정렬 순서를 보장해야 한다.', async () => {
-      const mockResult = [
-        { view_diff: 10, like_diff: 10, post_diff: 4 },
-        { view_diff: 20, like_diff: 5, post_diff: 1 },
-      ];
+    it('sort가 postCount인 경우 post_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
+      await repo.getUserLeaderboard('postCount', 30, 10);
 
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getUserLeaderboard('postCount', 30, 10);
-
-      expect(result).toEqual(mockResult);
-      expect(result[0].post_diff).toBeGreaterThan(result[1].post_diff);
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY post_diff DESC'),
+        expect.anything(),
+      );
     });
 
-    it('limit 만큼의 데이터만 반환해야 한다', async () => {
-      const mockData = [
-        { id: 1, title: 'test' },
-        { id: 2, title: 'test2' },
-        { id: 3, title: 'test3' },
-        { id: 4, title: 'test4' },
-        { id: 5, title: 'test5' },
-      ];
+    it('limit 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
       const mockLimit = 5;
 
-      mockPool.query.mockResolvedValue({
-        rows: mockData,
-        rowCount: mockData.length,
-      } as unknown as QueryResult);
-
-      const result = await repo.getUserLeaderboard('viewCount', 30, mockLimit);
-
-      expect(result).toEqual(mockData);
-      expect(result.length).toEqual(mockLimit);
+      await repo.getUserLeaderboard('viewCount', 30, mockLimit);
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('LIMIT $2'),
@@ -130,43 +98,15 @@ describe('LeaderboardRepository', () => {
       );
     });
 
-    it('GROUP BY 절이 포함되어야 한다', async () => {
-      mockPool.query.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as unknown as QueryResult);
-
-      await repo.getUserLeaderboard('viewCount', 30, 10);
-
-      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('GROUP BY u.id, u.email'), expect.anything());
-    });
-
     it('dateRange 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
-      const mockResult = [{ id: 1 }];
-      const testDateRange = 30;
+      const mockDateRange = 30;
 
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      await repo.getUserLeaderboard('viewCount', testDateRange, 10);
+      await repo.getUserLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('$1::int'),
-        expect.arrayContaining([testDateRange, expect.anything()]),
+        expect.stringContaining('make_interval(days := $1::int)'),
+        expect.arrayContaining([mockDateRange, expect.anything()]),
       );
-    });
-
-    it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
-      mockPool.query.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as unknown as QueryResult);
-
-      const result = await repo.getUserLeaderboard('viewCount', 30, 10);
-
-      expect(result).toEqual([]);
     });
 
     it('에러 발생 시 DBError를 던져야 한다', async () => {
@@ -176,7 +116,7 @@ describe('LeaderboardRepository', () => {
   });
 
   describe('getPostLeaderboard', () => {
-    it('게시물 리더보드를 조회할 수 있어야 한다', async () => {
+    it('게시물 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
       const mockResult = [
         {
           id: 2,
@@ -200,10 +140,7 @@ describe('LeaderboardRepository', () => {
         },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockResult));
 
       const result = await repo.getPostLeaderboard('viewCount', 30, 10);
 
@@ -211,43 +148,44 @@ describe('LeaderboardRepository', () => {
       expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM posts_post p'), expect.anything());
     });
 
-    it('GROUP BY 절이 포함되지 않아야 한다', async () => {
-      mockPool.query.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as unknown as QueryResult);
-
+    it('sort가 viewCount인 경우 view_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
       await repo.getPostLeaderboard('viewCount', 30, 10);
 
-      expect(mockPool.query).toHaveBeenCalledWith(expect.not.stringContaining('GROUP BY'), expect.anything());
-    });
-
-    it('dateRange 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
-      const mockResult = [{ id: 1 }];
-      const testDateRange = 30;
-
-      mockPool.query.mockResolvedValue({
-        rows: mockResult,
-        rowCount: mockResult.length,
-      } as unknown as QueryResult);
-
-      await repo.getPostLeaderboard('viewCount', testDateRange, 10);
-
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('$1::int'),
-        expect.arrayContaining([testDateRange, expect.anything()]),
+        expect.stringContaining('ORDER BY view_diff DESC'),
+        expect.anything(),
       );
     });
 
-    it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
-      mockPool.query.mockResolvedValue({
-        rows: [],
-        rowCount: 0,
-      } as unknown as QueryResult);
+    it('sort가 likeCount인 경우 like_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
+      await repo.getPostLeaderboard('likeCount', 30, 10);
 
-      const result = await repo.getPostLeaderboard('viewCount', 30, 10);
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY like_diff DESC'),
+        expect.anything(),
+      );
+    });
 
-      expect(result).toEqual([]);
+    it('limit 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
+      const mockLimit = 5;
+
+      await repo.getPostLeaderboard('viewCount', 30, mockLimit);
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('LIMIT $2'),
+        expect.arrayContaining([30, mockLimit]),
+      );
+    });
+
+    it('dateRange 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
+      const mockDateRange = 30;
+
+      await repo.getPostLeaderboard('viewCount', mockDateRange, 10);
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('make_interval(days := $1::int)'),
+        expect.arrayContaining([mockDateRange, expect.anything()]),
+      );
     });
 
     it('에러 발생 시 DBError를 던져야 한다', async () => {

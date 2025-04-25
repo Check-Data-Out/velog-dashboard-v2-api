@@ -50,7 +50,6 @@ describe('LeaderboardService', () => {
       ];
 
       const mockResult = {
-        posts: null,
         users: [
           {
             id: 1,
@@ -76,13 +75,22 @@ describe('LeaderboardService', () => {
       };
 
       repo.getUserLeaderboard.mockResolvedValue(mockRawResult);
-      const result = await service.getUserLeaderboard();
+      const result = await service.getUserLeaderboard('viewCount', 30, 10);
 
       expect(result.users).toEqual(mockResult.users);
     });
 
+    it('쿼리 파라미터가 올바르게 적용되어야 한다', async () => {
+      repo.getUserLeaderboard.mockResolvedValue([]);
+
+      await service.getUserLeaderboard('postCount', 30, 10);
+
+      expect(repo.getUserLeaderboard).toHaveBeenCalledWith('postCount', 30, 10);
+    });
+
     it('쿼리 파라미터가 입력되지 않은 경우 기본값으로 처리되어야 한다', async () => {
       repo.getUserLeaderboard.mockResolvedValue([]);
+
       await service.getUserLeaderboard();
 
       expect(repo.getUserLeaderboard).toHaveBeenCalledWith('viewCount', 30, 10);
@@ -90,6 +98,7 @@ describe('LeaderboardService', () => {
 
     it('데이터가 없는 경우 빈 배열을 반환해야 한다', async () => {
       repo.getUserLeaderboard.mockResolvedValue([]);
+
       const result = await service.getUserLeaderboard();
 
       expect(result).toEqual({ users: [] });
@@ -153,17 +162,25 @@ describe('LeaderboardService', () => {
             releasedAt: '2025-01-02',
           },
         ],
-        users: null,
       };
 
       repo.getPostLeaderboard.mockResolvedValue(mockRawResult);
-      const result = await service.getPostLeaderboard();
+      const result = await service.getPostLeaderboard('viewCount', 30, 10);
 
       expect(result.posts).toEqual(mockResult.posts);
     });
 
+    it('쿼리 파라미터가 올바르게 적용되어야 한다', async () => {
+      repo.getPostLeaderboard.mockResolvedValue([]);
+
+      await service.getPostLeaderboard('likeCount', 30, 10);
+
+      expect(repo.getPostLeaderboard).toHaveBeenCalledWith('likeCount', 30, 10);
+    });
+
     it('쿼리 파라미터가 입력되지 않은 경우 기본값으로 처리되어야 한다', async () => {
       repo.getPostLeaderboard.mockResolvedValue([]);
+
       await service.getPostLeaderboard();
 
       expect(repo.getPostLeaderboard).toHaveBeenCalledWith('viewCount', 30, 10);
