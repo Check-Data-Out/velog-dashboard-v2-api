@@ -3,7 +3,7 @@ import { DBError } from '@/exception';
 import { Pool } from 'pg';
 
 const mockPool: Partial<Pool> = {
-  query: jest.fn()
+  query: jest.fn(),
 };
 
 describe('QRLoginTokenRepository', () => {
@@ -17,40 +17,46 @@ describe('QRLoginTokenRepository', () => {
     jest.clearAllMocks();
   });
 
-  it('should insert QR login token', async () => {
-    (mockPool.query as jest.Mock).mockResolvedValueOnce(undefined);
+  describe('createQRLoginToken', () => {
+    it('QR 토큰을 성공적으로 삽입해야 한다', async () => {
+      (mockPool.query as jest.Mock).mockResolvedValueOnce(undefined);
 
-    await expect(
-      repo.createQRLoginToken('token', 1, 'ip', 'agent')
-    ).resolves.not.toThrow();
+      await expect(
+        repo.createQRLoginToken('token', 1, 'ip', 'agent')
+      ).resolves.not.toThrow();
 
-    expect(mockPool.query).toHaveBeenCalled();
+      expect(mockPool.query).toHaveBeenCalled();
+    });
+
+    it('삽입 중 오류 발생 시 DBError를 던져야 한다', async () => {
+      (mockPool.query as jest.Mock).mockRejectedValueOnce(new Error('fail'));
+
+      await expect(
+        repo.createQRLoginToken('token', 1, 'ip', 'agent')
+      ).rejects.toThrow(DBError);
+    });
   });
 
-  it('should throw DBError on insert failure', async () => {
-    (mockPool.query as jest.Mock).mockRejectedValueOnce(new Error('fail'));
+  describe('findQRLoginToken', () => {
+    it('토큰이 존재할 경우 반환해야 한다', async () => {
+      const mockTokenData = { token: 'token', user: 1 };
+      (mockPool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockTokenData] });
 
-    await expect(repo.createQRLoginToken('token', 1, 'ip', 'agent'))
-      .rejects.toThrow(DBError);
-  });
+      const result = await repo.findQRLoginToken('token');
+      expect(result).toEqual(mockTokenData);
+    });
 
-  it('should return token if found', async () => {
-    (mockPool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ token: 'token' }] });
+    it('토큰이 존재하지 않으면 null을 반환해야 한다', async () => {
+      (mockPool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
-    const result = await repo.findQRLoginToken('token');
-    expect(result).toEqual({ token: 'token' });
-  });
+      const result = await repo.findQRLoginToken('token');
+      expect(result).toBeNull();
+    });
 
-  it('should return null if token not found', async () => {
-    (mockPool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
+    it('조회 중 오류 발생 시 DBError를 던져야 한다', async () => {
+      (mockPool.query as jest.Mock).mockRejectedValueOnce(new Error('fail'));
 
-    const result = await repo.findQRLoginToken('token');
-    expect(result).toBeNull();
-  });
-
-  it('should throw DBError on select failure', async () => {
-    (mockPool.query as jest.Mock).mockRejectedValueOnce(new Error('fail'));
-
-    await expect(repo.findQRLoginToken('token')).rejects.toThrow(DBError);
+      await expect(repo.findQRLoginToken('token')).rejects.toThrow(DBError);
+    });
   });
 });
