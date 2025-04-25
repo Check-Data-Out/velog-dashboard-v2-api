@@ -14,4 +14,15 @@ export class QRLoginTokenService {
     async getByToken(token: string): Promise<QRLoginToken | null> {
         return await this.qrRepo.findQRLoginToken(token);
     }
+
+    async useToken(token: string): Promise<QRLoginToken | null> {
+        const qrToken = await this.qrRepo.findQRLoginToken(token);
+      
+        if (!qrToken) {
+          return null;
+        }
+      
+        await this.qrRepo.markTokenUsed(token);
+        return qrToken;
+      }
 }

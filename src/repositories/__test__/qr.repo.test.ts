@@ -59,4 +59,22 @@ describe('QRLoginTokenRepository', () => {
       await expect(repo.findQRLoginToken('token')).rejects.toThrow(DBError);
     });
   });
+
+  describe('markTokenUsed', () => {
+    it('토큰을 사용 처리해야 한다', async () => {
+      (mockPool.query as jest.Mock).mockResolvedValueOnce(undefined);
+
+      await expect(repo.markTokenUsed('token')).resolves.not.toThrow();
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE qr_login_tokens SET is_used = true'),
+        ['token']
+      );
+    });
+
+    it('토큰 사용 처리 중 오류 발생 시 DBError를 던져야 한다', async () => {
+      (mockPool.query as jest.Mock).mockRejectedValueOnce(new Error('fail'));
+
+      await expect(repo.markTokenUsed('token')).rejects.toThrow(DBError);
+    });
+  });
 });

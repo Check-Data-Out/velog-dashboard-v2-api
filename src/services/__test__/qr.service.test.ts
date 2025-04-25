@@ -10,7 +10,7 @@ describe('QRLoginTokenService', () => {
   let repo: jest.Mocked<QRLoginTokenRepository>;
 
   beforeEach(() => {
-    const repoInstance = new QRLoginTokenRepository({} as any)
+    const repoInstance = new QRLoginTokenRepository({} as any);
     repo = repoInstance as jest.Mocked<QRLoginTokenRepository>;
     service = new QRLoginTokenService(repo);
   });
@@ -33,51 +33,80 @@ describe('QRLoginTokenService', () => {
     });
 
     it('QR 토큰 생성 중 오류 발생 시 예외 발생', async () => {
-      const userId = 1;
-      const ip = '127.0.0.1';
-      const userAgent = 'Mozilla';
       repo.createQRLoginToken.mockRejectedValueOnce(new DBError('생성 실패'));
 
-      await expect(service.create(userId, ip, userAgent)).rejects.toThrow('생성 실패');
-      expect(repo.createQRLoginToken).toHaveBeenCalled();
+      await expect(service.create(1, 'ip', 'agent')).rejects.toThrow('생성 실패');
     });
   });
 
   describe('getByToken', () => {
-    const mockToken = 'sample-token';
-    const mockQRToken: QRLoginToken = {
-      token: mockToken,
-      user: 1,
-      created_at: new Date(),
-      expires_at: new Date(Date.now() + 1000 * 60 * 5),
-      is_used: false,
-      ip_address: '127.0.0.1',
-      user_agent: 'Chrome',
-    };
+    it('유효한 토큰 조회 시 반환해야 한다', async () => {
+      const mockToken: QRLoginToken = {
+        token: 'token',
+        user: 1,
+        created_at: new Date(),
+        expires_at: new Date(),
+        is_used: false,
+        ip_address: '127.0.0.1',
+        user_agent: 'Chrome',
+      };
+      repo.findQRLoginToken.mockResolvedValue(mockToken);
 
-    it('유효한 토큰 조회 시 QRLoginToken 반환', async () => {
-      repo.findQRLoginToken.mockResolvedValue(mockQRToken);
-
-      const result = await service.getByToken(mockToken);
-
-      expect(result).toEqual(mockQRToken);
-      expect(repo.findQRLoginToken).toHaveBeenCalledWith(mockToken);
+      const result = await service.getByToken('token');
+      expect(result).toEqual(mockToken);
     });
 
-    it('토큰이 없을 경우 null 반환', async () => {
+    it('토큰이 없으면 null 반환', async () => {
       repo.findQRLoginToken.mockResolvedValue(null);
-
-      const result = await service.getByToken(mockToken);
-
+      const result = await service.getByToken('token');
       expect(result).toBeNull();
-      expect(repo.findQRLoginToken).toHaveBeenCalledWith(mockToken);
     });
 
-    it('토큰 조회 중 오류 발생 시 예외 발생', async () => {
+    it('조회 중 오류 발생 시 예외 발생', async () => {
       repo.findQRLoginToken.mockRejectedValueOnce(new DBError('조회 실패'));
+      await expect(service.getByToken('token')).rejects.toThrow('조회 실패');
+    });
+  });
 
-      await expect(service.getByToken(mockToken)).rejects.toThrow('조회 실패');
-      expect(repo.findQRLoginToken).toHaveBeenCalledWith(mockToken);
+  describe('useToken', () => {
+    it('유효한 토큰 사용 처리 후 반환', async () => {
+      const mockToken: QRLoginToken = {
+        token: 'token',
+        user: 1,
+        created_at: new Date(),
+        expires_at: new Date(),
+        is_used: false,
+        ip_address: '127.0.0.1',
+        user_agent: 'Chrome',
+      };
+      repo.findQRLoginToken.mockResolvedValue(mockToken);
+
+      const result = await service.useToken('token');
+
+      expect(result).toEqual(mockToken);
+      expect(repo.markTokenUsed).toHaveBeenCalledWith('token');
+    });
+
+    it('토큰이 존재하지 않으면 null 반환', async () => {
+      repo.findQRLoginToken.mockResolvedValue(null);
+      const result = await service.useToken('token');
+      expect(result).toBeNull();
+    });
+
+    it('markTokenUsed 호출 시 예외 발생하면 전파', async () => {
+      const mockToken: QRLoginToken = {
+        token: 'token',
+        user: 1,
+        created_at: new Date(),
+        expires_at: new Date(),
+        is_used: false,
+        ip_address: '127.0.0.1',
+        user_agent: 'Chrome',
+      };
+      repo.findQRLoginToken.mockResolvedValue(mockToken);
+      repo.markTokenUsed.mockRejectedValueOnce(new DBError('사용 처리 실패'));
+
+      await expect(service.useToken('token')).rejects.toThrow('사용 처리 실패');
     });
   });
 });

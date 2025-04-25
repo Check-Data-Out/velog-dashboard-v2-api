@@ -33,4 +33,16 @@ export class QRLoginTokenRepository {
             throw new DBError('QR 코드 토큰 조회 중 문제가 발생했습니다.');
         }
     }
+
+    async markTokenUsed(token: string): Promise<void> {
+        try {
+          const query = `
+            UPDATE qr_login_tokens SET is_used = true WHERE token = $1;
+          `;
+          await this.pool.query(query, [token]);
+        } catch (error) {
+          logger.error('QRLoginToken Repo mark as used Error : ', error);
+          throw new DBError('QR 코드 사용 처리 중 문제가 발생했습니다.');
+        }
+      }
 }
