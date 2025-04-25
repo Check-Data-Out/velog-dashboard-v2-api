@@ -6,7 +6,7 @@ export class QRLoginTokenService {
     constructor(private qrRepo: QRLoginTokenRepository) {}
 
     async create(userId: number, ip: string, userAgent: string): Promise<string> {
-        const token =  randomUUID();
+        const token = randomUUID();
         await this.qrRepo.createQRLoginToken(token, userId, ip, userAgent);
         return token;
     }
