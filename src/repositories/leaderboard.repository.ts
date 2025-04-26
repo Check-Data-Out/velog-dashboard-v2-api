@@ -9,7 +9,6 @@ export class LeaderboardRepository {
   async getUserLeaderboard(sort: UserLeaderboardSortType, dateRange: number, limit: number) {
     try {
       const cteQuery = this.buildLeaderboardCteQuery();
-      const sortCol = sort === 'postCount' ? 'post_diff' : sort === 'likeCount' ? 'like_diff' : 'view_diff';
 
       const query = `
         ${cteQuery}
@@ -28,7 +27,7 @@ export class LeaderboardRepository {
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE u.email IS NOT NULL
         GROUP BY u.id, u.email
-        ORDER BY ${sortCol} DESC
+        ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC
         LIMIT $2;
       `;
       const result = await this.pool.query(query, [dateRange, limit]);
@@ -43,7 +42,6 @@ export class LeaderboardRepository {
   async getPostLeaderboard(sort: PostLeaderboardSortType, dateRange: number, limit: number) {
     try {
       const cteQuery = this.buildLeaderboardCteQuery();
-      const sortCol = sort === 'viewCount' ? 'view_diff' : 'like_diff';
 
       const query = `
         ${cteQuery}
@@ -60,7 +58,7 @@ export class LeaderboardRepository {
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE p.is_active = true
-        ORDER BY ${sortCol} DESC
+        ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC
         LIMIT $2;
       `;
       const result = await this.pool.query(query, [dateRange, limit]);
@@ -96,4 +94,10 @@ export class LeaderboardRepository {
       )
     `;
   }
+
+  private readonly SORT_COL_MAPPING = {
+    viewCount: 'view_diff',
+    likeCount: 'like_diff',
+    postCount: 'post_diff',
+  } as const;
 }
