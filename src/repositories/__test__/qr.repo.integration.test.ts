@@ -137,12 +137,15 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
       const token = generateRandomToken();
       const ip = '127.0.0.1';
       const userAgent = 'test-agent';
-
+  
       await repo.createQRLoginToken(token, TEST_DATA.USER_ID, ip, userAgent);
-
+  
       await expect(
         repo.createQRLoginToken(token, TEST_DATA.USER_ID, ip, userAgent)
       ).rejects.toThrow(DBError);
+      
+      await testPool.end();
+      logger.info('중복 토큰 테스트 후 DB 연결 종료');
     });
   });
 });
