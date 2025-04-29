@@ -6,6 +6,8 @@ import { sendSlackMessage } from '@/modules/slack/slack.notifier';
 import { UserRepository } from '@/repositories/user.repository';
 import { UserWithTokenDto, User, SampleUser } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
+import { QRLoginToken } from "@/types/models/QRLoginToken.type";
+import { generateRandomToken } from '@/utils/generateRandomToken.util';
 
 export class UserService {
   constructor(private userRepo: UserRepository) { }
@@ -125,5 +127,26 @@ export class UserService {
 
   public getDecryptedTokens(userId: number, accessToken: string, refreshToken: string) {  
     return this.decryptTokens(userId, accessToken, refreshToken);  
+  }
+
+  async create(userId: number, ip: string, userAgent: string): Promise<string> {
+    const token = generateRandomToken(10);
+    await this.userRepo.createQRLoginToken(token, userId, ip, userAgent);
+    return token;
+}
+
+async getByToken(token: string): Promise<QRLoginToken | null> {
+    return await this.userRepo.findQRLoginToken(token);
+}
+
+async useToken(token: string): Promise<QRLoginToken | null> {
+    const qrToken = await this.userRepo.findQRLoginToken(token);
+  
+    if (!qrToken) {
+      return null;
+    }
+  
+    await this.userRepo.markTokenUsed(token);
+    return qrToken;
   }
 }

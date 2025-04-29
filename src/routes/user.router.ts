@@ -115,4 +115,41 @@ router.post('/logout', authMiddleware.verify, userController.logout);
  */
 router.get('/me', authMiddleware.login, userController.fetchCurrentUser);
 
+/**
+ * @swagger
+ * /api/qr-login:
+ *   post:
+ *     summary: QR 로그인 토큰 생성
+ *     tags: [QRLogin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: QR 로그인 토큰 생성 성공
+ */
+router.post('/qr-login', authMiddleware.login, userController.createToken);
+
+/**
+ * @swagger
+ * /api/qr-login:
+ *   get:
+ *     summary: QR 로그인 토큰 조회 및 자동 로그인 처리
+ *     tags: [QRLogin]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 조회할 QR 토큰
+ *     responses:
+ *       302:
+ *         description: 자동 로그인 완료 후 메인 페이지로 리디렉션
+ *       400:
+ *         description: 잘못된 토큰
+ *       404:
+ *         description: 만료 또는 존재하지 않는 토큰
+ */
+router.get('/qr-login', userController.getToken);
+
 export default router;

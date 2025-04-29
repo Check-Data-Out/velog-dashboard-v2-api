@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import pg from 'pg';
-import { QRLoginTokenRepository } from '@/repositories/qr.repository';
+import { UserRepository } from '@/repositories/user.repository';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import logger from '@/configs/logger.config';
 
@@ -10,7 +10,7 @@ jest.setTimeout(30000);
 
 describe('QRLoginTokenRepository 통합 테스트', () => {
   let testPool: Pool;
-  let repo: QRLoginTokenRepository;
+  let repo: UserRepository;
 
   const TEST_DATA = {
     USER_ID: 1,
@@ -39,7 +39,7 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
     await testPool.query('SELECT 1');
     logger.info('테스트 DB 연결 성공');
 
-    repo = new QRLoginTokenRepository(testPool);
+    repo = new UserRepository(testPool);
   });
 
   afterAll(async () => {

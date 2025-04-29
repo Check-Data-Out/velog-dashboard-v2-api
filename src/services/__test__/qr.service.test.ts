@@ -1,18 +1,18 @@
-import { QRLoginTokenService } from '@/services/qr.service';
-import { QRLoginTokenRepository } from '@/repositories/qr.repository';
+import { UserService } from '@/services/user.service';
+import { UserRepository } from '@/repositories/user.repository';
 import { DBError } from '@/exception';
 import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 
-jest.mock('@/repositories/qr.repository');
+jest.mock('@/repositories/user.repository');
 
-describe('QRLoginTokenService', () => {
-  let service: QRLoginTokenService;
-  let repo: jest.Mocked<QRLoginTokenRepository>;
+describe('UserService', () => {
+  let service: UserService;
+  let repo: jest.Mocked<UserRepository>;
 
   beforeEach(() => {
-    const repoInstance = new QRLoginTokenRepository({} as any);
-    repo = repoInstance as jest.Mocked<QRLoginTokenRepository>;
-    service = new QRLoginTokenService(repo);
+    const repoInstance = new UserRepository({} as any);
+    repo = repoInstance as jest.Mocked<UserRepository>;
+    service = new UserService(repo);
   });
 
   afterEach(() => {

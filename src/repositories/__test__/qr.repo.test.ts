@@ -1,4 +1,4 @@
-import { QRLoginTokenRepository } from '@/repositories/qr.repository';
+import { UserRepository } from '@/repositories/user.repository';
 import { DBError } from '@/exception';
 import { Pool } from 'pg';
 
@@ -7,10 +7,10 @@ const mockPool: Partial<Pool> = {
 };
 
 describe('QRLoginTokenRepository', () => {
-  let repo: QRLoginTokenRepository;
+  let repo: UserRepository;
 
   beforeEach(() => {
-    repo = new QRLoginTokenRepository(mockPool as Pool);
+    repo = new UserRepository(mockPool as Pool);
   });
 
   afterEach(() => {
