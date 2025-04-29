@@ -9,7 +9,7 @@ export class QRLoginTokenRepository {
     async createQRLoginToken(token: string, userId: number, ip: string, userAgent: string): Promise<void> {
         try {
             const query = `
-                INSERT INTO qr_login_tokens (token, user_id, created_at, expires_at, is_used, ip_address, user_agent)
+                INSERT INTO users_qrlogintoken (token, user_id, created_at, expires_at, is_used, ip_address, user_agent)
                 VALUES ($1, $2, NOW(), NOW() + INTERVAL '5 minutes', false, $3, $4);
             `;
             await this.pool.query(query, [token, userId, ip, userAgent]);
@@ -23,7 +23,7 @@ export class QRLoginTokenRepository {
         try {
             const query = `
                 SELECT *
-                FROM qr_login_tokens
+                FROM users_qrlogintoken
                 WHERE token = $1 AND is_used = false AND expires_at > NOW();
             `;
             const result = await this.pool.query(query, [token]);
@@ -37,7 +37,7 @@ export class QRLoginTokenRepository {
     async markTokenUsed(token: string): Promise<void> {
         try {
           const query = `
-            UPDATE qr_login_tokens SET is_used = true WHERE token = $1;
+            UPDATE users_qrlogintoken SET is_used = true WHERE token = $1;
           `;
           await this.pool.query(query, [token]);
         } catch (error) {

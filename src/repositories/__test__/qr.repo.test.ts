@@ -66,7 +66,7 @@ describe('QRLoginTokenRepository', () => {
 
       await expect(repo.markTokenUsed('token')).resolves.not.toThrow();
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE qr_login_tokens SET is_used = true'),
+        expect.stringContaining('UPDATE users_qrlogintoken SET is_used = true'),
         ['token']
       );
     });
