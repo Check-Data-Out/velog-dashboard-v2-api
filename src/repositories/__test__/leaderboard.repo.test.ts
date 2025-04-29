@@ -1,6 +1,7 @@
 import { Pool, QueryResult } from 'pg';
 import { DBError } from '@/exception';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
+import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types';
 
 jest.mock('pg');
 
@@ -60,31 +61,19 @@ describe('LeaderboardRepository', () => {
       expect(result).toEqual(mockResult);
     });
 
-    it('sort가 viewCount인 경우 view_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
-      await repo.getUserLeaderboard('viewCount', 30, 10);
+    describe.each([
+      { sort: 'viewCount', field: 'view_diff' },
+      { sort: 'likeCount', field: 'like_diff' },
+      { sort: 'postCount', field: 'post_diff' },
+    ])('sort 파라미터에 따라 내림차순 정렬되어야 한다', ({ sort, field }) => {
+      it(`sort가 ${sort}인 경우 ${field} 필드를 기준으로 정렬해야 한다`, async () => {
+        await repo.getUserLeaderboard(sort as UserLeaderboardSortType, 30, 10);
 
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY view_diff DESC'),
-        expect.anything(),
-      );
-    });
-
-    it('sort가 likeCount인 경우 like_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
-      await repo.getUserLeaderboard('likeCount', 30, 10);
-
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY like_diff DESC'),
-        expect.anything(),
-      );
-    });
-
-    it('sort가 postCount인 경우 post_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
-      await repo.getUserLeaderboard('postCount', 30, 10);
-
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY post_diff DESC'),
-        expect.anything(),
-      );
+        expect(mockPool.query).toHaveBeenCalledWith(
+          expect.stringContaining(`ORDER BY ${field} DESC`),
+          expect.anything(),
+        );
+      });
     });
 
     it('limit 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
@@ -148,22 +137,18 @@ describe('LeaderboardRepository', () => {
       expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM posts_post p'), expect.anything());
     });
 
-    it('sort가 viewCount인 경우 view_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
-      await repo.getPostLeaderboard('viewCount', 30, 10);
+    describe.each([
+      { sort: 'viewCount', field: 'view_diff' },
+      { sort: 'likeCount', field: 'like_diff' },
+    ])('sort 파라미터에 따라 내림차순 정렬되어야 한다', ({ sort, field }) => {
+      it(`sort가 ${sort}인 경우 ${field} 필드를 기준으로 정렬해야 한다`, async () => {
+        await repo.getPostLeaderboard(sort as PostLeaderboardSortType, 30, 10);
 
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY view_diff DESC'),
-        expect.anything(),
-      );
-    });
-
-    it('sort가 likeCount인 경우 like_diff 필드를 기준으로 내림차순 정렬해야 한다', async () => {
-      await repo.getPostLeaderboard('likeCount', 30, 10);
-
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY like_diff DESC'),
-        expect.anything(),
-      );
+        expect(mockPool.query).toHaveBeenCalledWith(
+          expect.stringContaining(`ORDER BY ${field} DESC`),
+          expect.anything(),
+        );
+      });
     });
 
     it('limit 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
