@@ -125,8 +125,8 @@ export class UserService {
     return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
   }
 
-  public getDecryptedTokens(userId: number, accessToken: string, refreshToken: string) {  
-    return this.decryptTokens(userId, accessToken, refreshToken);  
+  public getDecryptedTokens(groupId: number, accessToken: string, refreshToken: string) {  
+    return this.decryptTokens(groupId, accessToken, refreshToken);  
   }
 
   async create(userId: number, ip: string, userAgent: string): Promise<string> {

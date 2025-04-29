@@ -2,6 +2,7 @@ import { UserService } from '@/services/user.service';
 import { UserRepository } from '@/repositories/user.repository';
 import { DBError } from '@/exception';
 import { QRLoginToken } from '@/types/models/QRLoginToken.type';
+import { Pool } from 'pg';
 
 jest.mock('@/repositories/user.repository');
 
@@ -10,7 +11,8 @@ describe('UserService', () => {
   let repo: jest.Mocked<UserRepository>;
 
   beforeEach(() => {
-    const repoInstance = new UserRepository({} as any);
+    const mockPool = {} as jest.Mocked<Pool>;
+    const repoInstance = new UserRepository(mockPool);
     repo = repoInstance as jest.Mocked<UserRepository>;
     service = new UserService(repo);
   });
