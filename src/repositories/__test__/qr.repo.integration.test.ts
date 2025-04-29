@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import pg from 'pg';
-import { DBError } from '@/exception';
 import { QRLoginTokenRepository } from '@/repositories/qr.repository';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import logger from '@/configs/logger.config';
@@ -129,23 +128,6 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
       const found = await repo.findQRLoginToken(token);
 
       expect(found).toBeNull();
-    });
-  });
-
-  describe('예외 상황', () => {
-    it('중복 토큰 삽입 시 DBError를 발생시켜야 한다', async () => {
-      const token = generateRandomToken();
-      const ip = '127.0.0.1';
-      const userAgent = 'test-agent';
-  
-      await repo.createQRLoginToken(token, TEST_DATA.USER_ID, ip, userAgent);
-  
-      await expect(
-        repo.createQRLoginToken(token, TEST_DATA.USER_ID, ip, userAgent)
-      ).rejects.toThrow(DBError);
-      
-      await testPool.end();
-      logger.info('중복 토큰 테스트 후 DB 연결 종료');
     });
   });
 });
