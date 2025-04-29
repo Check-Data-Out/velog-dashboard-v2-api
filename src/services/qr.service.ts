@@ -1,12 +1,12 @@
 import { QRLoginTokenRepository } from "@/repositories/qr.repository";
 import { QRLoginToken } from "@/types/models/QRLoginToken.type";
-import { randomUUID } from "crypto";
+import { generateRandomToken } from '@/utils/generateRandomToken.util';
 
 export class QRLoginTokenService {
     constructor(private qrRepo: QRLoginTokenRepository) {}
 
     async create(userId: number, ip: string, userAgent: string): Promise<string> {
-        const token = randomUUID();
+        const token = generateRandomToken(10);
         await this.qrRepo.createQRLoginToken(token, userId, ip, userAgent);
         return token;
     }

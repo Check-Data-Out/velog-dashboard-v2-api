@@ -24,11 +24,12 @@ describe('QRLoginTokenService', () => {
       const userId = 1;
       const ip = '127.0.0.1';
       const userAgent = 'Chrome';
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
+  
       const token = await service.create(userId, ip, userAgent);
-
-      expect(token).toMatch(uuidRegex);
+  
+      expect(typeof token).toBe('string');
+      expect(token.length).toBe(10);
+      expect(/^[A-Za-z0-9]{10}$/.test(token)).toBe(true);
       expect(repo.createQRLoginToken).toHaveBeenCalledWith(token, userId, ip, userAgent);
     });
 

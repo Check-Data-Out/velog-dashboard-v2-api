@@ -1,9 +1,9 @@
 import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
 
-type Token32 = string & { __lengthBrand: 32 };
+type Token10 = string & { __lengthBrand: 10 };
 
 export interface QRLoginTokenResponseData {
-  token: Token32;
+  token: Token10;
 }
 
 export class QRLoginTokenResponseDto extends BaseResponseDto<QRLoginTokenResponseData> {}

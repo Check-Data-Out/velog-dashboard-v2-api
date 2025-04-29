@@ -7,7 +7,7 @@ import { UserService } from '@/services/user.service';
 import { NotFoundError } from '@/exception';
 import { CookieOptions } from 'express';
 
-type Token32 = string & { __lengthBrand: 32 };
+type Token32 = string & { __lengthBrand: 10 };
 
 export class QRLoginController {
   constructor(
