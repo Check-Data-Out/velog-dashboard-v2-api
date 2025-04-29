@@ -4,6 +4,17 @@ import { DBError } from '@/exception';
 
 jest.mock('pg');
 
+// pg의 QueryResult 타입을 만족하는 mock 객체를 생성하기 위한 헬퍼 함수 생성
+function createMockQueryResult<T extends Record<string, unknown>>(rows: T[]): QueryResult<T> {
+  return {
+    rows,
+    rowCount: rows.length,
+    command: '',
+    oid: 0,
+    fields: [],
+  } satisfies QueryResult<T>;
+}
+
 const mockPool: {
   query: jest.Mock<Promise<QueryResult<Record<string, unknown>>>, unknown[]>;
 } = {
@@ -15,6 +26,7 @@ describe('PostRepository', () => {
 
   beforeEach(() => {
     repo = new PostRepository(mockPool as unknown as Pool);
+    jest.clearAllMocks();
   });
 
   describe('findPostsByUserId', () => {
@@ -24,13 +36,7 @@ describe('PostRepository', () => {
         { id: 2, post_released_at: '2025-03-02T00:00:00Z', daily_view_count: 20, daily_like_count: 15 },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockPosts,
-        rowCount: mockPosts.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
       const result = await repo.findPostsByUserId(1, undefined, 'released_at', false);
 
@@ -44,17 +50,27 @@ describe('PostRepository', () => {
         { id: 1, post_released_at: '2025-03-01T00:00:00Z', daily_view_count: 10, daily_like_count: 5 },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockPosts,
-        rowCount: mockPosts.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
       const result = await repo.findPostsByUserId(1, undefined, 'released_at', false);
       expect(result.posts).toEqual(mockPosts);
       expect(result.posts[0].id).toBeGreaterThan(result.posts[1].id);
+    });
+
+    it('쿼리에 is_active = TRUE 조건이 포함되어야 한다', async () => {
+      const mockPosts = [
+        { id: 1, post_released_at: '2025-03-01T00:00:00Z', daily_view_count: 10, daily_like_count: 5 },
+      ];
+
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
+
+      await repo.findPostsByUserId(1);
+
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("p.is_active = TRUE"),
+        expect.anything()
+      );
     });
   });
 
@@ -79,13 +95,7 @@ describe('PostRepository', () => {
         },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockPosts,
-        rowCount: mockPosts.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
       const result = await repo.findPostsByUserIdWithGrowthMetrics(1);
 
@@ -113,13 +123,7 @@ describe('PostRepository', () => {
         },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockPosts,
-        rowCount: mockPosts.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
       const result = await repo.findPostsByUserIdWithGrowthMetrics(1, undefined, false);
       expect(result.posts).toEqual(mockPosts);
@@ -137,13 +141,7 @@ describe('PostRepository', () => {
         },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockPosts,
-        rowCount: mockPosts.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
       const result = await repo.findPostsByUserIdWithGrowthMetrics(1, "10,2", false);
       expect(result.posts).toEqual(mockPosts);
@@ -157,20 +155,42 @@ describe('PostRepository', () => {
       mockPool.query.mockRejectedValue(new Error('DB connection failed'));
       await expect(repo.findPostsByUserIdWithGrowthMetrics(1)).rejects.toThrow(DBError);
     });
+
+    it('쿼리에 is_active = TRUE 조건이 포함되어야 한다', async () => {
+      const mockPosts = [
+        { id: 1, view_growth: 20, like_growth: 5 },
+      ];
+
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
+
+      await repo.findPostsByUserIdWithGrowthMetrics(1);
+
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("p.is_active = TRUE"),
+        expect.anything()
+      );
+    });
   });
 
   describe('getTotalPostCounts', () => {
     it('사용자의 총 게시글 수를 반환해야 한다', async () => {
-      mockPool.query.mockResolvedValue({
-        rows: [{ count: '10' }],
-        rowCount: 1,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult([{ count: '10' }]));
 
       const count = await repo.getTotalPostCounts(1);
       expect(count).toBe(10);
+    });
+
+    it('is_active = TRUE인 게시물만 카운트해야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([{ count: '5' }]));
+
+      await repo.getTotalPostCounts(1);
+
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("is_active = TRUE"),
+        expect.anything()
+      );
     });
   });
 
@@ -193,16 +213,22 @@ describe('PostRepository', () => {
         last_updated_date: '2025-03-08T00:00:00Z',
       };
 
-      mockPool.query.mockResolvedValue({
-        rows: [mockStats],
-        rowCount: 1,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult([mockStats]));
 
       const result = await repo.getYesterdayAndTodayViewLikeStats(1);
       expect(result).toEqual(mockStats);
+    });
+
+    it('is_active = TRUE인 게시물의 통계만 반환해야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([{ daily_view_count: 20, daily_like_count: 15 }]));
+
+      await repo.getYesterdayAndTodayViewLikeStats(1);
+
+      // 쿼리 호출 확인
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining("p.is_active = TRUE"),
+        expect.anything()
+      );
     });
   });
 
@@ -212,13 +238,7 @@ describe('PostRepository', () => {
         { date: '2025-03-08T00:00:00Z', daily_view_count: 50, daily_like_count: 30 },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockStats,
-        rowCount: mockStats.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockStats));
 
       const result = await repo.findPostByPostId(1);
       expect(result).toEqual(mockStats);
@@ -231,13 +251,7 @@ describe('PostRepository', () => {
         { date: '2025-03-08T00:00:00Z', daily_view_count: 50, daily_like_count: 30 },
       ];
 
-      mockPool.query.mockResolvedValue({
-        rows: mockStats,
-        rowCount: mockStats.length,
-        command: '',
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockStats));
 
       const result = await repo.findPostByPostUUID('uuid-1234', '2025-03-01', '2025-03-08');
       expect(result).toEqual(mockStats);
