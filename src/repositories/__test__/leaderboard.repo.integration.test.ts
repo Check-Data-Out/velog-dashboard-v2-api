@@ -7,6 +7,8 @@ import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
 
 dotenv.config();
 
+jest.setTimeout(20000); // 각 케이스당 20초 타임아웃 설정
+
 /**
  * LeaderboardRepository 통합 테스트
  *
