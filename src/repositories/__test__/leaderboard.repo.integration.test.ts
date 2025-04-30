@@ -72,14 +72,10 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
   afterAll(async () => {
     try {
-      // 모든 쿼리 완료 대기
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      jest.clearAllMocks();
 
       // 풀 완전 종료
-      if (testPool) {
-        // 강제 종료: 모든 활성 쿼리와 연결 중지
-        await testPool.end();
-      }
+      await testPool.end();
 
       logger.info('LeaderboardRepository 통합 테스트 DB 연결 종료');
     } catch (error) {

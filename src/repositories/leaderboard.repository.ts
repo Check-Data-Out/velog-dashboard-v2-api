@@ -52,8 +52,8 @@ export class LeaderboardRepository {
           p.released_at,
           COALESCE(ts.today_view, 0)::int AS total_views,
           COALESCE(ts.today_like, 0)::int AS total_likes,
-          COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0))::int AS view_diff,
-          COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0))::int AS like_diff
+          (COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0)))::int AS view_diff,
+          (COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0)))::int AS like_diff
         FROM posts_post p
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
