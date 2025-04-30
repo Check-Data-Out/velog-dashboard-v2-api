@@ -133,13 +133,13 @@ export class UserService {
     const token = generateRandomToken(10);
     await this.userRepo.createQRLoginToken(token, userId, ip, userAgent);
     return token;
-}
+  }
 
-async getByToken(token: string): Promise<QRLoginToken | null> {
+  async getByToken(token: string): Promise<QRLoginToken | null> {
     return await this.userRepo.findQRLoginToken(token);
-}
+  }
 
-async useToken(token: string): Promise<QRLoginToken | null> {
+  async useToken(token: string): Promise<QRLoginToken | null> {
     const qrToken = await this.userRepo.findQRLoginToken(token);
   
     if (!qrToken) {
