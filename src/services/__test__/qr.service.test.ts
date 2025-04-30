@@ -3,6 +3,13 @@ import { UserRepository } from '@/repositories/user.repository';
 import { DBError } from '@/exception';
 import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { Pool } from 'pg';
+import crypto from 'crypto';
+
+const validKey = crypto.randomBytes(32).toString('hex').slice(0, 32);
+
+jest.mock('@/utils/key.util', () => ({
+  getKeyByGroup: () => validKey,
+}));
 
 jest.mock('@/repositories/user.repository');
 
