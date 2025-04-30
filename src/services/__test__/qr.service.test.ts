@@ -11,6 +11,10 @@ jest.mock('@/utils/key.util', () => ({
   getKeyByGroup: () => validKey,
 }));
 
+jest.mock('@/modules/slack/slack.notifier', () => ({
+  sendSlackMessage: jest.fn(),
+}));
+
 jest.mock('@/repositories/user.repository');
 
 describe('UserService', () => {
