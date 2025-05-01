@@ -15,12 +15,12 @@ export class LeaderboardRepository {
         SELECT
           u.id AS id,
           u.email AS email,
-          COALESCE(SUM(ts.today_view), 0)::int AS total_views,
-          COALESCE(SUM(ts.today_like), 0)::int AS total_likes, 
-          COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END)::int AS total_posts,
-          SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0)))::int AS view_diff,
-          SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0)))::int AS like_diff,
-          COUNT(DISTINCT CASE WHEN p.released_at >= CURRENT_DATE - make_interval(days := $1::int) AND p.is_active = true THEN p.id END)::int AS post_diff
+          COALESCE(SUM(ts.today_view), 0) AS total_views,
+          COALESCE(SUM(ts.today_like), 0) AS total_likes, 
+          COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
+          SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0))) AS view_diff,
+          SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0))) AS like_diff,
+          COUNT(DISTINCT CASE WHEN p.released_at >= CURRENT_DATE - make_interval(days := $1::int) AND p.is_active = true THEN p.id END) AS post_diff
         FROM users_user u
         LEFT JOIN posts_post p ON p.user_id = u.id
         LEFT JOIN today_stats ts ON ts.post_id = p.id
@@ -50,10 +50,10 @@ export class LeaderboardRepository {
           p.title,
           p.slug,
           p.released_at,
-          COALESCE(ts.today_view, 0)::int AS total_views,
-          COALESCE(ts.today_like, 0)::int AS total_likes,
-          (COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0)))::int AS view_diff,
-          (COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0)))::int AS like_diff
+          COALESCE(ts.today_view, 0) AS total_views,
+          COALESCE(ts.today_like, 0) AS total_likes,
+          COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0)) AS view_diff,
+          COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0)) AS like_diff
         FROM posts_post p
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
