@@ -6,7 +6,7 @@ import { UserService } from '@/services/user.service';
 import { InvalidTokenError, TokenExpiredError } from '@/exception/token.exception';
 import { NotFoundError } from '@/exception';
 
-type Token32 = string & { __lengthBrand: 10 };
+type Token10 = string & { __lengthBrand: 10 };
 
 export class UserController {
   constructor(private userService: UserService) { }
@@ -116,11 +116,11 @@ export class UserController {
   ) => {
     try {
       const user = req.user;
-      const ip = req.ip ?? '';
+      const ip = typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip ?? '';
       const userAgent = req.headers['user-agent'] || '';
 
       const token = await this.userService.create(user.id, ip, userAgent);
-      const typedToken = token as Token32;
+      const typedToken = token as Token10;
 
       const response = new QRLoginTokenResponseDto(
         true,
@@ -130,7 +130,7 @@ export class UserController {
       );
       res.status(200).json(response);
     } catch (error) {
-      logger.error('QR 토큰 생성 실패:', error);
+      logger.error(`QR 토큰 생성 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
       next(error);
     }
   };
@@ -164,7 +164,7 @@ export class UserController {
 
       res.redirect('/main');
     } catch (error) {
-      logger.error('QR 토큰 로그인 처리 실패', error);
+      logger.error(`QR 토큰 로그인 처리 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
       next(error);
     }
   };

@@ -13,6 +13,8 @@ import { NotFoundError } from './exception';
 dotenv.config();
 
 const app: Application = express();
+// 실제 클라이언트 IP를 알기 위한 trust proxy 설정
+app.set('trust proxy', true);
 const swaggerSpec = swaggerJSDoc(options);
 
 app.use(cookieParser());
