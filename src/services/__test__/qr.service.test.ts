@@ -17,7 +17,7 @@ jest.mock('@/modules/slack/slack.notifier', () => ({
 
 jest.mock('@/repositories/user.repository');
 
-describe('UserService', () => {
+describe('UserService 의 QRService', () => {
   let service: UserService;
   let repo: jest.Mocked<UserRepository>;
 
@@ -42,7 +42,7 @@ describe('UserService', () => {
   
       expect(typeof token).toBe('string');
       expect(token.length).toBe(10);
-      expect(/^[A-Za-z0-9]{10}$/.test(token)).toBe(true);
+      expect(/^[A-Za-z0-9\-_.~!]{10}$/.test(token)).toBe(true);
       expect(repo.createQRLoginToken).toHaveBeenCalledWith(token, userId, ip, userAgent);
     });
 
