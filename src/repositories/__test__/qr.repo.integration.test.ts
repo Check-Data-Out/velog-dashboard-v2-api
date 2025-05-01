@@ -6,7 +6,7 @@ import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import logger from '@/configs/logger.config';
 
 dotenv.config();
-jest.setTimeout(30000);
+jest.setTimeout(5000);
 
 describe('QRLoginTokenRepository 통합 테스트', () => {
   let testPool: Pool;
@@ -44,12 +44,24 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
 
   afterAll(async () => {
     try {
+      await testPool.query(
+        `
+          DELETE FROM users_qrlogintoken
+          WHERE ip_address = '127.0.0.1'
+            AND user_agent = 'test-agent'
+            AND user_id = $1
+        `,
+        [TEST_DATA.USER_ID]
+      );
+  
       await new Promise(resolve => setTimeout(resolve, 1000));
+  
       if (testPool) {
         await testPool.end();
       }
+  
       await new Promise(resolve => setTimeout(resolve, 1000));
-      logger.info('테스트 DB 연결 종료');
+      logger.info('테스트 DB 연결 종료 및 테스트 데이터 정리 완료');
     } catch (error) {
       logger.error('테스트 종료 중 오류:', error);
     }
@@ -67,7 +79,9 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
       expect(foundToken).not.toBeNull();
       expect(foundToken?.token).toBe(token);
       expect(foundToken?.is_used).toBe(false);
-      expect(new Date(foundToken!.expires_at).getTime()).toBeGreaterThan(new Date(foundToken!.created_at).getTime());
+      if (foundToken) {  
+        expect(new Date(foundToken.expires_at).getTime()).toBeGreaterThan(new Date(foundToken.created_at).getTime());  
+      }
     });
 
     it('존재하지 않는 토큰 조회 시 null을 반환해야 한다', async () => {
