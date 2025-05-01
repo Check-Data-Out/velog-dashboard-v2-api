@@ -86,7 +86,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
   });
 
   describe('getUserLeaderboard', () => {
-    it('사용자 통계 배열로 이루어진 리더보드를 반환해야 하며, 통계 값은 음수가 아니어야 한다', async () => {
+    it('사용자 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
       const result = await repo.getUserLeaderboard(
         DEFAULT_PARAMS.USER_SORT,
         DEFAULT_PARAMS.DATE_RANGE,
