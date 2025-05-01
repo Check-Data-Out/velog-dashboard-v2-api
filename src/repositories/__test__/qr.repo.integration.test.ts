@@ -76,12 +76,13 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
       await repo.createQRLoginToken(token, TEST_DATA.USER_ID, ip, userAgent);
       const foundToken = await repo.findQRLoginToken(token);
 
+      // 토큰이 존재함을 확인하고 타입 단언
       expect(foundToken).not.toBeNull();
-      expect(foundToken?.token).toBe(token);
-      expect(foundToken?.is_used).toBe(false);
-      if (foundToken) {  
-        expect(new Date(foundToken.expires_at).getTime()).toBeGreaterThan(new Date(foundToken.created_at).getTime());  
-      }
+      const nonNullToken = foundToken as NonNullable<typeof foundToken>;
+      
+      expect(nonNullToken.token).toBe(token);
+      expect(nonNullToken.is_used).toBe(false);
+      expect(new Date(nonNullToken.expires_at).getTime()).toBeGreaterThan(new Date(nonNullToken.created_at).getTime());
     });
 
     it('존재하지 않는 토큰 조회 시 null을 반환해야 한다', async () => {
