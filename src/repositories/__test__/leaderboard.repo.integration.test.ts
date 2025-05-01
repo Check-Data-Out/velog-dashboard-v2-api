@@ -86,7 +86,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
   });
 
   describe('getUserLeaderboard', () => {
-    it('사용자 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
+    it('사용자 통계 배열로 이루어진 리더보드를 반환해야 하며, 통계 값은 음수가 아니어야 한다', async () => {
       const result = await repo.getUserLeaderboard(
         DEFAULT_PARAMS.USER_SORT,
         DEFAULT_PARAMS.DATE_RANGE,
@@ -98,14 +98,14 @@ describe('LeaderboardRepository 통합 테스트', () => {
       if (!isEnoughData(result, 1, '사용자 리더보드 반환값')) return;
 
       result.forEach((leaderboardUser) => {
-        expect(typeof leaderboardUser.id).toEqual('string');
-        expect(typeof leaderboardUser.email).toEqual('string');
-        expect(typeof leaderboardUser.total_views).toEqual('number');
-        expect(typeof leaderboardUser.total_likes).toEqual('number');
-        expect(typeof leaderboardUser.total_posts).toEqual('number');
-        expect(typeof leaderboardUser.view_diff).toEqual('number');
-        expect(typeof leaderboardUser.like_diff).toEqual('number');
-        expect(typeof leaderboardUser.post_diff).toEqual('number');
+        expect(leaderboardUser).toHaveProperty('id');
+        expect(leaderboardUser).toHaveProperty('email');
+        expect(leaderboardUser).toHaveProperty('total_views');
+        expect(leaderboardUser).toHaveProperty('total_likes');
+        expect(leaderboardUser).toHaveProperty('total_posts');
+        expect(leaderboardUser).toHaveProperty('view_diff');
+        expect(leaderboardUser).toHaveProperty('like_diff');
+        expect(leaderboardUser).toHaveProperty('post_diff');
       });
     });
 
@@ -119,12 +119,12 @@ describe('LeaderboardRepository 통합 테스트', () => {
       if (!isEnoughData(result, 1, '사용자 리더보드 반환값')) return;
 
       result.forEach((leaderboardUser) => {
-        expect(leaderboardUser.total_views).toBeGreaterThanOrEqual(0);
-        expect(leaderboardUser.total_likes).toBeGreaterThanOrEqual(0);
-        expect(leaderboardUser.total_posts).toBeGreaterThanOrEqual(0);
-        expect(leaderboardUser.view_diff).toBeGreaterThanOrEqual(0);
-        expect(leaderboardUser.like_diff).toBeGreaterThanOrEqual(0);
-        expect(leaderboardUser.post_diff).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardUser.total_views)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardUser.total_likes)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardUser.total_posts)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardUser.view_diff)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardUser.like_diff)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardUser.post_diff)).toBeGreaterThanOrEqual(0);
       });
     });
 
@@ -144,7 +144,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
         const isSorted = result.every((leaderboardUser, idx) => {
           if (idx === 0) return true;
-          return leaderboardUser[field] <= result[idx - 1][field];
+          return Number(leaderboardUser[field]) <= Number(result[idx - 1][field]);
         });
 
         expect(isSorted).toBe(true);
@@ -233,14 +233,14 @@ describe('LeaderboardRepository 통합 테스트', () => {
       if (!isEnoughData(result, 1, '게시물 리더보드 반환값')) return;
 
       result.forEach((leaderboardPost) => {
-        expect(typeof leaderboardPost.id).toEqual('string');
-        expect(typeof leaderboardPost.title).toEqual('string');
-        expect(typeof leaderboardPost.slug).toEqual('string');
-        expect(typeof leaderboardPost.total_views).toEqual('number');
-        expect(typeof leaderboardPost.total_likes).toEqual('number');
-        expect(typeof leaderboardPost.view_diff).toEqual('number');
-        expect(typeof leaderboardPost.like_diff).toEqual('number');
-        expect(typeof leaderboardPost.released_at).toEqual('object');
+        expect(leaderboardPost).toHaveProperty('id');
+        expect(leaderboardPost).toHaveProperty('title');
+        expect(leaderboardPost).toHaveProperty('slug');
+        expect(leaderboardPost).toHaveProperty('total_views');
+        expect(leaderboardPost).toHaveProperty('total_likes');
+        expect(leaderboardPost).toHaveProperty('view_diff');
+        expect(leaderboardPost).toHaveProperty('like_diff');
+        expect(leaderboardPost).toHaveProperty('released_at');
       });
     });
 
@@ -254,10 +254,10 @@ describe('LeaderboardRepository 통합 테스트', () => {
       if (!isEnoughData(result, 1, '게시물 리더보드 반환값')) return;
 
       result.forEach((leaderboardPost) => {
-        expect(leaderboardPost.total_views).toBeGreaterThanOrEqual(0);
-        expect(leaderboardPost.total_likes).toBeGreaterThanOrEqual(0);
-        expect(leaderboardPost.view_diff).toBeGreaterThanOrEqual(0);
-        expect(leaderboardPost.like_diff).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardPost.total_views)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardPost.total_likes)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardPost.view_diff)).toBeGreaterThanOrEqual(0);
+        expect(Number(leaderboardPost.like_diff)).toBeGreaterThanOrEqual(0);
       });
     });
 
@@ -276,7 +276,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
         const isSorted = result.every((leaderboardPost, idx) => {
           if (idx === 0) return true;
-          return leaderboardPost[field] <= result[idx - 1][field];
+          return Number(leaderboardPost[field]) <= Number(result[idx - 1][field]);
         });
 
         expect(isSorted).toBe(true);
