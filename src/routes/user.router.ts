@@ -131,7 +131,7 @@ router.post('/qr-login', authMiddleware.login, userController.createToken);
 
 /**
  * @swagger
- * /api/qr-login:
+ * /qr-login:
  *   get:
  *     summary: QR 로그인 토큰 조회 및 자동 로그인 처리
  *     tags: [QRLogin]
