@@ -135,10 +135,6 @@ export class UserService {
     return token;
   }
 
-  async getByToken(token: string): Promise<QRLoginToken | null> {
-    return await this.userRepo.findQRLoginToken(token);
-  }
-
   async useToken(token: string): Promise<QRLoginToken | null> {
     const qrToken = await this.userRepo.findQRLoginToken(token);
   
