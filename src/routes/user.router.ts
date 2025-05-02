@@ -117,7 +117,7 @@ router.get('/me', authMiddleware.login, userController.fetchCurrentUser);
 
 /**
  * @swagger
- * /api/qr-login:
+ * /qr-login:
  *   post:
  *     summary: QR 로그인 토큰 생성
  *     tags: [QRLogin]
