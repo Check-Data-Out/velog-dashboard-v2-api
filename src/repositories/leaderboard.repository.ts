@@ -27,7 +27,7 @@ export class LeaderboardRepository {
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE u.email IS NOT NULL
         GROUP BY u.id, u.email
-        ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC
+        ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, u.id
         LIMIT $2;
       `;
       const result = await this.pool.query(query, [dateRange, limit]);
@@ -58,7 +58,7 @@ export class LeaderboardRepository {
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE p.is_active = true
-        ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC
+        ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, p.id
         LIMIT $2;
       `;
       const result = await this.pool.query(query, [dateRange, limit]);

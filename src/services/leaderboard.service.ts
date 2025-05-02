@@ -42,12 +42,12 @@ export class LeaderboardService {
     const users = rawResult.map((user) => ({
       id: user.id,
       email: user.email,
-      totalViews: user.total_views,
-      totalLikes: user.total_likes,
-      totalPosts: user.total_posts,
-      viewDiff: user.view_diff,
-      likeDiff: user.like_diff,
-      postDiff: user.post_diff,
+      totalViews: Number(user.total_views),
+      totalLikes: Number(user.total_likes),
+      totalPosts: Number(user.total_posts),
+      viewDiff: Number(user.view_diff),
+      likeDiff: Number(user.like_diff),
+      postDiff: Number(user.post_diff),
     }));
 
     return { users };
@@ -58,10 +58,10 @@ export class LeaderboardService {
       id: post.id,
       title: post.title,
       slug: post.slug,
-      totalViews: post.total_views,
-      totalLikes: post.total_likes,
-      viewDiff: post.view_diff,
-      likeDiff: post.like_diff,
+      totalViews: Number(post.total_views),
+      totalLikes: Number(post.total_likes),
+      viewDiff: Number(post.view_diff),
+      likeDiff: Number(post.like_diff),
       releasedAt: post.released_at,
     }));
 
@@ -73,20 +73,20 @@ interface RawPostResult {
   id: string;
   title: string;
   slug: string;
-  total_views: number;
-  total_likes: number;
-  view_diff: number;
-  like_diff: number;
+  total_views: string;
+  total_likes: string;
+  view_diff: string;
+  like_diff: string;
   released_at: string;
 }
 
 interface RawUserResult {
   id: string;
   email: string;
-  total_views: number;
-  total_likes: number;
-  total_posts: number;
-  view_diff: number;
-  like_diff: number;
-  post_diff: number;
+  total_views: string;
+  total_likes: string;
+  total_posts: string;
+  view_diff: string;
+  like_diff: string;
+  post_diff: string;
 }
