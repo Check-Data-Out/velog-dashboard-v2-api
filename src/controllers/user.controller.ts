@@ -4,7 +4,6 @@ import { EmptyResponseDto, LoginResponseDto, UserWithTokenDto } from '@/types';
 import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { InvalidTokenError, TokenExpiredError } from '@/exception/token.exception';
-import { NotFoundError } from '@/exception';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -147,7 +146,7 @@ export class UserController {
         throw new TokenExpiredError();
       }
       
-      const { user, decryptedAccessToken, decryptedRefreshToken } = 
+      const { decryptedAccessToken, decryptedRefreshToken } = 
         await this.userService.findUserAndTokensByVelogUUID(found.user.toString());
 
       res.clearCookie('access_token', this.cookieOption());
