@@ -53,7 +53,7 @@ export class UserService {
   async handleUserTokensByVelogUUID(userData: UserWithTokenDto) {
     const { id, email, accessToken, refreshToken } = userData;
     try {
-      let user = await this.findByVelogUUID(id);
+      let user = await this.userRepo.findByUserVelogUUID(id);
 
       if (!user) {
         user = await this.createUser({
@@ -80,10 +80,6 @@ export class UserService {
       logger.error('User Service handleUserTokensByVelogUUID 중 오류 발생 : ', error);
       throw error;
     }
-  }
-
-  async findByVelogUUID(uuid: string): Promise<User | null> {
-    return await this.userRepo.findByUserVelogUUID(uuid);
   }
 
   async findSampleUser(): Promise<SampleUser> {
@@ -125,8 +121,19 @@ export class UserService {
     return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
   }
 
-  public getDecryptedTokens(groupId: number, accessToken: string, refreshToken: string) {  
-    return this.decryptTokens(groupId, accessToken, refreshToken);  
+  async findUserAndTokensByVelogUUID(uuid: string): Promise<{ user: User; decryptedAccessToken: string; decryptedRefreshToken: string }> {
+    const user = await this.userRepo.findByUserVelogUUID(uuid);
+    if (!user) {
+      throw new NotFoundError('유저를 찾을 수 없습니다.');
+    }
+  
+    const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
+      user.group_id,
+      user.access_token,
+      user.refresh_token,
+    );
+  
+    return { user, decryptedAccessToken, decryptedRefreshToken };
   }
 
   async create(userId: number, ip: string, userAgent: string): Promise<string> {

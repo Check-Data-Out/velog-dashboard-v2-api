@@ -146,15 +146,9 @@ export class UserController {
       if (!found) {
         throw new TokenExpiredError();
       }
-
-      const user = await this.userService.findByVelogUUID(found.user.toString());
-      if (!user) throw new NotFoundError('유저를 찾을 수 없습니다.');
-
-      const { decryptedAccessToken, decryptedRefreshToken } = this.userService.getDecryptedTokens(  
-        user.group_id,  
-        user.access_token,  
-        user.refresh_token  
-      );
+      
+      const { user, decryptedAccessToken, decryptedRefreshToken } = 
+        await this.userService.findUserAndTokensByVelogUUID(found.user.toString());
 
       res.clearCookie('access_token', this.cookieOption());
       res.clearCookie('refresh_token', this.cookieOption());
