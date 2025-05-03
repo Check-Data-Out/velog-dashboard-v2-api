@@ -14,4 +14,5 @@ router.use('/', UserRouter);
 router.use('/', PostRouter);
 router.use('/', NotiRouter);
 router.use('/', LeaderboardRouter);
+
 export default router;

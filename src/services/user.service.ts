@@ -6,6 +6,8 @@ import { sendSlackMessage } from '@/modules/slack/slack.notifier';
 import { UserRepository } from '@/repositories/user.repository';
 import { UserWithTokenDto, User, SampleUser } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
+import { QRLoginToken } from "@/types/models/QRLoginToken.type";
+import { generateRandomToken } from '@/utils/generateRandomToken.util';
 
 export class UserService {
   constructor(private userRepo: UserRepository) { }
@@ -51,7 +53,7 @@ export class UserService {
   async handleUserTokensByVelogUUID(userData: UserWithTokenDto) {
     const { id, email, accessToken, refreshToken } = userData;
     try {
-      let user = await this.findByVelogUUID(id);
+      let user = await this.userRepo.findByUserVelogUUID(id);
 
       if (!user) {
         user = await this.createUser({
@@ -78,10 +80,6 @@ export class UserService {
       logger.error('User Service handleUserTokensByVelogUUID 중 오류 발생 : ', error);
       throw error;
     }
-  }
-
-  async findByVelogUUID(uuid: string): Promise<User | null> {
-    return await this.userRepo.findByUserVelogUUID(uuid);
   }
 
   async findSampleUser(): Promise<SampleUser> {
@@ -121,5 +119,37 @@ export class UserService {
 
   async updateUserTokens(userData: UserWithTokenDto) {
     return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
+  }
+
+  async findUserAndTokensByVelogUUID(uuid: string): Promise<{ user: User; decryptedAccessToken: string; decryptedRefreshToken: string }> {
+    const user = await this.userRepo.findByUserVelogUUID(uuid);
+    if (!user) {
+      throw new NotFoundError('유저를 찾을 수 없습니다.');
+    }
+  
+    const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
+      user.group_id,
+      user.access_token,
+      user.refresh_token,
+    );
+  
+    return { user, decryptedAccessToken, decryptedRefreshToken };
+  }
+
+  async create(userId: number, ip: string, userAgent: string): Promise<string> {
+    const token = generateRandomToken(10);
+    await this.userRepo.createQRLoginToken(token, userId, ip, userAgent);
+    return token;
+  }
+
+  async useToken(token: string): Promise<QRLoginToken | null> {
+    const qrToken = await this.userRepo.findQRLoginToken(token);
+  
+    if (!qrToken) {
+      return null;
+    }
+  
+    await this.userRepo.markTokenUsed(token);
+    return qrToken;
   }
 }
