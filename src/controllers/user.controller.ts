@@ -99,13 +99,15 @@ export class UserController {
     res.status(200).json(response);
   };
 
-  fetchCurrentUser: RequestHandler = (req: Request, res: Response<LoginResponseDto>) => {
-    const { user } = req;
+  fetchCurrentUser: RequestHandler = async (req: Request, res: Response<LoginResponseDto>) => {
+    // 외부 API (velog) 호출로 username 을 가져와야 함, 게시글 바로가기 때문에 (username)
+    const { accessToken, refreshToken } = req.tokens;
+    const velogUser = await fetchVelogApi(accessToken, refreshToken);
 
     const response = new LoginResponseDto(
       true,
       '유저 정보 조회에 성공하였습니다.',
-      { id: user.id, username: user.username, profile: user.profile },
+      { id: req.user.id, username: velogUser.username, profile: velogUser.profile },
       null,
     );
 
