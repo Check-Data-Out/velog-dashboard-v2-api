@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { isUUID } from 'class-validator';
 import logger from '@/configs/logger.config';
 import pool from '@/configs/db.config';
-import { InvalidTokenError } from '@/exception';
+import { DBError, InvalidTokenError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 
 /**
@@ -52,9 +52,10 @@ const verifyBearerTokens = () => {
       }
 
       const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id])).rows[0] as User;
+      if (!user) throw new DBError('사용자를 찾을 수 없습니다.');
+
       req.user = user;
       req.tokens = { accessToken, refreshToken };
-
       next();
     } catch (error) {
       logger.error('인증 처리중 오류가 발생하였습니다. : ', error);

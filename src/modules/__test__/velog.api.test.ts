@@ -41,6 +41,7 @@ describe('Velog API', () => {
       mockedAxios.post.mockResolvedValueOnce(mockResponse);
 
       const result = await fetchVelogApi(mockAccessToken, mockRefreshToken);
+      const query = VELOG_QUERIES.LOGIN;
 
       // 결과 검증
       expect(result).toEqual({
@@ -56,7 +57,7 @@ describe('Velog API', () => {
       expect(mockedAxios.post).toHaveBeenCalledTimes(1);
       expect(mockedAxios.post).toHaveBeenCalledWith(
         VELOG_API_URL,
-        { VELOG_QUERIES, variables: {} },
+        { query, variables: {} },
         {
           headers: {
             authority: 'v3.velog.io',

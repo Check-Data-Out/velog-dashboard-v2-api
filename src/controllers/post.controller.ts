@@ -90,7 +90,6 @@ export class PostController {
   ) => {
     try {
       const postId = req.params.postId;
-
       const post = await this.postService.getPostByPostUUID(postId);
 
       const response = new PostResponseDto(true, 'uuid로 post 조회에 성공하였습니다.', { post }, null);

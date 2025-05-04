@@ -3,7 +3,7 @@ import axios from 'axios';
 import logger from '@/configs/logger.config';
 import { InvalidTokenError } from '@/exception';
 import { VELOG_API_URL, VELOG_QUERIES } from '@/modules/velog/velog.constans';
-import { VelogUserCurrentResponse } from './velog.type';
+import { VelogUserCurrentResponse } from '@/types';
 
 /**
  * Velog API를 통해 사용자 정보를 조회합니다.
@@ -14,9 +14,10 @@ import { VelogUserCurrentResponse } from './velog.type';
  */
 export const fetchVelogApi = async (accessToken: string, refreshToken: string): Promise<VelogUserCurrentResponse> => {
   try {
+    const query = VELOG_QUERIES.LOGIN;
     const response = await axios.post(
       VELOG_API_URL,
-      { VELOG_QUERIES, variables: {} },
+      { query, variables: {} },
       {
         headers: {
           authority: 'v3.velog.io',
