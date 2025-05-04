@@ -1,5 +1,6 @@
 import pool from '@/configs/db.config';
 import express, { Router } from 'express';
+import { authMiddleware } from '@/middlewares/auth.middleware';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { LeaderboardService } from '@/services/leaderboard.service';
 import { LeaderboardController } from '@/controllers/leaderboard.controller';
@@ -44,6 +45,7 @@ const leaderboardController = new LeaderboardController(leaderboardService);
  */
 router.get(
   '/leaderboard/user',
+  authMiddleware.verify,
   validateRequestDto(GetUserLeaderboardQueryDto, 'query'),
   leaderboardController.getUserLeaderboard,
 );
@@ -80,6 +82,7 @@ router.get(
  */
 router.get(
   '/leaderboard/post',
+  authMiddleware.verify,
   validateRequestDto(GetPostLeaderboardQueryDto, 'query'),
   leaderboardController.getPostLeaderboard,
 );

@@ -1,9 +1,10 @@
 export interface QRLoginToken {
+    id: number;
     token: string;
-    user: number;
+    user_id: number;
     is_used: boolean;
     ip_address: string;
     user_agent: string;
-    created_at: Date;
     expires_at: Date;
+    created_at: Date;
 }
