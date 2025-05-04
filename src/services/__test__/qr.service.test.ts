@@ -61,7 +61,7 @@ describe('UserService 의 QRService', () => {
     });
     
     it('유저 조회 실패 시 예외 발생', async () => {
-      repo.findByUserVelogUUID.mockResolvedValueOnce(null as any);
+      repo.findByUserVelogUUID.mockResolvedValueOnce(null as unknown as typeof mockUser);
       
       await expect(service.create(velogUUID, ip, userAgent)).rejects.toThrow('QR 토큰 생성 실패: 유저 없음');
     });
@@ -70,7 +70,7 @@ describe('UserService 의 QRService', () => {
       repo.findByUserVelogUUID.mockResolvedValueOnce(mockUser);
       repo.createQRLoginToken.mockRejectedValueOnce(new DBError('생성 실패'));
 
-      await expect(service.create('uuid-1234', 'ip', 'agent')).rejects.toThrow('생성 실패');
+      await expect(service.create(velogUUID, ip, userAgent)).rejects.toThrow('생성 실패');
     });
   });
 
