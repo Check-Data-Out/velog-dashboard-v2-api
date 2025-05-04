@@ -136,9 +136,14 @@ export class UserService {
     return { user, decryptedAccessToken, decryptedRefreshToken };
   }
 
-  async create(userId: number, ip: string, userAgent: string): Promise<string> {
+  async create(velogUUID: string, ip: string, userAgent: string): Promise<string> {
+    const user = await this.userRepo.findByUserVelogUUID(velogUUID);
+    if (!user) {
+      throw new NotFoundError('QR 토큰 생성 실패: 유저 없음');
+    }
+
     const token = generateRandomToken(10);
-    await this.userRepo.createQRLoginToken(token, userId, ip, userAgent);
+    await this.userRepo.createQRLoginToken(token, user.id, ip, userAgent);
     return token;
   }
 

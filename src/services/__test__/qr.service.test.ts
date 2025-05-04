@@ -33,23 +33,44 @@ describe('UserService 의 QRService', () => {
   });
 
   describe('create', () => {
+    const velogUUID = 'uuid-1234';
+    const ip = '127.0.0.1';
+    const userAgent = 'Chrome';
+    
+    const mockUser = {
+      id: 1,
+      velog_uuid: velogUUID,
+      access_token: 'token',
+      refresh_token: 'token',
+      group_id: 1,
+      email: 'test@example.com',
+      is_active: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
     it('QR 토큰을 생성하고 반환해야 한다', async () => {
-      const userId = 1;
-      const ip = '127.0.0.1';
-      const userAgent = 'Chrome';
-  
-      const token = await service.create(userId, ip, userAgent);
-  
+      repo.findByUserVelogUUID.mockResolvedValueOnce(mockUser);
+      
+      const token = await service.create(velogUUID, ip, userAgent);
+      
       expect(typeof token).toBe('string');
       expect(token.length).toBe(10);
       expect(/^[A-Za-z0-9\-_.~!]{10}$/.test(token)).toBe(true);
-      expect(repo.createQRLoginToken).toHaveBeenCalledWith(token, userId, ip, userAgent);
+      expect(repo.createQRLoginToken).toHaveBeenCalledWith(token, mockUser.id, ip, userAgent);
+    });
+    
+    it('유저 조회 실패 시 예외 발생', async () => {
+      repo.findByUserVelogUUID.mockResolvedValueOnce(null as any);
+      
+      await expect(service.create(velogUUID, ip, userAgent)).rejects.toThrow('QR 토큰 생성 실패: 유저 없음');
     });
 
     it('QR 토큰 생성 중 오류 발생 시 예외 발생', async () => {
+      repo.findByUserVelogUUID.mockResolvedValueOnce(mockUser);
       repo.createQRLoginToken.mockRejectedValueOnce(new DBError('생성 실패'));
 
-      await expect(service.create(1, 'ip', 'agent')).rejects.toThrow('생성 실패');
+      await expect(service.create('uuid-1234', 'ip', 'agent')).rejects.toThrow('생성 실패');
     });
   });
 

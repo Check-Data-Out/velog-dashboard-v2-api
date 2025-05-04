@@ -118,7 +118,7 @@ export class UserController {
       const ip = typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip ?? '';
       const userAgent = req.headers['user-agent'] || '';
 
-      const token = await this.userService.create(user.id, ip, userAgent);
+      const token = await this.userService.create(user.velog_uuid, ip, userAgent);
       const typedToken = token as Token10;
 
       const response = new QRLoginTokenResponseDto(
@@ -147,7 +147,7 @@ export class UserController {
       }
       
       const { decryptedAccessToken, decryptedRefreshToken } = 
-        await this.userService.findUserAndTokensByVelogUUID(found.user.toString());
+        await this.userService.findUserAndTokensByVelogUUID(String(found.user));
 
       res.clearCookie('access_token', this.cookieOption());
       res.clearCookie('refresh_token', this.cookieOption());
