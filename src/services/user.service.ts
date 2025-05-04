@@ -139,7 +139,11 @@ export class UserService {
     }
 
     // 2. 찾은 토큰을 기반으로 사용자를 다시 찾는다. (토큰 획득 및 사용자의 QR토큰 모두 비활성화)
-    const qrTokenUser = await this.userRepo.findByUserId(qrToken.user_id)
+    const qrTokenUser = await this.userRepo.findByUserId(qrToken.user_id);
+    if (!qrTokenUser) {
+      return null;
+    }
+
     await this.userRepo.updateQRLoginTokenToUse(qrToken.user_id);
     const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
       qrTokenUser.group_id,

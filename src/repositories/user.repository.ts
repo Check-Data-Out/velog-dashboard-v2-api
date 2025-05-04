@@ -10,7 +10,6 @@ export class UserRepository {
   async findByUserId(id: number): Promise<User> {
     try {
       const user = await this.pool.query('SELECT * FROM "users_user" WHERE id = $1', [id]);
-
       return user.rows[0] || null;
     } catch (error) {
       logger.error('Id로 유저를 조회 중 오류 : ', error);
@@ -21,7 +20,6 @@ export class UserRepository {
   async findByUserVelogUUID(uuid: string): Promise<User> {
     try {
       const user = await this.pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [uuid]);
-
       return user.rows[0] || null;
     } catch (error) {
       logger.error('Velog UUID로 유저를 조회 중 오류 : ', error);
