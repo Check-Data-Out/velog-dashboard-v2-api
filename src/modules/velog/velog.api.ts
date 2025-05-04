@@ -46,6 +46,11 @@ export const fetchVelogApi = async (accessToken: string, refreshToken: string): 
       email: currentUser.email ?? null
     };
   } catch (error) {
+    // 이미 InvalidTokenError인 경우 그대로 다시 던지기
+    if (error instanceof InvalidTokenError) {
+      throw error;
+    }
+
     logger.error('Velog API 호출 중 오류 : ', error);
     throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
   }
