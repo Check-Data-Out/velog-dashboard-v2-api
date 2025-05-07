@@ -8,7 +8,7 @@ import logger from '@/configs/logger.config';
 dotenv.config();
 jest.setTimeout(5000);
 
-describe('QRLoginTokenRepository 통합 테스트', () => {
+describe('UserRepository QR 토큰 통합 테스트', () => {
   let testPool: Pool;
   let repo: UserRepository;
 
@@ -53,13 +53,13 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
         `,
         [TEST_DATA.USER_ID]
       );
-  
+
       await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
       if (testPool) {
         await testPool.end();
       }
-  
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       logger.info('테스트 DB 연결 종료 및 테스트 데이터 정리 완료');
     } catch (error) {
@@ -79,9 +79,12 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
       // 토큰이 존재함을 확인하고 타입 단언
       expect(foundToken).not.toBeNull();
       const nonNullToken = foundToken as NonNullable<typeof foundToken>;
-      
+
       expect(nonNullToken.token).toBe(token);
+      expect(Number(nonNullToken.user_id)).toBe(TEST_DATA.USER_ID);
       expect(nonNullToken.is_used).toBe(false);
+      expect(nonNullToken.ip_address).toBe(ip);
+      expect(nonNullToken.user_agent).toBe(userAgent);
       expect(new Date(nonNullToken.expires_at).getTime()).toBeGreaterThan(new Date(nonNullToken.created_at).getTime());
     });
 
@@ -100,11 +103,16 @@ describe('QRLoginTokenRepository 통합 테스트', () => {
       const userAgent = 'test-agent';
 
       await repo.createQRLoginToken(token, TEST_DATA.USER_ID, ip, userAgent);
-      await repo.markTokenUsed(token);
 
-      const found = await repo.findQRLoginToken(token);
+      // 토큰 조회 후 user_id를 얻어 updateQRLoginTokenToUse 호출
+      const foundToken = await repo.findQRLoginToken(token);
+      expect(foundToken).not.toBeNull();
 
-      expect(found).toBeNull();
+      await repo.updateQRLoginTokenToUse(TEST_DATA.USER_ID);
+
+      // 토큰이 is_used=true로 변경되었으므로 findQRLoginToken에서 null 반환 예상
+      const afterUpdate = await repo.findQRLoginToken(token);
+      expect(afterUpdate).toBeNull();
     });
   });
 

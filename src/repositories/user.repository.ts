@@ -7,10 +7,19 @@ import { DBError } from '@/exception';
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
+  async findByUserId(id: number): Promise<User> {
+    try {
+      const user = await this.pool.query('SELECT * FROM "users_user" WHERE id = $1', [id]);
+      return user.rows[0] || null;
+    } catch (error) {
+      logger.error('Id로 유저를 조회 중 오류 : ', error);
+      throw new DBError('유저 조회 중 문제가 발생했습니다.');
+    }
+  }
+
   async findByUserVelogUUID(uuid: string): Promise<User> {
     try {
       const user = await this.pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [uuid]);
-
       return user.rows[0] || null;
     } catch (error) {
       logger.error('Velog UUID로 유저를 조회 중 오류 : ', error);
@@ -57,7 +66,7 @@ export class UserRepository {
 
   async createUser(
     uuid: string,
-    email: string | undefined,
+    email: string | null,
     encryptedAccessToken: string,
     encryptedRefreshToken: string,
     groupId: number,
@@ -121,12 +130,12 @@ export class UserRepository {
     }
   }
 
-  async markTokenUsed(token: string): Promise<void> {
+  async updateQRLoginTokenToUse(user_id: number): Promise<void> {
     try {
       const query = `
-        UPDATE users_qrlogintoken SET is_used = true WHERE token = $1;
+        UPDATE users_qrlogintoken SET is_used = true WHERE user_id = $1;
       `;
-      await this.pool.query(query, [token]);
+      await this.pool.query(query, [user_id]);
     } catch (error) {
       logger.error('QRLoginToken Repo mark as used Error : ', error);
       throw new DBError('QR 코드 사용 처리 중 문제가 발생했습니다.');

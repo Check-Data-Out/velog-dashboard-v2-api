@@ -39,6 +39,6 @@ const notiController = new NotiController(notiService);
  *       500:
  *         description: 서버 에러
  */
-router.get('/notis', authMiddleware.login, notiController.getAllNotiPosts);
+router.get('/notis', authMiddleware.verify, notiController.getAllNotiPosts);
 
 export default router;

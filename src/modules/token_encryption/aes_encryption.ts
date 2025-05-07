@@ -1,10 +1,15 @@
 import crypto from 'crypto';
 
+export interface TokenEncryptionService {
+  encrypt(plaintext: string): string;
+  decrypt(encryptedData: string): string;
+}
+
 /**
  * AES 암호화/복호화 유틸리티 클래스
  * AES-256-CBC 알고리즘을 사용하여 데이터를 암호화하고 복호화합니다.
  */
-class AESEncryption {
+class AESEncryption implements TokenEncryptionService {
   private readonly key: Buffer;
 
   /**

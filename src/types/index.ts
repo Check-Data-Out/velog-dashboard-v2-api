@@ -2,10 +2,11 @@ export type { User, SampleUser } from '@/types/models/User.type';
 export type { Post } from '@/types/models/Post.type';
 export type { PostDailyStatistics } from '@/types/models/PostDailyStatistics.type';
 export type { PostStatistics } from '@/types/models/PostStatistics.type';
-export type { VelogUserLoginResponse } from '@/types/velog.type';
+export type { VelogJWTPayload, VelogUserCurrentResponse } from '@/modules/velog/velog.type';
 export type { GetAllPostsQuery } from '@/types/dto/requests/getAllPostsQuery.type';
 export type { GetPostQuery, PostParam } from '@/types/dto/requests/getPostQuery.type';
 
+export { LoginRequestDto } from '@/types/dto/requests/loginRequest.type';
 export { GetAllPostsQueryDto } from '@/types/dto/requests/getAllPostsQuery.type';
 export { GetPostQueryDto } from '@/types/dto/requests/getPostQuery.type';
 export {

@@ -6,8 +6,8 @@ import { sendSlackMessage } from '@/modules/slack/slack.notifier';
 import { UserRepository } from '@/repositories/user.repository';
 import { UserWithTokenDto, User, SampleUser } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
-import { QRLoginToken } from "@/types/models/QRLoginToken.type";
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
+import { VelogUserCurrentResponse } from '@/modules/velog/velog.type';
 
 export class UserService {
   constructor(private userRepo: UserRepository) { }
@@ -50,20 +50,24 @@ export class UserService {
     }
   }
 
-  async handleUserTokensByVelogUUID(userData: UserWithTokenDto) {
-    const { id, email, accessToken, refreshToken } = userData;
+  async handleUserTokensByVelogUUID(userData: VelogUserCurrentResponse, accessToken: string, refreshToken: string): Promise<User> {
+    // velog response 에서 주는 응답 혼용 방지를 위한 변경 id -> uuid
+    const { id: uuid, email = null } = userData;
     try {
-      let user = await this.userRepo.findByUserVelogUUID(id);
+      let user = await this.userRepo.findByUserVelogUUID(uuid);
 
+      // 신규 유저라면 암호화가 안된 token 으로 사용자를 우선 바로 생성
       if (!user) {
         user = await this.createUser({
-          id,
-          email,  // undefined도 그대로 전달
+          uuid,
+          email,
           accessToken,
           refreshToken,
         });
       }
 
+      // 이제 부터는 모든 유저는 기유저로 판단, 로그인 할때마다 토큰을 업데이트 해줌
+      // 대신 토큰은 무조건 암호화 된 상태로만 저장되게 업데이트 로직
       const { encryptedAccessToken, encryptedRefreshToken } = this.encryptTokens(
         user.group_id,
         accessToken,
@@ -71,7 +75,7 @@ export class UserService {
       );
 
       return await this.updateUserTokens({
-        id,
+        uuid,
         email,
         accessToken: encryptedAccessToken,
         refreshToken: encryptedRefreshToken,
@@ -100,7 +104,7 @@ export class UserService {
   async createUser(userData: UserWithTokenDto) {
     const groupId = generateRandomGroupId();
     const newUser = await this.userRepo.createUser(
-      userData.id,
+      userData.uuid,
       userData.email,
       userData.accessToken,
       userData.refreshToken,
@@ -109,7 +113,7 @@ export class UserService {
 
     // 신규 유저 웹훅 알림
     try {
-      await sendSlackMessage(`새로운 유저 등록: ${userData.id}${userData.email ? `, ${userData.email}` : ''}`);
+      await sendSlackMessage(`새로운 유저 등록: ${userData.uuid}${userData.email ? `, ${userData.email}` : ''}`);
     } catch (error) {
       // Slack 알림 실패는 사용자 생성에 영향을 주지 않도록
       logger.error('Slack 알림 전송 실패:', error);
@@ -118,38 +122,34 @@ export class UserService {
   }
 
   async updateUserTokens(userData: UserWithTokenDto) {
-    return await this.userRepo.updateTokens(userData.id, userData.accessToken, userData.refreshToken);
+    return await this.userRepo.updateTokens(userData.uuid, userData.accessToken, userData.refreshToken);
   }
 
-  async findUserAndTokensByVelogUUID(uuid: string): Promise<{ user: User; decryptedAccessToken: string; decryptedRefreshToken: string }> {
-    const user = await this.userRepo.findByUserVelogUUID(uuid);
-    if (!user) {
-      throw new NotFoundError('유저를 찾을 수 없습니다.');
-    }
-  
-    const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
-      user.group_id,
-      user.access_token,
-      user.refresh_token,
-    );
-  
-    return { user, decryptedAccessToken, decryptedRefreshToken };
-  }
-
-  async create(userId: number, ip: string, userAgent: string): Promise<string> {
+  async createUserQRToken(userId: number, ip: string, userAgent: string): Promise<string> {
     const token = generateRandomToken(10);
     await this.userRepo.createQRLoginToken(token, userId, ip, userAgent);
     return token;
   }
 
-  async useToken(token: string): Promise<QRLoginToken | null> {
+  async useToken(token: string): Promise<{ decryptedAccessToken: string; decryptedRefreshToken: string } | null> {
+    // 1. 사용자의 토큰을 찾는다.
     const qrToken = await this.userRepo.findQRLoginToken(token);
-  
     if (!qrToken) {
       return null;
     }
-  
-    await this.userRepo.markTokenUsed(token);
-    return qrToken;
+
+    // 2. 찾은 토큰을 기반으로 사용자를 다시 찾는다. (토큰 획득 및 사용자의 QR토큰 모두 비활성화)
+    const qrTokenUser = await this.userRepo.findByUserId(qrToken.user_id);
+    if (!qrTokenUser) {
+      return null;
+    }
+
+    await this.userRepo.updateQRLoginTokenToUse(qrToken.user_id);
+    const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
+      qrTokenUser.group_id,
+      qrTokenUser.access_token,
+      qrTokenUser.refresh_token,
+    );
+    return { decryptedAccessToken, decryptedRefreshToken };
   }
 }
