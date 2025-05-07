@@ -147,7 +147,7 @@ describe('인증 미들웨어', () => {
       );
     });
 
-    it('사용자를 찾을 수 없으면 next를 호출해야 한다', async () => {
+    it('사용자를 찾을 수 없으면 DBError가 발생해야 한다', async () => {
       // 유효한 토큰 준비
       mockRequest.cookies = {
         'access_token': validToken,
@@ -169,46 +169,19 @@ describe('인증 미들웨어', () => {
       // 검증
       expect(nextFunction).toHaveBeenCalledTimes(1);
       expect(mockRequest.user).toBeUndefined();
+      expect(nextFunction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'DBError',
+          message: '사용자를 찾을 수 없습니다.'
+        })
+      );
     });
 
-    it('쿠키 대신 요청 본문에서 토큰을 추출해야 한다', async () => {
+    it('쿠키에 토큰이 없으면 헤더에서 토큰을 가져와야 한다', async () => {
       // 요청 본문에 토큰 설정
       mockRequest.body = {
         accessToken: validToken,
         refreshToken: 'refresh-token'
-      };
-
-      // 사용자 정보 mock
-      const mockUser = {
-        id: 1,
-        username: 'testuser',
-        email: 'test@example.com',
-        velog_uuid: 'c7507240-093b-11ea-9aae-a58a86bb0520'
-      };
-
-      // DB 쿼리 결과 모킹
-      (pool.query as jest.Mock).mockResolvedValueOnce({
-        rows: [mockUser]
-      });
-
-      // 미들웨어 실행
-      await authMiddleware.verify(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
-
-      // 검증
-      expect(nextFunction).toHaveBeenCalledTimes(1);
-      expect(nextFunction).not.toHaveBeenCalledWith(expect.any(Error));
-      expect(mockRequest.user).toEqual(mockUser);
-    });
-
-    it('쿠키와 요청 본문 대신 헤더에서 토큰을 추출해야 한다', async () => {
-      // 헤더에 토큰 설정
-      mockRequest.headers = {
-        'access_token': validToken,
-        'refresh_token': 'refresh-token'
       };
 
       // 사용자 정보 mock

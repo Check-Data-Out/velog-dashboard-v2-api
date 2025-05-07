@@ -72,6 +72,7 @@ describe('UserRepository - QR Login Token', () => {
     });
 
     it('토큰이 존재하지 않으면 null을 반환해야 한다', async () => {
+      // 참고로 존재하지 않거나, 만료된 토큰 밖에 없거나, 이미 사용된 토큰은 모두 "null 이 되는 것임"
       (mockPool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
       const result = await repo.findQRLoginToken('token');
@@ -102,14 +103,15 @@ describe('UserRepository - QR Login Token', () => {
 
   describe('updateQRLoginTokenToUse', () => {
     it('유저 ID로 토큰을 사용 처리해야 한다', async () => {
+      const targetUserId = 1;
       (mockPool.query as jest.Mock).mockResolvedValueOnce(undefined);
 
-      await expect(repo.updateQRLoginTokenToUse(1)).resolves.not.toThrow();
+      await expect(repo.updateQRLoginTokenToUse(targetUserId)).resolves.not.toThrow();
 
-      expect(mockPool.query).toHaveBeenCalledTimes(1);
+      expect(mockPool.query).toHaveBeenCalledTimes(targetUserId);
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE users_qrlogintoken'),
-        [1]
+        [targetUserId]
       );
     });
 
