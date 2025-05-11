@@ -87,8 +87,6 @@ export class PostService {
       const end = seoulNow.toISOString().split('T')[0];
       sevenDaysAgo.setDate(seoulNow.getDate() - 6);
 
-      // start, end 가 무조건 yyyy-mm-dd 로 넘어옴
-      console.log(start, end);
       const posts = await this.postRepo.findPostByPostUUID(postUUUID, start, end);
 
       const transformedPosts = this.transformPosts(posts);

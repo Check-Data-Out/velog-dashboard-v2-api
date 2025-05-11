@@ -271,8 +271,6 @@ export class PostRepository {
   }
 
   async findPostByPostId(postId: number, start?: string, end?: string) {
-    console.log(start, end);
-
     try {
       // 기본 쿼리 부분
       const baseQuery = `
