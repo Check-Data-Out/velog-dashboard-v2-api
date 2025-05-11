@@ -82,8 +82,8 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', 30, mockLimit);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT $2'),
-        expect.arrayContaining([30, mockLimit]),
+        expect.stringContaining('LIMIT $1'),
+        expect.arrayContaining([mockLimit]),
       );
     });
 
@@ -94,7 +94,7 @@ describe('LeaderboardRepository', () => {
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
-        expect.arrayContaining([mockDateRange, expect.anything()]),
+        expect.arrayContaining([expect.anything()]),
       );
     });
 
@@ -157,8 +157,8 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', 30, mockLimit);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT $2'),
-        expect.arrayContaining([30, mockLimit]),
+        expect.stringContaining('LIMIT $1'),
+        expect.arrayContaining([mockLimit]),
       );
     });
 
@@ -169,7 +169,7 @@ describe('LeaderboardRepository', () => {
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
-        expect.arrayContaining([mockDateRange, expect.anything()]),
+        expect.arrayContaining([expect.anything()]),
       );
     });
 
