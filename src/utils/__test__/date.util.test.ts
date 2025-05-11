@@ -33,55 +33,27 @@ describe('Date Utilities', () => {
     const year = kst.getUTCFullYear();
     const month = String(kst.getUTCMonth() + 1).padStart(2, '0');
     const day = String(kst.getUTCDate()).padStart(2, '0');
-    const hour = String(kst.getUTCHours()).padStart(2, '0');
-    const minute = String(kst.getUTCMinutes()).padStart(2, '0');
-    const second = String(kst.getUTCSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}+09`;
+    // 시간을 00:00:00으로 고정
+    return `${year}-${month}-${day} 00:00:00+09`;
   };
 
-  it('getCurrentKSTDateString이 KST 포맷의 문자열을 반환해야 한다', () => {
-    // 형식 검증
-    const result = getCurrentKSTDateString();
-    expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\+09$/);
 
-    // 현재 시간 기준 내용 검증
+  it('getCurrentKSTDateString이 KST 포맷의 문자열을 반환해야 한다', () => {
+    // 형식 검증 - HH:MM:SS가 항상 00:00:00
+    const result = getCurrentKSTDateString();
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2} 00:00:00\+09$/);
+
+    // 현재 날짜 기준 내용 검증
     const now = new Date();
     const expected = formatKST(now);
 
-    // 날짜 부분만 검증 (시간은 테스트 실행 중 변할 수 있음)
-    expect(result.slice(0, 10)).toBe(expected.slice(0, 10));
+    // 전체 문자열을 비교 (시간은 항상 00:00:00)
+    expect(result).toBe(expected);
   });
 
   it('getKSTDateStringWithOffset이 KST 포맷의 문자열을 반환해야 한다', () => {
     const result = getKSTDateStringWithOffset(30);
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\+09$/);
-  });
-
-  it('getCurrentKSTDateString은 5분 후와 다른 값을 반환해야 한다', () => {
-    // 고정된 시간 설정
-    const fixedTime = new originalDate(Date.UTC(2025, 4, 10, 6, 30, 0)); // 2025-05-10 06:30:00 UTC
-    const fiveMinutesLater = new originalDate(fixedTime.getTime() + 5 * 60 * 1000);
-
-    let callCount = 0;
-
-    // Date 클래스 모킹
-    class MockDate extends originalDate {
-      constructor(...args: ConstructorParameters<typeof Date>) {
-        if (args.length > 0) {
-          super(...args);
-        } else {
-          // new Date()로 호출될 때 다른 시간 반환
-          super(callCount++ === 0 ? fixedTime.getTime() : fiveMinutesLater.getTime());
-        }
-      }
-    }
-
-    global.Date = MockDate as unknown as DateConstructor;
-
-    const before = getCurrentKSTDateString();
-    const after = getCurrentKSTDateString();
-
-    expect(before).not.toBe(after);
   });
 
   it('getKSTDateStringWithOffset(0)은 getCurrentKSTDateString과 동일한 값을 반환해야 한다', () => {
@@ -95,21 +67,62 @@ describe('Date Utilities', () => {
     expect(current).toBe(offsetZero);
   });
 
-  it('getKSTDateStringWithOffset(60)은 정확히 1시간 후 KST 시간을 반환해야 한다', () => {
-    // 기준 시간과 1시간 후 시간 설정
+  it('getCurrentKSTDateString은 날짜가 변경될 때만 다른 값을 반환해야 한다', () => {
+    // 고정된 시간 설정
+    const fixedTime = new originalDate(Date.UTC(2025, 4, 10, 6, 30, 0)); // 2025-05-10 06:30:00 UTC
+
+    // 같은 날 5분 후
+    const sameDay = new originalDate(fixedTime.getTime() + 5 * 60 * 1000);
+
+    // 다음 날 (날짜가 변경됨)
+    const nextDay = new originalDate(fixedTime.getTime() + 24 * 60 * 60 * 1000);
+
+    let callCount = 0;
+
+    // Date 클래스 모킹
+    class MockDate extends originalDate {
+      constructor(...args: ConstructorParameters<typeof Date>) {
+        if (args.length > 0) {
+          super(...args);
+        } else {
+          // 호출 순서에 따라 다른 시간 반환
+          if (callCount === 0) {
+            super(fixedTime.getTime());
+          } else if (callCount === 1) {
+            super(sameDay.getTime());
+          } else {
+            super(nextDay.getTime());
+          }
+          callCount++;
+        }
+      }
+    }
+
+    global.Date = MockDate as unknown as DateConstructor;
+
+    const first = getCurrentKSTDateString();
+    const second = getCurrentKSTDateString(); // 같은 날
+    const third = getCurrentKSTDateString();  // 다음 날
+
+    expect(first).toBe(second); // 같은 날이므로 동일해야 함
+    expect(first).not.toBe(third); // 다른 날이므로 달라야 함
+  });
+
+  it('getKSTDateStringWithOffset(1440)은 정확히 하루 후의 날짜를 반환해야 한다', () => {
+    // 기준 시간과 하루 후 시간 설정
     const baseTime = new Date();
-    const oneHourLater = new Date(baseTime.getTime() + 60 * 60 * 1000);
+    const nextDay = new Date(baseTime.getTime() + 24 * 60 * 60 * 1000);
 
     // Date 생성자 모킹
     let callCount = 0;
     jest.spyOn(global, 'Date').mockImplementation(function (this: Date, time?: number | string | Date): Date {
       if (time !== undefined) return new originalDate(time);
       // 첫 호출과 두 번째 호출에서 다른 시간 반환
-      return callCount++ === 0 ? baseTime : oneHourLater;
+      return callCount++ === 0 ? baseTime : nextDay;
     } as unknown as (time?: number | string | Date) => Date);
 
-    const result = getKSTDateStringWithOffset(60);
-    const expected = formatKST(oneHourLater);
+    const result = getKSTDateStringWithOffset(1440); // 1440분 = 24시간 = 1일
+    const expected = formatKST(nextDay);
 
     expect(result).toBe(expected);
   });

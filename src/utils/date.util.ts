@@ -1,10 +1,11 @@
 /**
- * 현재 시간을 한국 표준시(KST, UTC+9)의 포맷팅된 문자열로 반환합니다.
+ * 현재 날짜의 시작 시간(00:00:00)을 한국 표준시(KST, UTC+9)의 포맷팅된 문자열로 반환합니다.
  * 
- * @returns {string} 'YYYY-MM-DD HH:MM:SS+09' 형식의 한국 시간 문자열
+ * @returns {string} 'YYYY-MM-DD 00:00:00+09' 형식의 한국 시간 문자열
  * @example
- * // 반환 예시: '2025-05-10 15:30:25+09'
- * const nowKST = getCurrentKSTDateString();
+ * // 현재 시간이 2025-05-10 15:30:25 KST일 경우
+ * // 반환 예시: '2025-05-10 00:00:00+09'
+ * const todayStartKST = getCurrentKSTDateString();
  */
 export function getCurrentKSTDateString(): string {
   const now = new Date();
@@ -14,25 +15,31 @@ export function getCurrentKSTDateString(): string {
   const year = kstDate.getUTCFullYear();
   const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
   const day = String(kstDate.getUTCDate()).padStart(2, '0');
-  const hours = String(kstDate.getUTCHours()).padStart(2, '0');
-  const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
-  const seconds = String(kstDate.getUTCSeconds()).padStart(2, '0');
   
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}+09`;
+  // 시간은 항상 00:00:00으로 고정
+  return `${year}-${month}-${day} 00:00:00+09`;
 }
 
 /**
- * 현재 시간으로부터 지정된 분(minutes) 후의 시간을 한국 표준시(KST, UTC+9)로 반환합니다.
+ * 현재 시간으로부터 지정된 분(minutes) 후의 날짜에 대한 시작 시간(00:00:00)을 
+ * 한국 표준시(KST, UTC+9)로 반환합니다.
  * 
  * @param {number} minutes - 현재 시간에 더할 분(minutes)
- * @returns {string} 'YYYY-MM-DD HH:MM:SS+09' 형식의 지정된 시간 후의 한국 시간 문자열
+ * @returns {string} 'YYYY-MM-DD 00:00:00+09' 형식의 지정된 날짜의 시작 시간 문자열
  * @example
- * // 5분 후의 시간을 얻기
- * // 반환 예시: '2025-05-10 15:35:25+09'
- * const fiveMinutesLater = getKSTDateStringWithOffset(5);
+ * // 현재 시간이 2025-05-10 15:30:25 KST일 경우
  * 
- * // 1시간(60분) 후의 시간을 얻기
- * const oneHourLater = getKSTDateStringWithOffset(60);
+ * // 5분 후 날짜의 시작 시간 (같은 날이므로 동일)
+ * // 반환 예시: '2025-05-10 00:00:00+09'
+ * const sameDay = getKSTDateStringWithOffset(5);
+ * 
+ * // 하루 후(1440분)의 날짜 시작 시간
+ * // 반환 예시: '2025-05-11 00:00:00+09'
+ * const nextDay = getKSTDateStringWithOffset(1440);
+ * 
+ * // 하루 전(-1440분)의 날짜 시작 시간
+ * // 반환 예시: '2025-05-09 00:00:00+09'
+ * const previousDay = getKSTDateStringWithOffset(-1440);
  */
 export function getKSTDateStringWithOffset(minutes: number): string {
   const now = new Date();
@@ -44,9 +51,7 @@ export function getKSTDateStringWithOffset(minutes: number): string {
   const year = kstDate.getUTCFullYear();
   const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
   const day = String(kstDate.getUTCDate()).padStart(2, '0');
-  const hours = String(kstDate.getUTCHours()).padStart(2, '0');
-  const min = String(kstDate.getUTCMinutes()).padStart(2, '0');
-  const sec = String(kstDate.getUTCSeconds()).padStart(2, '0');
   
-  return `${year}-${month}-${day} ${hours}:${min}:${sec}+09`;
+  // 시간은 항상 00:00:00으로 고정
+  return `${year}-${month}-${day} 00:00:00+09`;
 }
