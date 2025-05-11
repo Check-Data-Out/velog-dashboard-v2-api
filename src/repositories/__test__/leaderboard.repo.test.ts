@@ -93,7 +93,7 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('make_interval(days := $1::int)'),
+        expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
         expect.arrayContaining([mockDateRange, expect.anything()]),
       );
     });
@@ -168,7 +168,7 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('make_interval(days := $1::int)'),
+        expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
         expect.arrayContaining([mockDateRange, expect.anything()]),
       );
     });

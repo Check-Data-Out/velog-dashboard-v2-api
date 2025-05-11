@@ -2,13 +2,15 @@ import logger from '@/configs/logger.config';
 import { Pool } from 'pg';
 import { DBError } from '@/exception';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types/index';
+import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class LeaderboardRepository {
   constructor(private pool: Pool) {}
 
   async getUserLeaderboard(sort: UserLeaderboardSortType, dateRange: number, limit: number) {
     try {
-      const cteQuery = this.buildLeaderboardCteQuery();
+      const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange);  
 
       const query = `
         ${cteQuery}
@@ -20,7 +22,7 @@ export class LeaderboardRepository {
           COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
           SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0))) AS view_diff,
           SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0))) AS like_diff,
-          COUNT(DISTINCT CASE WHEN p.released_at >= CURRENT_DATE - make_interval(days := $1::int) AND p.is_active = true THEN p.id END) AS post_diff
+          COUNT(DISTINCT CASE WHEN p.released_at >= '${pastDateKST}' AND p.is_active = true THEN p.id END) AS post_diff
         FROM users_user u
         LEFT JOIN posts_post p ON p.user_id = u.id
         LEFT JOIN today_stats ts ON ts.post_id = p.id
@@ -28,9 +30,9 @@ export class LeaderboardRepository {
         WHERE u.email IS NOT NULL
         GROUP BY u.id, u.email
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, u.id
-        LIMIT $2;
+        LIMIT $1;
       `;
-      const result = await this.pool.query(query, [dateRange, limit]);
+      const result = await this.pool.query(query, [limit]);
 
       return result.rows;
     } catch (error) {
@@ -41,7 +43,7 @@ export class LeaderboardRepository {
 
   async getPostLeaderboard(sort: PostLeaderboardSortType, dateRange: number, limit: number) {
     try {
-      const cteQuery = this.buildLeaderboardCteQuery();
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange);
 
       const query = `
         ${cteQuery}
@@ -59,9 +61,9 @@ export class LeaderboardRepository {
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE p.is_active = true
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, p.id
-        LIMIT $2;
+        LIMIT $1;
       `;
-      const result = await this.pool.query(query, [dateRange, limit]);
+      const result = await this.pool.query(query, [limit]);
 
       return result.rows;
     } catch (error) {
@@ -71,7 +73,11 @@ export class LeaderboardRepository {
   }
 
   // 오늘 날짜와 기준 날짜의 통계를 가져오는 CTE(임시 결과 집합) 쿼리 빌드
-  private buildLeaderboardCteQuery() {
+  private buildLeaderboardCteQuery(dateRange: number) {
+    const nowDateKST = getCurrentKSTDateString();
+    // 과거 날짜 계산 (dateRange일 전)
+    const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
+
     return `
       WITH 
       today_stats AS (
@@ -80,7 +86,7 @@ export class LeaderboardRepository {
           daily_view_count AS today_view,
           daily_like_count AS today_like
         FROM posts_postdailystatistics
-        WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= (NOW() AT TIME ZONE 'UTC')::date
+        WHERE date <= '${nowDateKST}'
         ORDER BY post_id, date DESC
       ),
       start_stats AS (
@@ -89,7 +95,7 @@ export class LeaderboardRepository {
           daily_view_count AS start_view,
           daily_like_count AS start_like
         FROM posts_postdailystatistics
-        WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ((NOW() AT TIME ZONE 'UTC')::date - make_interval(days := $1::int))
+        WHERE date >= '${pastDateKST}'
         ORDER BY post_id, date ASC
       )
     `;

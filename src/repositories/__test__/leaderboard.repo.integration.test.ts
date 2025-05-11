@@ -1,3 +1,9 @@
+/**
+ * 주의: 이 통합 테스트는 현재 시간에 의존적입니다.
+ * getCurrentKSTDateString과 getKSTDateStringWithOffset 함수는 실제 시간을 기준으로
+ * 날짜 문자열을 생성하므로, 테스트 실행 시간에 따라 결과가 달라질 수 있습니다.
+ */
+
 import logger from '@/configs/logger.config';
 import dotenv from 'dotenv';
 import pg from 'pg';
