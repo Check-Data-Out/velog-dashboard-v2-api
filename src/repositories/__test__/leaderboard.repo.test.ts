@@ -94,7 +94,7 @@ describe('LeaderboardRepository', () => {
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
-        expect.arrayContaining([expect.anything()]),
+        [expect.any(Number)] // limit
       );
     });
 
@@ -169,7 +169,7 @@ describe('LeaderboardRepository', () => {
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
-        expect.arrayContaining([expect.anything()]),
+        [expect.any(Number)] // limit
       );
     });
 

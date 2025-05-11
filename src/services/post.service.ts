@@ -61,8 +61,12 @@ export class PostService {
   }
 
   async getPostByPostId(postId: number, start?: string, end?: string) {
+    // start, end 가 yyyy-mm-dd 만 넘어옴, 이를 kst 형태로 바꿔줘야 함
+    const kstStart = `${start} 00:00:00+09`;
+    const kstEnd = `${end} 00:00:00+09`;
+
     try {
-      const posts = await this.postRepo.findPostByPostId(postId, start, end);
+      const posts = await this.postRepo.findPostByPostId(postId, kstStart, kstEnd);
 
       const transformedPosts = this.transformPosts(posts);
 
@@ -73,15 +77,18 @@ export class PostService {
     }
   }
 
+  // !! 해당 함수 사용하지 않는 것으로 보임, 추후 정리 필요
   async getPostByPostUUID(postUUUID: string) {
     try {
       const seoulNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
       const sevenDaysAgo = new Date(seoulNow);
 
+      const start = sevenDaysAgo.toISOString().split('T')[0];
       const end = seoulNow.toISOString().split('T')[0];
       sevenDaysAgo.setDate(seoulNow.getDate() - 6);
-      const start = sevenDaysAgo.toISOString().split('T')[0];
 
+      // start, end 가 무조건 yyyy-mm-dd 로 넘어옴
+      console.log(start, end);
       const posts = await this.postRepo.findPostByPostUUID(postUUUID, start, end);
 
       const transformedPosts = this.transformPosts(posts);

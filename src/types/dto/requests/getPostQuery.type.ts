@@ -1,5 +1,4 @@
-import { Type } from 'class-transformer';
-import { IsDate, IsOptional } from 'class-validator';
+import { IsString, Validate } from 'class-validator';
 
 export interface PostParam extends Record<string, string> {
   postId: string;
@@ -29,18 +28,21 @@ export interface GetPostQuery {
  *           nullable: true
  */
 export class GetPostQueryDto {
-  @IsOptional()
-  @IsDate()
-  @Type(() => Date)
+  @IsString()
+  @Validate((value: string) => {
+    const date = new Date(value);
+    return !isNaN(date.getTime());
+  }, {
+    message: '유효한 날짜 형식이 아닙니다. (예: YYYY-MM-DD)'
+  })
   start?: string;
 
-  @IsOptional()
-  @IsDate()
-  @Type(() => Date)
+  @IsString()
+  @Validate((value: string) => {
+    const date = new Date(value);
+    return !isNaN(date.getTime());
+  }, {
+    message: '유효한 날짜 형식이 아닙니다. (예: YYYY-MM-DD)'
+  })
   end?: string;
-
-  constructor(start: string, end: string) {
-    this.start = start;
-    this.end = end;
-  }
 }

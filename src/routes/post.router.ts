@@ -6,7 +6,7 @@ import { PostRepository } from '@/repositories/post.repository';
 import { PostService } from '@/services/post.service';
 import { PostController } from '@/controllers/post.controller';
 import { validateRequestDto } from '@/middlewares/validation.middleware';
-import { GetAllPostsQueryDto } from '@/types/dto/requests/getAllPostsQuery.type';
+import { GetAllPostsQueryDto, GetPostQueryDto } from '@/types';
 
 const router: Router = express.Router();
 dotenv.config();
@@ -133,6 +133,11 @@ router.get('/post/velog/:postId', authMiddleware.verify, postController.getPostB
  *       '500':
  *         description: 서버 오류 / 데이터 베이스 조회 오류
  */
-router.get('/post/:postId', authMiddleware.verify, postController.getPostByPostId);
+router.get(
+  '/post/:postId',
+  authMiddleware.verify,
+  validateRequestDto(GetPostQueryDto, 'query'),
+  postController.getPostByPostId
+);
 
 export default router;

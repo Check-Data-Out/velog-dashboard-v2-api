@@ -58,8 +58,10 @@ describe('Date Utilities', () => {
 
   it('getKSTDateStringWithOffset(0)은 getCurrentKSTDateString과 동일한 값을 반환해야 한다', () => {
     // 시간을 고정하여 두 함수 호출 사이에 실제 시간이 변경되지 않도록 함
-    const fixed = Date.now();
+    const fixedDate = new Date();
+    const fixed = fixedDate.getTime();
     Date.now = jest.fn(() => fixed);
+    jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
 
     const current = getCurrentKSTDateString();
     const offsetZero = getKSTDateStringWithOffset(0);
