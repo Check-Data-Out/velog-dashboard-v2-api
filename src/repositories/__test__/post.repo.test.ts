@@ -240,7 +240,7 @@ describe('PostRepository', () => {
 
       mockPool.query.mockResolvedValue(createMockQueryResult(mockStats));
 
-      const result = await repo.findPostByPostId(1);
+      const result = await repo.findPostByPostId(1, '2025-05-01', '2025-05-08');
       expect(result).toEqual(mockStats);
     });
   });

@@ -270,38 +270,34 @@ export class PostRepository {
     }
   }
 
-  async findPostByPostId(postId: number, start?: string, end?: string) {
+  /**
+   * 특정 게시물의 주어진 날짜 범위 내 일별 통계를 조회합니다.
+   *
+   * @param postId - 통계를 조회할 게시물의 ID.
+   * @param start - 조회 범위의 시작 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @param end - 조회 범위의 종료 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @returns 주어진 날짜 범위 내 일별 통계 배열을 반환하는 Promise:
+   *          - `date`: 통계 날짜.
+   *          - `daily_view_count`: 해당 날짜의 조회수.
+   *          - `daily_like_count`: 해당 날짜의 좋아요 수.
+   * @throws {DBError} 데이터베이스 조회 중 오류가 발생한 경우.
+   */
+  async findPostByPostId(postId: number, start: string, end: string) {
+    const query = `
+      SELECT
+        pds.date,
+        pds.daily_view_count,
+        pds.daily_like_count
+      FROM posts_postdailystatistics pds
+      WHERE pds.post_id = $1
+      AND pds.date >= $2
+      AND pds.date <= $3
+      ORDER BY pds.date ASC
+    `;
+
     try {
-      // 기본 쿼리 부분
-      const baseQuery = `
-        SELECT
-          pds.date,
-          pds.daily_view_count,
-          pds.daily_like_count
-        FROM posts_postdailystatistics pds
-        WHERE pds.post_id = $1
-      `;
-
-      // 날짜 필터링 조건 구성
-      let dateFilterQuery = '';
-      const queryParams: Array<number | string> = [postId];
-
-      if (start && end) {
-        dateFilterQuery = `
-          AND pds.date >= $2
-          AND pds.date <= $3
-        `;
-        queryParams.push(start, end);
-      }
-
-      // 정렬 조건 추가
-      const orderByQuery = `ORDER BY pds.date ASC`;
-
-      // 최종 쿼리 조합
-      const fullQuery = [baseQuery, dateFilterQuery, orderByQuery].join(' ');
-
-      // 쿼리 실행
-      const result = await this.pool.query(fullQuery, queryParams);
+      const values: Array<number | string> = [postId, start, end];
+      const result = await this.pool.query(query, values);
       return result.rows;
     } catch (error) {
       logger.error('Post Repo findPostByPostId error:', error);
@@ -309,9 +305,21 @@ export class PostRepository {
     }
   }
 
+  /**
+   * 특정 게시물의 uuid 값 기반으로 날짜 범위 내 일별 통계를 조회합니다. 익스텐션에서 사용합니다.
+   *
+   * @param postUUUID - 통계를 조회할 게시물의 UUID.
+   * @param start - 조회 범위의 시작 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @param end - 조회 범위의 종료 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @returns 주어진 날짜 범위 내 일별 통계 배열을 반환하는 Promise:
+   *          - `date`: 통계 날짜.
+   *          - `daily_view_count`: 해당 날짜의 조회수.
+   *          - `daily_like_count`: 해당 날짜의 좋아요 수.
+   * @throws {DBError} 데이터베이스 조회 중 오류가 발생한 경우.
+   */
   async findPostByPostUUID(postUUUID: string, start: string, end: string) {
-    try {
-      const query = `
+    // findPostByPostId 와 다르게 UUID 가 기준이라 join 필수
+    const query = `
       SELECT
         pds.date,
         pds.daily_view_count,
@@ -323,10 +331,10 @@ export class PostRepository {
         AND pds.date >= $2
         AND pds.date <= $3
       ORDER BY pds.date ASC
-      `;
+    `;
 
+    try {
       const values = [postUUUID, start, end];
-
       const result = await this.pool.query(query, values);
       return result.rows;
     } catch (error) {

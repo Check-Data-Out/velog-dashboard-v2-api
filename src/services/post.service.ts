@@ -1,6 +1,7 @@
 import logger from '@/configs/logger.config';
 import { PostRepository } from '@/repositories/post.repository';
 import { RawPostType } from '@/types';
+import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class PostService {
   constructor(private postRepo: PostRepository) { }
@@ -62,14 +63,12 @@ export class PostService {
 
   async getPostByPostId(postId: number, start?: string, end?: string) {
     // start, end 가 yyyy-mm-dd 만 넘어옴, 이를 kst 형태로 바꿔줘야 함
-    const kstStart = `${start} 00:00:00+09`;
-    const kstEnd = `${end} 00:00:00+09`;
+    const startKST = `${start} 00:00:00+09`;
+    const endKST = `${end} 00:00:00+09`;
 
     try {
-      const posts = await this.postRepo.findPostByPostId(postId, kstStart, kstEnd);
-
+      const posts = await this.postRepo.findPostByPostId(postId, startKST, endKST);
       const transformedPosts = this.transformPosts(posts);
-
       return transformedPosts;
     } catch (error) {
       logger.error('PostService getPost error : ', error);
@@ -77,20 +76,14 @@ export class PostService {
     }
   }
 
-  // !! 해당 함수 사용하지 않는 것으로 보임, 추후 정리 필요
   async getPostByPostUUID(postUUUID: string) {
+    // 날짜가 넘어오지 않기에 기본적으로 7일로 세팅
+    const sevenDayAgoKST = getKSTDateStringWithOffset(-24 * 60 * 7);
+    const endKST = getCurrentKSTDateString(); // now
+
     try {
-      const seoulNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
-      const sevenDaysAgo = new Date(seoulNow);
-
-      const start = sevenDaysAgo.toISOString().split('T')[0];
-      const end = seoulNow.toISOString().split('T')[0];
-      sevenDaysAgo.setDate(seoulNow.getDate() - 6);
-
-      const posts = await this.postRepo.findPostByPostUUID(postUUUID, start, end);
-
+      const posts = await this.postRepo.findPostByPostUUID(postUUUID, sevenDayAgoKST, endKST);
       const transformedPosts = this.transformPosts(posts);
-
       return transformedPosts;
     } catch (error) {
       logger.error('PostService getPostByPostUUID error : ', error);
