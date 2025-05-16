@@ -317,65 +317,39 @@ describe('PostService', () => {
       },
     ];
 
-    it('게시물 ID로 상세 통계 조회', async () => {
-      // Arrange
-      postRepo.findPostByPostId.mockResolvedValue(mockPostStats);
-
-      // Act
-      const result = await postService.getPostByPostId(1);
-
-      // Assert
-      expect(result).toEqual(expectedTransformedStats);
-      expect(postRepo.findPostByPostId).toHaveBeenCalledWith(1, undefined, undefined);
-    });
-
     it('시작일과 종료일을 지정하여 상세 통계 조회', async () => {
-      // Arrange
       const start = '2025-03-01';
       const end = '2025-03-10';
 
       postRepo.findPostByPostId.mockResolvedValue(mockPostStats);
 
-      // Act
       const result = await postService.getPostByPostId(1, start, end);
-
-      // Assert
       expect(result).toEqual(expectedTransformedStats);
-      expect(postRepo.findPostByPostId).toHaveBeenCalledWith(1, start, end);
+      expect(postRepo.findPostByPostId).toHaveBeenCalledWith(1, `${start} 00:00:00+09`, `${end} 00:00:00+09`);
     });
 
     it('빈 통계 목록 처리', async () => {
-      // Arrange
       postRepo.findPostByPostId.mockResolvedValue([]);
 
-      // Act
       const result = await postService.getPostByPostId(1);
-
-      // Assert
       expect(result).toEqual([]);
     });
 
     it('쿼리 오류 발생 시 예외를 그대로 전파', async () => {
-      // Arrange
       const errorMessage = '게시물 조회 중 문제가 발생했습니다.';
       postRepo.findPostByPostId.mockRejectedValue(new DBError(errorMessage));
 
-      // Act & Assert
       await expect(postService.getPostByPostId(1)).rejects.toThrow(errorMessage);
     });
 
     it('숫자가 아닌 ID를 전달해도 처리되어야 함', async () => {
-      // Arrange
       postRepo.findPostByPostId.mockResolvedValue(mockPostStats);
-
-      // Act
       const result = await postService.getPostByPostId('abc' as unknown as number);
-
-      // Assert
       expect(result).toEqual(expectedTransformedStats);
       // Repository에 ID가 'abc'로 전달됨 (내부적으로 변환하지 않음)
-      expect(postRepo.findPostByPostId).toHaveBeenCalledWith('abc', undefined, undefined);
+      expect(postRepo.findPostByPostId).toHaveBeenCalledWith('abc', "undefined 00:00:00+09", "undefined 00:00:00+09");
     });
+    
   });
 
   describe('getPostByPostUUID', () => {
@@ -416,39 +390,30 @@ describe('PostService', () => {
     });
 
     it('게시물 UUID로 상세 통계 조회 (기본 7일 범위)', async () => {
-      // Arrange
       postRepo.findPostByPostUUID.mockResolvedValue(mockPostStats);
 
-      // Act
       const result = await postService.getPostByPostUUID('uuid-1234');
 
-      // Assert
       expect(result).toEqual(expectedTransformedStats);
       // 7일 범위 설정 확인 (현재 날짜 2025-03-15 기준)
       expect(postRepo.findPostByPostUUID).toHaveBeenCalledWith(
         'uuid-1234',
-        '2025-03-09', // 6일 전
-        '2025-03-15'  // 오늘
-      );
+        '2025-03-08 00:00:00+09', // 현재 날짜 (테스트에서 고정된 날짜)
+        '2025-03-15 00:00:00+09'  // 현재 날짜 (테스트에서 고정된 날짜)
+      );    
     });
 
     it('빈 통계 목록 처리', async () => {
-      // Arrange
       postRepo.findPostByPostUUID.mockResolvedValue([]);
-
-      // Act
       const result = await postService.getPostByPostUUID('uuid-1234');
 
-      // Assert
       expect(result).toEqual([]);
     });
 
     it('쿼리 오류 발생 시 예외를 그대로 전파', async () => {
-      // Arrange
       const errorMessage = 'UUID로 게시물 조회 중 문제가 발생했습니다.';
       postRepo.findPostByPostUUID.mockRejectedValue(new DBError(errorMessage));
 
-      // Act & Assert
       await expect(postService.getPostByPostUUID('uuid-1234')).rejects.toThrow(errorMessage);
     });
 

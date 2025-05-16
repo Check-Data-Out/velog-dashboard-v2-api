@@ -82,8 +82,8 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', 30, mockLimit);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT $2'),
-        expect.arrayContaining([30, mockLimit]),
+        expect.stringContaining('LIMIT $1'),
+        expect.arrayContaining([mockLimit]),
       );
     });
 
@@ -93,8 +93,8 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('make_interval(days := $1::int)'),
-        expect.arrayContaining([mockDateRange, expect.anything()]),
+        expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
+        [expect.any(Number)] // limit
       );
     });
 
@@ -157,8 +157,8 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', 30, mockLimit);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('LIMIT $2'),
-        expect.arrayContaining([30, mockLimit]),
+        expect.stringContaining('LIMIT $1'),
+        expect.arrayContaining([mockLimit]),
       );
     });
 
@@ -168,8 +168,8 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('make_interval(days := $1::int)'),
-        expect.arrayContaining([mockDateRange, expect.anything()]),
+        expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
+        [expect.any(Number)] // limit
       );
     });
 

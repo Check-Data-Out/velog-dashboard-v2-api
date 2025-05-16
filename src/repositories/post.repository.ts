@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
 import { DBError } from '@/exception';
+import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class PostRepository {
   constructor(private pool: Pool) { }
@@ -12,6 +13,10 @@ export class PostRepository {
     isAsc: boolean = false,
     limit: number = 15
   ) {
+    const nowDateKST = getCurrentKSTDateString();
+    const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
+    const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
+
     try {
       // 1) 정렬 컬럼 매핑
       let sortCol = 'p.released_at';
@@ -70,12 +75,12 @@ export class PostRepository {
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
+          WHERE date >= '${nowDateKST}' AND date < '${tomorrowDateKST}'
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
           SELECT post_id, daily_view_count, daily_like_count, date
           FROM posts_postdailystatistics
-          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
+          WHERE date >= '${yesterDateKST}' AND date < '${nowDateKST}'
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
           AND p.is_active = TRUE
@@ -128,6 +133,10 @@ export class PostRepository {
     isAsc: boolean = false,
     limit: number = 15
   ) {
+    const nowDateKST = getCurrentKSTDateString();
+    const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
+    const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
+
     try {
       const selectFields = `
         p.id,
@@ -170,25 +179,25 @@ export class PostRepository {
       }
 
       const query = `
-      SELECT ${selectFields}
-      FROM posts_post p
-      LEFT JOIN (
-        SELECT post_id, daily_view_count, daily_like_count, date
-        FROM posts_postdailystatistics
-        WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
-      ) pds ON p.id = pds.post_id
-      LEFT JOIN (
-        SELECT post_id, daily_view_count, daily_like_count, date
-        FROM posts_postdailystatistics
-        WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
-      ) yesterday_stats ON p.id = yesterday_stats.post_id
-      WHERE p.user_id = $1
-        AND p.is_active = TRUE
-        AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
-        ${cursorCondition}
-      ORDER BY ${orderByExpression}
-      LIMIT ${cursor ? '$4' : '$2'}
-    `;
+        SELECT ${selectFields}
+        FROM posts_post p
+        LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count, date
+          FROM posts_postdailystatistics
+          WHERE date >= '${nowDateKST}' AND date < '${tomorrowDateKST}'
+        ) pds ON p.id = pds.post_id
+        LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count, date
+          FROM posts_postdailystatistics
+          WHERE date >= '${yesterDateKST}' AND date < '${nowDateKST}'
+        ) yesterday_stats ON p.id = yesterday_stats.post_id
+        WHERE p.user_id = $1
+          AND p.is_active = TRUE
+          AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
+          ${cursorCondition}
+        ORDER BY ${orderByExpression}
+        LIMIT ${cursor ? '$4' : '$2'}
+      `;
 
       const posts = await this.pool.query(query, params);
 
@@ -225,7 +234,10 @@ export class PostRepository {
   }
 
   async getYesterdayAndTodayViewLikeStats(userId: number) {
-    // ! pds.updated_at 은 FE 화면을 위해 억지로 9h 시간 더한 값임 주의
+    const nowDateKST = getCurrentKSTDateString();
+    const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
+    const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
+
     try {
       const query = `
         SELECT
@@ -233,17 +245,17 @@ export class PostRepository {
             COALESCE(SUM(pds.daily_like_count), 0) AS daily_like_count,
             COALESCE(SUM(yesterday_stats.daily_view_count), 0) AS yesterday_views,
             COALESCE(SUM(yesterday_stats.daily_like_count), 0) AS yesterday_likes,
-            (MAX(pds.updated_at AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC') AS last_updated_date
+            MAX(pds.updated_at) AS last_updated_date
         FROM posts_post p
         LEFT JOIN (
             SELECT post_id, daily_view_count, daily_like_count, updated_at
             FROM posts_postdailystatistics
-            WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC')::date
+            WHERE date >= '${nowDateKST}' AND date < '${tomorrowDateKST}'
         ) pds ON p.id = pds.post_id
         LEFT JOIN (
             SELECT post_id, daily_view_count, daily_like_count
             FROM posts_postdailystatistics
-          WHERE (date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date = (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 day')::date
+          WHERE date >= '${yesterDateKST}' AND date < '${nowDateKST}'
         ) yesterday_stats ON p.id = yesterday_stats.post_id
         WHERE p.user_id = $1
         AND p.is_active = TRUE
@@ -258,38 +270,34 @@ export class PostRepository {
     }
   }
 
-  async findPostByPostId(postId: number, start?: string, end?: string) {
+  /**
+   * 특정 게시물의 주어진 날짜 범위 내 일별 통계를 조회합니다.
+   *
+   * @param postId - 통계를 조회할 게시물의 ID.
+   * @param start - 조회 범위의 시작 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @param end - 조회 범위의 종료 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @returns 주어진 날짜 범위 내 일별 통계 배열을 반환하는 Promise:
+   *          - `date`: 통계 날짜.
+   *          - `daily_view_count`: 해당 날짜의 조회수.
+   *          - `daily_like_count`: 해당 날짜의 좋아요 수.
+   * @throws {DBError} 데이터베이스 조회 중 오류가 발생한 경우.
+   */
+  async findPostByPostId(postId: number, start: string, end: string) {
+    const query = `
+      SELECT
+        pds.date,
+        pds.daily_view_count,
+        pds.daily_like_count
+      FROM posts_postdailystatistics pds
+      WHERE pds.post_id = $1
+      AND pds.date >= $2
+      AND pds.date <= $3
+      ORDER BY pds.date ASC
+    `;
+
     try {
-      // 기본 쿼리 부분
-      const baseQuery = `
-        SELECT
-          (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
-          pds.daily_view_count,
-          pds.daily_like_count
-        FROM posts_postdailystatistics pds
-        WHERE pds.post_id = $1
-      `;
-
-      // 날짜 필터링 조건 구성
-      const dateFilterQuery = (start && end)
-        ? `
-          AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
-          AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
-        `
-        : '';
-
-      // 정렬 조건 추가
-      const orderByQuery = `ORDER BY pds.date ASC`;
-
-      // 최종 쿼리 조합
-      const fullQuery = [baseQuery, dateFilterQuery, orderByQuery].join(' ');
-
-      // 파라미터 배열 구성
-      const queryParams: Array<number | string> = [postId];
-      if (start && end) queryParams.push(start, end);
-
-      // 쿼리 실행
-      const result = await this.pool.query(fullQuery, queryParams);
+      const values: Array<number | string> = [postId, start, end];
+      const result = await this.pool.query(query, values);
       return result.rows;
     } catch (error) {
       logger.error('Post Repo findPostByPostId error:', error);
@@ -297,24 +305,36 @@ export class PostRepository {
     }
   }
 
+  /**
+   * 특정 게시물의 uuid 값 기반으로 날짜 범위 내 일별 통계를 조회합니다. 익스텐션에서 사용합니다.
+   *
+   * @param postUUUID - 통계를 조회할 게시물의 UUID.
+   * @param start - 조회 범위의 시작 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @param end - 조회 범위의 종료 날짜(포함), 'YYYY-MM-DD' 형식.
+   * @returns 주어진 날짜 범위 내 일별 통계 배열을 반환하는 Promise:
+   *          - `date`: 통계 날짜.
+   *          - `daily_view_count`: 해당 날짜의 조회수.
+   *          - `daily_like_count`: 해당 날짜의 좋아요 수.
+   * @throws {DBError} 데이터베이스 조회 중 오류가 발생한 경우.
+   */
   async findPostByPostUUID(postUUUID: string, start: string, end: string) {
-    try {
-      const query = `
+    // findPostByPostId 와 다르게 UUID 가 기준이라 join 필수
+    const query = `
       SELECT
-        (pds.date AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC' AS date,
+        pds.date,
         pds.daily_view_count,
         pds.daily_like_count
       FROM posts_post p
       JOIN posts_postdailystatistics pds ON p.id = pds.post_id
       WHERE p.post_uuid = $1
         AND p.is_active = TRUE
-        AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date >= ($2 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
-        AND (pds.date AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date <= ($3 AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC')::date
+        AND pds.date >= $2
+        AND pds.date <= $3
       ORDER BY pds.date ASC
-      `;
+    `;
 
+    try {
       const values = [postUUUID, start, end];
-
       const result = await this.pool.query(query, values);
       return result.rows;
     } catch (error) {

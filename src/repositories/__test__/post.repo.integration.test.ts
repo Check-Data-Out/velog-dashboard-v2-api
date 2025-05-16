@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 import pg from 'pg';
 import { PostRepository } from '../post.repository';
 import logger from '@/configs/logger.config';
+import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 
 dotenv.config();
@@ -407,7 +408,9 @@ describe('PostRepository 통합 테스트', () => {
    */
   describe('findPostByPostId', () => {
     it('게시물 ID로 통계 데이터를 조회할 수 있어야 한다', async () => {
-      const result = await repo.findPostByPostId(TEST_DATA.POST_ID);
+      const sevenDayAgoKST = getKSTDateStringWithOffset(-24 * 60 * 7);
+      const endKST = getCurrentKSTDateString();
+      const result = await repo.findPostByPostId(TEST_DATA.POST_ID, sevenDayAgoKST, endKST);
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -437,7 +440,9 @@ describe('PostRepository 통합 테스트', () => {
     });
 
     it('날짜 오름차순으로 정렬된 결과를 반환해야 한다', async () => {
-      const result = await repo.findPostByPostId(TEST_DATA.POST_ID);
+      const sevenDayAgoKST = getKSTDateStringWithOffset(-24 * 60 * 7);
+      const endKST = getCurrentKSTDateString();
+      const result = await repo.findPostByPostId(TEST_DATA.POST_ID, sevenDayAgoKST, endKST);
 
       // 2개 이상의 결과가 있는 경우에만 정렬 검증
       if (result.length >= 2) {
@@ -459,8 +464,10 @@ describe('PostRepository 통합 테스트', () => {
     });
 
     it('존재하지 않는 게시물 ID에 대해 빈 배열을 반환해야 한다', async () => {
+      const sevenDayAgoKST = getKSTDateStringWithOffset(-24 * 60 * 7);
+      const endKST = getCurrentKSTDateString();
       const nonExistentPostId = 9999999;
-      const result = await repo.findPostByPostId(nonExistentPostId);
+      const result = await repo.findPostByPostId(nonExistentPostId, sevenDayAgoKST, endKST);
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -468,7 +475,9 @@ describe('PostRepository 통합 테스트', () => {
     });
 
     it('날짜 형식이 올바르게 변환되어야 한다', async () => {
-      const result = await repo.findPostByPostId(TEST_DATA.POST_ID);
+      const sevenDayAgoKST = getKSTDateStringWithOffset(-24 * 60 * 7);
+      const endKST = getCurrentKSTDateString();
+      const result = await repo.findPostByPostId(TEST_DATA.POST_ID, sevenDayAgoKST, endKST);
 
       if (result.length <= 0) {
         logger.info('존재하지 않는 게시물 ID에 대해 빈 배열을 테스트를 위한 충분한 데이터가 없습니다.');
@@ -490,7 +499,9 @@ describe('PostRepository 통합 테스트', () => {
     });
 
     it('일일 조회수와 좋아요 수가 숫자 타입이어야 한다', async () => {
-      const result = await repo.findPostByPostId(TEST_DATA.POST_ID);
+      const sevenDayAgoKST = getKSTDateStringWithOffset(-24 * 60 * 7);
+      const endKST = getCurrentKSTDateString();
+      const result = await repo.findPostByPostId(TEST_DATA.POST_ID, sevenDayAgoKST, endKST);
 
       if (result.length <= 0) {
         logger.info('일일 조회수와 좋아요 수가 숫자 타입인지 테스트를 위한 충분한 데이터가 없습니다.');

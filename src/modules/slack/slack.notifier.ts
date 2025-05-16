@@ -8,6 +8,8 @@ dotenv.config();
 if (!process.env.SLACK_WEBHOOK_URL) {
   throw new Error('SLACK_WEBHOOK_URL is not defined in environment variables.');
 }
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const SLACK_WEBHOOK_URL: string = process.env.SLACK_WEBHOOK_URL;
 
 interface SlackPayload {
@@ -20,8 +22,7 @@ interface SlackPayload {
  */
 export async function sendSlackMessage(message: string): Promise<void> {
   const payload: SlackPayload = { text: message };
-  const response = await axios.post(SLACK_WEBHOOK_URL, payload, {
+  await axios.post(SLACK_WEBHOOK_URL, payload, {
     headers: { 'Content-Type': 'application/json' },
   });
-  console.log(response);
 }

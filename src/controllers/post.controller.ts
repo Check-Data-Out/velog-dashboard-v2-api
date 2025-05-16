@@ -11,7 +11,7 @@ import {
 } from '@/types';
 
 export class PostController {
-  constructor(private postService: PostService) {}
+  constructor(private postService: PostService) { }
 
   getAllPosts: RequestHandler = async (
     req: Request<object, object, object, GetAllPostsQuery>,
@@ -70,10 +70,9 @@ export class PostController {
   ) => {
     try {
       const postId = Number(req.params.postId);
+
       const { start, end } = req.query;
-
       const post = await this.postService.getPostByPostId(postId, start, end);
-
       const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', { post }, null);
 
       res.status(200).json(response);
