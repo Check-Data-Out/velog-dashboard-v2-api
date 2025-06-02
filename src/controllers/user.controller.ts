@@ -12,6 +12,8 @@ export class UserController {
   constructor(private userService: UserService) { }
 
   private cookieOption(): CookieOptions {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const THREE_WEEKS_IN_MS = 21 * 24 * 60 * 60 * 1000;
     const isProd = process.env.NODE_ENV === 'production';
 
     const baseOptions: CookieOptions = {
@@ -22,6 +24,7 @@ export class UserController {
     if (isProd) {
       baseOptions.sameSite = 'lax';
       baseOptions.domain = "velog-dashboard.kro.kr";
+      baseOptions.maxAge = THREE_WEEKS_IN_MS; // 3주
     } else {
       baseOptions.domain = 'localhost';
     }
