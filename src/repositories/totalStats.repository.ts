@@ -10,7 +10,7 @@ interface RawStatsResult {
 }
 
 export class TotalStatsRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   private async getTotalViewStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {

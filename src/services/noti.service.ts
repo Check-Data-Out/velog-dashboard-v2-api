@@ -1,10 +1,10 @@
-import { NotiRepository } from "@/repositories/noti.repository";
-import { NotiPost } from "@/types/models/NotiPost.type";
+import { NotiRepository } from '@/repositories/noti.repository';
+import { NotiPost } from '@/types/models/NotiPost.type';
 
 export class NotiService {
-    constructor(private notiRepo: NotiRepository) {}
+  constructor(private notiRepo: NotiRepository) {}
 
-    async getAllNotiPosts(): Promise<NotiPost[]> {
-        return await this.notiRepo.getAllNotiPosts();
-    }
+  async getAllNotiPosts(): Promise<NotiPost[]> {
+    return await this.notiRepo.getAllNotiPosts();
+  }
 }

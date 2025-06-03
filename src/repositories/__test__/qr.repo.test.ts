@@ -2,7 +2,7 @@ import { UserRepository } from '@/repositories/user.repository';
 import { DBError } from '@/exception';
 import { Pool } from 'pg';
 import { QRLoginToken } from "@/types/models/QRLoginToken.type";
-import { mockPool } from './fixture';
+import { mockPool } from './fixtures';
 
 jest.mock('pg');
 

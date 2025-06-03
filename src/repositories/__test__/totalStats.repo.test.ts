@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 import { DBError } from '@/exception';
 import { getKSTDateStringWithOffset } from '@/utils/date.util';
-import { mockPool, createMockQueryResult } from './fixture';
+import { mockPool, createMockQueryResult } from './fixtures';
 import { TotalStatsType } from '@/types';
 
 // Mock dependencies

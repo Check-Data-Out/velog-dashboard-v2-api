@@ -10,7 +10,7 @@ export class LeaderboardRepository {
   async getUserLeaderboard(sort: UserLeaderboardSortType, dateRange: number, limit: number) {
     try {
       const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
-      const cteQuery = this.buildLeaderboardCteQuery(dateRange);  
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange);
 
       const query = `
         ${cteQuery}

@@ -3,7 +3,7 @@ import { TotalStatsPeriod, TotalStatsType, TotalStatsItem } from '@/types';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 
 export class TotalStatsService {
-  constructor(private totalStatsRepo: TotalStatsRepository) { }
+  constructor(private totalStatsRepo: TotalStatsRepository) {}
 
   async getTotalStats(userId: number, period: TotalStatsPeriod = 7, type: TotalStatsType): Promise<TotalStatsItem[]> {
     try {

@@ -4,9 +4,8 @@ import { BadRequestError } from '@/exception';
 import { GetTotalStatsQuery, TotalStatsResponseDto } from '@/types';
 import { TotalStatsService } from '@/services/totalStats.service';
 
-
 export class TotalStatsController {
-  constructor(private totalStatsService: TotalStatsService) { }
+  constructor(private totalStatsService: TotalStatsService) {}
 
   getTotalStats: RequestHandler = async (
     req: Request<object, object, object, GetTotalStatsQuery>,
@@ -23,12 +22,7 @@ export class TotalStatsController {
       const stats = await this.totalStatsService.getTotalStats(id, period, type);
       const message = this.totalStatsService.getSuccessMessage(type);
 
-      const response = new TotalStatsResponseDto(
-        true,
-        message,
-        stats,
-        null,
-      );
+      const response = new TotalStatsResponseDto(true, message, stats, null);
 
       res.status(200).json(response);
     } catch (error) {
