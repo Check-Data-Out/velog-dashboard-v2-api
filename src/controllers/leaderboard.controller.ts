@@ -6,7 +6,7 @@ import {
   GetPostLeaderboardQuery,
   UserLeaderboardResponseDto,
   PostLeaderboardResponseDto,
-} from '@/types/index';
+} from '@/types';
 
 export class LeaderboardController {
   constructor(private leaderboardService: LeaderboardService) {}

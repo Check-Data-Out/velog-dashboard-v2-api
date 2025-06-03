@@ -1,9 +1,8 @@
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
-import pg from 'pg';
+import pg, { Pool } from 'pg';
+import logger from '@/configs/logger.config';
 import { UserRepository } from '@/repositories/user.repository';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
-import logger from '@/configs/logger.config';
 
 dotenv.config();
 jest.setTimeout(5000);

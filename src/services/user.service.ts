@@ -10,7 +10,7 @@ import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import { VelogUserCurrentResponse } from '@/modules/velog/velog.type';
 
 export class UserService {
-  constructor(private userRepo: UserRepository) { }
+  constructor(private userRepo: UserRepository) {}
 
   private encryptTokens(groupId: number, accessToken: string, refreshToken: string) {
     const key = getKeyByGroup(groupId);
@@ -50,7 +50,11 @@ export class UserService {
     }
   }
 
-  async handleUserTokensByVelogUUID(userData: VelogUserCurrentResponse, accessToken: string, refreshToken: string): Promise<User> {
+  async handleUserTokensByVelogUUID(
+    userData: VelogUserCurrentResponse,
+    accessToken: string,
+    refreshToken: string,
+  ): Promise<User> {
     // velog response 에서 주는 응답 혼용 방지를 위한 변경 id -> uuid
     const { id: uuid, email = null } = userData;
     try {
@@ -95,7 +99,7 @@ export class UserService {
     const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
       user.group_id,
       user.access_token,
-      user.refresh_token
+      user.refresh_token,
     );
     logger.info('샘플 유저 로그인');
     return { user, decryptedAccessToken, decryptedRefreshToken };

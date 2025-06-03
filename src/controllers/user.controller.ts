@@ -9,7 +9,7 @@ import { fetchVelogApi } from '@/modules/velog/velog.api';
 type Token10 = string & { __lengthBrand: 10 };
 
 export class UserController {
-  constructor(private userService: UserService) { }
+  constructor(private userService: UserService) {}
 
   private cookieOption(): CookieOptions {
     const isProd = process.env.NODE_ENV === 'production';
@@ -21,7 +21,7 @@ export class UserController {
 
     if (isProd) {
       baseOptions.sameSite = 'lax';
-      baseOptions.domain = "velog-dashboard.kro.kr";
+      baseOptions.domain = 'velog-dashboard.kro.kr';
     } else {
       baseOptions.domain = 'localhost';
     }
@@ -31,7 +31,6 @@ export class UserController {
 
   login: RequestHandler = async (req: Request, res: Response<LoginResponseDto>, next: NextFunction): Promise<void> => {
     try {
-
       // 1. 외부 API (velog) 호출로 실존 하는 토큰 & 사용자 인지 검증
       const { accessToken, refreshToken } = req.body;
       const velogUser = await fetchVelogApi(accessToken, refreshToken);
@@ -60,7 +59,11 @@ export class UserController {
     }
   };
 
-  sampleLogin: RequestHandler = async (req: Request, res: Response<LoginResponseDto>, next: NextFunction): Promise<void> => {
+  sampleLogin: RequestHandler = async (
+    req: Request,
+    res: Response<LoginResponseDto>,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       const sampleUser = await this.userService.findSampleUser();
 
@@ -77,8 +80,8 @@ export class UserController {
         '로그인에 성공하였습니다.',
         {
           id: sampleUser.user.id,
-          username: "테스트 유저",
-          profile: { "thumbnail": "https://velog.io/favicon.ico" }
+          username: '테스트 유저',
+          profile: { thumbnail: 'https://velog.io/favicon.ico' },
         },
         null,
       );
@@ -88,7 +91,7 @@ export class UserController {
       logger.error('로그인 실패 : ', error);
       next(error);
     }
-  }
+  };
 
   logout: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>) => {
     res.clearCookie('access_token', this.cookieOption());
@@ -114,25 +117,19 @@ export class UserController {
     res.status(200).json(response);
   };
 
-  createToken: RequestHandler = async (
-    req: Request,
-    res: Response<QRLoginTokenResponseDto>,
-    next: NextFunction,
-  ) => {
+  createToken: RequestHandler = async (req: Request, res: Response<QRLoginTokenResponseDto>, next: NextFunction) => {
     try {
       const user = req.user;
-      const ip = typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip ?? '';
+      const ip =
+        typeof req.headers['x-forwarded-for'] === 'string'
+          ? req.headers['x-forwarded-for'].split(',')[0].trim()
+          : (req.ip ?? '');
       const userAgent = req.headers['user-agent'] || '';
 
       const token = await this.userService.createUserQRToken(user.id, ip, userAgent);
       const typedToken = token as Token10;
 
-      const response = new QRLoginTokenResponseDto(
-        true,
-        'QR 토큰 생성 완료',
-        { token: typedToken },
-        null
-      );
+      const response = new QRLoginTokenResponseDto(true, 'QR 토큰 생성 완료', { token: typedToken }, null);
       res.status(200).json(response);
     } catch (error) {
       logger.error(`QR 토큰 생성 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
