@@ -4,15 +4,14 @@ import { RawPostType } from '@/types';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class PostService {
-  constructor(private postRepo: PostRepository) { }
+  constructor(private postRepo: PostRepository) {}
 
   async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
       let result = null;
-      if (sort === "viewGrowth") {
+      if (sort === 'viewGrowth') {
         result = await this.postRepo.findPostsByUserIdWithGrowthMetrics(userId, cursor, isAsc, limit);
-      }
-      else {
+      } else {
         result = await this.postRepo.findPostsByUserId(userId, cursor, sort, isAsc, limit);
       }
 

@@ -3,7 +3,7 @@ import logger from '@/configs/logger.config';
 import { DBError } from '@/exception';
 
 export class NotiRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
   async getAllNotiPosts(limit: number = 5) {
     try {

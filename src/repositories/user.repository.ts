@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
 import { User } from '@/types';
-import { QRLoginToken } from "@/types/models/QRLoginToken.type";
+import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { DBError } from '@/exception';
 
 export class UserRepository {

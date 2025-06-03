@@ -1,8 +1,7 @@
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
-import pg from 'pg';
-import { PostRepository } from '../post.repository';
+import pg, { Pool } from 'pg';
 import logger from '@/configs/logger.config';
+import { PostRepository } from '@/repositories/post.repository';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 

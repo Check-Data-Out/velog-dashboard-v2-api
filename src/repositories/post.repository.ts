@@ -4,15 +4,9 @@ import { DBError } from '@/exception';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class PostRepository {
-  constructor(private pool: Pool) { }
+  constructor(private pool: Pool) {}
 
-  async findPostsByUserId(
-    userId: number,
-    cursor?: string,
-    sort?: string,
-    isAsc: boolean = false,
-    limit: number = 15
-  ) {
+  async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc: boolean = false, limit: number = 15) {
     const nowDateKST = getCurrentKSTDateString();
     const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
     const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
@@ -131,7 +125,7 @@ export class PostRepository {
     userId: number,
     cursor?: string,
     isAsc: boolean = false,
-    limit: number = 15
+    limit: number = 15,
   ) {
     const nowDateKST = getCurrentKSTDateString();
     const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);

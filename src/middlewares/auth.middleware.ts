@@ -32,7 +32,8 @@ const extractTokens = (req: Request): { accessToken: string; refreshToken: strin
  * const payload = extractPayload(token);
  * // 반환값: { sub: "1234567890" }
  */
-const extractPayload = (token: string): VelogJWTPayload => JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+const extractPayload = (token: string): VelogJWTPayload =>
+  JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 
 /**
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
@@ -51,7 +52,8 @@ const verifyBearerTokens = () => {
         throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
       }
 
-      const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id])).rows[0] as User;
+      const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
+        .rows[0] as User;
       if (!user) throw new DBError('사용자를 찾을 수 없습니다.');
 
       req.user = user;

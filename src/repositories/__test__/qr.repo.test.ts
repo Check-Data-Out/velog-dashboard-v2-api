@@ -2,16 +2,15 @@ import { UserRepository } from '@/repositories/user.repository';
 import { DBError } from '@/exception';
 import { Pool } from 'pg';
 import { QRLoginToken } from "@/types/models/QRLoginToken.type";
+import { mockPool } from './fixtures';
 
-const mockPool: Partial<Pool> = {
-  query: jest.fn(),
-};
+jest.mock('pg');
 
 describe('UserRepository - QR Login Token', () => {
   let repo: UserRepository;
 
   beforeEach(() => {
-    repo = new UserRepository(mockPool as Pool);
+    repo = new UserRepository(mockPool as unknown as Pool);
   });
 
   afterEach(() => {

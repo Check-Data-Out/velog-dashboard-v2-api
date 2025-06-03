@@ -11,7 +11,7 @@ import {
 } from '@/types';
 
 export class PostController {
-  constructor(private postService: PostService) { }
+  constructor(private postService: PostService) {}
 
   getAllPosts: RequestHandler = async (
     req: Request<object, object, object, GetAllPostsQuery>,

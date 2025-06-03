@@ -137,7 +137,7 @@ router.get(
   '/post/:postId',
   authMiddleware.verify,
   validateRequestDto(GetPostQueryDto, 'query'),
-  postController.getPostByPostId
+  postController.getPostByPostId,
 );
 
 export default router;
