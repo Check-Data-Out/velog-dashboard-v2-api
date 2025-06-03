@@ -8,6 +8,9 @@ import { fetchVelogApi } from '@/modules/velog/velog.api';
 
 type Token10 = string & { __lengthBrand: 10 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const THREE_WEEKS_IN_MS = 21 * 24 * 60 * 60 * 1000;
+
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -21,7 +24,9 @@ export class UserController {
 
     if (isProd) {
       baseOptions.sameSite = 'lax';
-      baseOptions.domain = 'velog-dashboard.kro.kr';
+      baseOptions.domain = "velog-dashboard.kro.kr";
+      baseOptions.maxAge = THREE_WEEKS_IN_MS; // 3주
+
     } else {
       baseOptions.domain = 'localhost';
     }
