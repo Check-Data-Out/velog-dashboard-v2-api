@@ -5,7 +5,7 @@ import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 export class TotalStatsService {
   constructor(private totalStatsRepo: TotalStatsRepository) {}
 
-  async getTotalStats(userId: number, period: TotalStatsPeriod = 7, type: TotalStatsType): Promise<TotalStatsItem[]> {
+  async getTotalStats(userId: number, period: TotalStatsPeriod = 7, type: TotalStatsType = 'view'): Promise<TotalStatsItem[]> {
     try {
       const rawStats = await this.totalStatsRepo.getTotalStats(userId, period, type);
 
@@ -19,7 +19,7 @@ export class TotalStatsService {
     }
   }
 
-  getSuccessMessage(type: TotalStatsType): string {
+  getSuccessMessage(type: TotalStatsType = 'view'): string {
     const messages = {
       view: '전체 조회수 변동 조회에 성공하였습니다.',
       like: '전체 좋아요 변동 조회에 성공하였습니다.',
