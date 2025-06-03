@@ -5,7 +5,11 @@ import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 export class TotalStatsService {
   constructor(private totalStatsRepo: TotalStatsRepository) {}
 
-  async getTotalStats(userId: number, period: TotalStatsPeriod = 7, type: TotalStatsType = 'view'): Promise<TotalStatsItem[]> {
+  async getTotalStats(
+    userId: number,
+    period: TotalStatsPeriod = 7,
+    type: TotalStatsType = 'view',
+  ): Promise<TotalStatsItem[]> {
     try {
       const rawStats = await this.totalStatsRepo.getTotalStats(userId, period, type);
 
