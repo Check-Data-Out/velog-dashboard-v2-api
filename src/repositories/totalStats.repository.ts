@@ -73,22 +73,16 @@ export class TotalStatsRepository {
             CURRENT_DATE,
             '1 day'::interval
           )::date AS date
-        ),
-        daily_posts AS (
-          SELECT 
-            DATE(p.released_at) AS date,
-            COUNT(*) AS post_count
-          FROM posts_post p
-          WHERE p.user_id = $1 
-            AND p.is_active = true
-            AND DATE(p.released_at) >= DATE($2)
-          GROUP BY DATE(p.released_at)
         )
         SELECT 
           ds.date,
-          COALESCE(SUM(dp.post_count) OVER (ORDER BY ds.date), 0) AS total_value
+          (SELECT COUNT(id) 
+          FROM posts_post p 
+          WHERE p.user_id = $1 
+            AND p.is_active = true 
+            AND DATE(p.released_at) <= ds.date
+          ) AS total_value
         FROM date_series ds
-        LEFT JOIN daily_posts dp ON ds.date = dp.date
         ORDER BY ds.date ASC;
       `;
 

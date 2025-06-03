@@ -124,7 +124,7 @@ describe('TotalStatsRepository', () => {
           [userId, mockStartDate]
         );
         expect(mockPool.query).toHaveBeenCalledWith(
-          expect.stringContaining('SUM(dp.post_count) OVER'),
+          expect.stringContaining('SELECT COUNT(id)'),
           [userId, mockStartDate]
         );
       });
@@ -217,8 +217,6 @@ describe('TotalStatsRepository', () => {
         const calledQuery = mockPool.query.mock.calls[0][0] as string;
         expect(calledQuery).toContain('WITH date_series AS');
         expect(calledQuery).toContain('generate_series');
-        expect(calledQuery).toContain('SUM(dp.post_count) OVER');
-        expect(calledQuery).toContain('DATE(p.released_at)');
       });
     });
   });
