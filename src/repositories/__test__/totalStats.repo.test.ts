@@ -1,8 +1,9 @@
-import { Pool} from 'pg';
+import { Pool } from 'pg';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 import { DBError } from '@/exception';
 import { getKSTDateStringWithOffset } from '@/utils/date.util';
-import { createMockQueryResult } from './fixture';
+import { mockPool, createMockQueryResult } from './fixture';
+import { TotalStatsType } from '@/types';
 
 // Mock dependencies
 jest.mock('@/configs/logger.config', () => ({
@@ -15,17 +16,12 @@ jest.mock('@/utils/date.util', () => ({
 
 describe('TotalStatsRepository', () => {
   let repository: TotalStatsRepository;
-  let mockPool: jest.Mocked<Pool>;
   let mockGetKSTDateStringWithOffset: jest.MockedFunction<typeof getKSTDateStringWithOffset>;
 
   beforeEach(() => {
-    mockPool = {
-      query: jest.fn(),
-    } as unknown as jest.Mocked<Pool>;
-
     mockGetKSTDateStringWithOffset = getKSTDateStringWithOffset as jest.MockedFunction<typeof getKSTDateStringWithOffset>;
-    
-    repository = new TotalStatsRepository(mockPool);
+
+    repository = new TotalStatsRepository(mockPool as unknown as Pool);
     jest.clearAllMocks();
   });
 
@@ -148,7 +144,7 @@ describe('TotalStatsRepository', () => {
       it('지원되지 않는 통계 타입이 전달되면 DBError를 던져야 한다', async () => {
         // When & Then
         await expect(
-          repository.getTotalStats(userId, period, 'invalid' as any)
+          repository.getTotalStats(userId, period, 'invalid' as unknown as TotalStatsType)
         ).rejects.toThrow(new DBError('지원되지 않는 통계 타입입니다.'));
 
         expect(mockPool.query).not.toHaveBeenCalled();

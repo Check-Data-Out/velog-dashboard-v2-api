@@ -1,7 +1,6 @@
 import logger from '@/configs/logger.config';
+import { TotalStatsPeriod, TotalStatsType, TotalStatsItem } from '@/types';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
-import { TotalStatsPeriod, TotalStatsType } from '@/types';
-import { TotalStatsItem } from '@/types';
 
 export class TotalStatsService {
   constructor(private totalStatsRepo: TotalStatsRepository) { }

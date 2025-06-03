@@ -6,8 +6,7 @@
 
 import logger from '@/configs/logger.config';
 import dotenv from 'dotenv';
-import pg from 'pg';
-import { Pool } from 'pg';
+import pg, { Pool } from 'pg';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
 

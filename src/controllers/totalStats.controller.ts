@@ -1,8 +1,8 @@
-import logger from '@/configs/logger.config';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
-import { TotalStatsService } from '@/services/totalStats.service';
-import { GetTotalStatsQuery, TotalStatsResponseDto } from '@/types';
+import logger from '@/configs/logger.config';
 import { BadRequestError } from '@/exception';
+import { GetTotalStatsQuery, TotalStatsResponseDto } from '@/types';
+import { TotalStatsService } from '@/services/totalStats.service';
 
 
 export class TotalStatsController {
