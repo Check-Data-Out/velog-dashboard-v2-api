@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { PostRepository } from '@/repositories/post.repository';
 import { DBError } from '@/exception';
-import { mockPool, createMockQueryResult } from './fixtures';
+import { mockPool, createMockQueryResult } from '@/utils/fixtures';
 
 jest.mock('pg');
 
