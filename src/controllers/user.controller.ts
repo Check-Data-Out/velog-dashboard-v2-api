@@ -24,9 +24,8 @@ export class UserController {
 
     if (isProd) {
       baseOptions.sameSite = 'lax';
-      baseOptions.domain = "velog-dashboard.kro.kr";
+      baseOptions.domain = 'velog-dashboard.kro.kr';
       baseOptions.maxAge = THREE_WEEKS_IN_MS; // 3주
-
     } else {
       baseOptions.domain = 'localhost';
     }
@@ -108,14 +107,16 @@ export class UserController {
   };
 
   fetchCurrentUser: RequestHandler = async (req: Request, res: Response<LoginResponseDto>) => {
-    // 외부 API (velog) 호출로 username 을 가져와야 함, 게시글 바로가기 때문에 (username)
-    const { accessToken, refreshToken } = req.tokens;
-    const velogUser = await fetchVelogApi(accessToken, refreshToken);
+    const currnetUser = req.user;
+
+    // 인가 middle 에서 만든 객체 그대로 재활용
+    const username = currnetUser.username || '';
+    const profile = { thumbnail: currnetUser.thumbnail || '' };
 
     const response = new LoginResponseDto(
       true,
       '유저 정보 조회에 성공하였습니다.',
-      { id: req.user.id, username: velogUser.username, profile: velogUser.profile },
+      { id: currnetUser.id, username: username, profile: profile },
       null,
     );
 
