@@ -107,16 +107,16 @@ export class UserController {
   };
 
   fetchCurrentUser: RequestHandler = async (req: Request, res: Response<LoginResponseDto>) => {
-    const currnetUser = req.user;
+    const currentUser = req.user;
 
     // 인가 middle 에서 만든 객체 그대로 재활용
-    const username = currnetUser.username || '';
-    const profile = { thumbnail: currnetUser.thumbnail || '' };
+    const username = currentUser.username || '';
+    const profile = { thumbnail: currentUser.thumbnail || '' };
 
     const response = new LoginResponseDto(
       true,
       '유저 정보 조회에 성공하였습니다.',
-      { id: currnetUser.id, username: username, profile: profile },
+      { id: currentUser.id, username: username, profile: profile },
       null,
     );
 
