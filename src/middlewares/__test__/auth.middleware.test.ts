@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { authMiddleware } from '@/middlewares/auth.middleware';
 import pool from '@/configs/db.config';
+import { mockUser } from '@/utils/fixtures';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -182,14 +183,6 @@ describe('인증 미들웨어', () => {
       mockRequest.body = {
         accessToken: validToken,
         refreshToken: 'refresh-token'
-      };
-
-      // 사용자 정보 mock
-      const mockUser = {
-        id: 1,
-        username: 'testuser',
-        email: 'test@example.com',
-        velog_uuid: 'c7507240-093b-11ea-9aae-a58a86bb0520'
       };
 
       // DB 쿼리 결과 모킹

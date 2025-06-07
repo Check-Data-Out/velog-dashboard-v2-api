@@ -1,9 +1,9 @@
 import { Pool } from 'pg';
-import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 import { DBError } from '@/exception';
-import { getKSTDateStringWithOffset } from '@/utils/date.util';
-import { mockPool, createMockQueryResult } from './fixtures';
 import { TotalStatsType } from '@/types';
+import { TotalStatsRepository } from '@/repositories/totalStats.repository';
+import { getKSTDateStringWithOffset } from '@/utils/date.util';
+import { mockPool, createMockQueryResult } from '@/utils/fixtures';
 
 // Mock dependencies
 jest.mock('@/configs/logger.config', () => ({

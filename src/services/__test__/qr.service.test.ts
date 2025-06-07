@@ -1,9 +1,9 @@
+import { Pool } from 'pg';
+import { DBError } from '@/exception';
 import { UserService } from '@/services/user.service';
 import { UserRepository } from '@/repositories/user.repository';
-import { DBError } from '@/exception';
 import { QRLoginToken } from '@/types/models/QRLoginToken.type';
-import { User } from '@/types';
-import { Pool } from 'pg';
+import { mockUser } from '@/utils/fixtures';
 
 // AESEncryption 클래스 모킹
 jest.mock('@/modules/token_encryption/aes_encryption', () => {
@@ -68,18 +68,6 @@ describe('UserService의 QR 로그인 기능', () => {
   });
 
   describe('useToken', () => {
-    const mockUser: User = {
-      id: 1,
-      velog_uuid: 'uuid-1',
-      access_token: 'encrypted-access-token',
-      refresh_token: 'encrypted-refresh-token',
-      email: 'test@example.com',
-      group_id: 1,
-      is_active: true,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
     const mockQRToken: QRLoginToken = {
       id: 1,
       token: 'token',

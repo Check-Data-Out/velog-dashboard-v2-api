@@ -103,7 +103,7 @@ router.post('/logout', authMiddleware.verify, userController.logout);
  *   get:
  *     tags:
  *       - User
- *     summary: 사용자 정보 조회
+ *     summary: 사용자 정보 조회, auth 미들웨어 객체 그대로 사용
  *     responses:
  *       '200':
  *         description: 성공

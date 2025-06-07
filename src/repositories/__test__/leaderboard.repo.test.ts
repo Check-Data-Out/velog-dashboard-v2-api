@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
 import { DBError } from '@/exception';
-import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types';
-import { mockPool, createMockQueryResult } from './fixtures';
+import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
+import { mockPool, createMockQueryResult } from '@/utils/fixtures';
 
 jest.mock('pg');
 
