@@ -56,7 +56,8 @@ export class UserService {
     refreshToken: string,
   ): Promise<User> {
     // velog response 에서 주는 응답 혼용 방지를 위한 변경 id -> uuid
-    const { id: uuid, email = null, username, profile: { thumbnail } } = userData;
+    const { id: uuid, email = null, username, profile } = userData;
+    const thumbnail = profile?.thumbnail || null // undefined 방어
     try {
       let user = await this.userRepo.findByUserVelogUUID(uuid);
 
