@@ -58,6 +58,17 @@ jobs:
           echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
+          # AES 키들 추가 (테스트용 더미 키)
+          echo "AES_KEY_0=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" >> .env
+          echo "AES_KEY_1=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" >> .env
+          echo "AES_KEY_2=cccccccccccccccccccccccccccccccc" >> .env
+          echo "AES_KEY_3=dddddddddddddddddddddddddddddddd" >> .env
+          echo "AES_KEY_4=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" >> .env
+          echo "AES_KEY_5=ffffffffffffffffffffffffffffffff" >> .env
+          echo "AES_KEY_6=gggggggggggggggggggggggggggggggg" >> .env
+          echo "AES_KEY_7=hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh" >> .env
+          echo "AES_KEY_8=iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii" >> .env
+          echo "AES_KEY_9=jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" >> .env
 
       - name: Run lint
         run: pnpm run lint
