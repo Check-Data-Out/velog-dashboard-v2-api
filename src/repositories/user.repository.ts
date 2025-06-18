@@ -42,7 +42,7 @@ export class UserRepository {
     }
   }
 
-  async updateTokens(uuid: string, email: string, username: string, thumbnail: string, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
+  async updateTokens(uuid: string, email: string | null, username: string | null, thumbnail: string | null, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
     try {
       const query = `
         UPDATE "users_user"
@@ -67,7 +67,7 @@ export class UserRepository {
   async createUser(
     uuid: string,
     email: string | null,
-    username: string,
+    username: string | null,
     thumbnail: string | null,
     encryptedAccessToken: string,
     encryptedRefreshToken: string,
