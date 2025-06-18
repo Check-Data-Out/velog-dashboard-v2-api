@@ -132,7 +132,7 @@ export class UserService {
   }
 
   async updateUserTokens(userData: UserWithTokenDto) {
-    return await this.userRepo.updateTokens(userData.uuid, userData.email || '', userData.username, userData.thumbnail || '', userData.accessToken, userData.refreshToken);
+    return await this.userRepo.updateTokens(userData.uuid, userData.email, userData.username, userData.thumbnail, userData.accessToken, userData.refreshToken);
   }
 
   async createUserQRToken(userId: number, ip: string, userAgent: string): Promise<string> {

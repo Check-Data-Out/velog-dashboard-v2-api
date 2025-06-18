@@ -12,7 +12,7 @@ type Token10 = string & { __lengthBrand: 10 };
 const THREE_WEEKS_IN_MS = 21 * 24 * 60 * 60 * 1000;
 
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService) { }
 
   /**
    * 환경 및 쿠키 삭제 여부에 따라 쿠키 옵션을 생성합니다.
@@ -55,7 +55,7 @@ export class UserController {
       const response = new LoginResponseDto(
         true,
         '로그인에 성공하였습니다.',
-        { id: user.id, username: velogUser.username, profile: velogUser.profile },
+        { id: user.id, username: user.username || '', profile: { thumbnail: user.thumbnail || '' } },
         null,
       );
 
