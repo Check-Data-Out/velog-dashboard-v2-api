@@ -14,23 +14,26 @@ const THREE_WEEKS_IN_MS = 21 * 24 * 60 * 60 * 1000;
 export class UserController {
   constructor(private userService: UserService) {}
 
-  private cookieOption(): CookieOptions {
+  /**
+   * 환경 및 쿠키 삭제 여부에 따라 쿠키 옵션을 생성합니다.
+   *
+   * @param isClear - true일 경우 쿠키 삭제용 옵션을 생성합니다. 기본값은 false입니다.
+   * @returns 현재 환경에 맞게 설정된 CookieOptions 객체를 반환합니다.
+   */
+  private cookieOption(isClear: boolean = false): CookieOptions {
     const isProd = process.env.NODE_ENV === 'production';
-
-    const baseOptions: CookieOptions = {
+    const options: CookieOptions = {
       httpOnly: isProd,
       secure: isProd,
+      sameSite: isProd ? 'lax' : undefined,
+      domain: isProd ? 'velog-dashboard.kro.kr' : 'localhost',
     };
 
-    if (isProd) {
-      baseOptions.sameSite = 'lax';
-      baseOptions.domain = 'velog-dashboard.kro.kr';
-      baseOptions.maxAge = THREE_WEEKS_IN_MS; // 3주
-    } else {
-      baseOptions.domain = 'localhost';
+    if (isProd && !isClear) {
+      options.maxAge = THREE_WEEKS_IN_MS;
     }
 
-    return baseOptions;
+    return options;
   }
 
   login: RequestHandler = async (req: Request, res: Response<LoginResponseDto>, next: NextFunction): Promise<void> => {
@@ -43,8 +46,8 @@ export class UserController {
       const user = await this.userService.handleUserTokensByVelogUUID(velogUser, accessToken, refreshToken);
 
       // 3. 로그이 완료 후 쿠키 세팅
-      res.clearCookie('access_token', this.cookieOption());
-      res.clearCookie('refresh_token', this.cookieOption());
+      res.clearCookie('access_token', this.cookieOption(true));
+      res.clearCookie('refresh_token', this.cookieOption(true));
 
       res.cookie('access_token', accessToken, this.cookieOption());
       res.cookie('refresh_token', refreshToken, this.cookieOption());
@@ -71,8 +74,8 @@ export class UserController {
     try {
       const sampleUser = await this.userService.findSampleUser();
 
-      res.clearCookie('access_token', this.cookieOption());
-      res.clearCookie('refresh_token', this.cookieOption());
+      res.clearCookie('access_token', this.cookieOption(true));
+      res.clearCookie('refresh_token', this.cookieOption(true));
 
       res.cookie('access_token', sampleUser.decryptedAccessToken, this.cookieOption());
       res.cookie('refresh_token', sampleUser.decryptedRefreshToken, this.cookieOption());
@@ -98,8 +101,8 @@ export class UserController {
   };
 
   logout: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>) => {
-    res.clearCookie('access_token', this.cookieOption());
-    res.clearCookie('refresh_token', this.cookieOption());
+    res.clearCookie('access_token', this.cookieOption(true));
+    res.clearCookie('refresh_token', this.cookieOption(true));
 
     const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
 
@@ -155,8 +158,8 @@ export class UserController {
         throw new QRTokenExpiredError();
       }
 
-      res.clearCookie('access_token', this.cookieOption());
-      res.clearCookie('refresh_token', this.cookieOption());
+      res.clearCookie('access_token', this.cookieOption(true));
+      res.clearCookie('refresh_token', this.cookieOption(true));
 
       res.cookie('access_token', userLoginToken.decryptedAccessToken, this.cookieOption());
       res.cookie('refresh_token', userLoginToken.decryptedRefreshToken, this.cookieOption());

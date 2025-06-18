@@ -11,15 +11,24 @@ export class UserWithTokenDto {
 
   @IsNotEmpty()
   @IsString()
+  username: string;
+
+  @IsOptional()
+  thumbnail: string | null = null;
+
+  @IsNotEmpty()
+  @IsString()
   accessToken: string;
 
   @IsNotEmpty()
   @IsString()
   refreshToken: string;
 
-  constructor(uuid: string, email: string | null, accessToken: string, refreshToken: string) {
+  constructor(uuid: string, email: string | null, username: string, thumbnail: string | null,  accessToken: string, refreshToken: string) {
     this.uuid = uuid;
     this.email = email;
+    this.username = username;
+    this.thumbnail = thumbnail;
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
   }
