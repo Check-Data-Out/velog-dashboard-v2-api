@@ -8,16 +8,6 @@ import { NotFoundError } from '@/exception';
 import { mockUser, mockPool } from '@/utils/fixtures';
 import { Pool } from 'pg';
 
-// Mock dependencies
-jest.mock('@/services/user.service');
-jest.mock('@/modules/velog/velog.api');
-
-// logger 모킹
-jest.mock('@/configs/logger.config', () => ({
-  error: jest.fn(),
-  info: jest.fn(),
-}));
-
 // 환경변수 모킹 (AES 키 설정, 첫 메모리 로드될때 util 함수쪽 key 세팅 이슈 방지)
 process.env.AES_KEY_0 = 'a'.repeat(32);
 process.env.AES_KEY_1 = 'b'.repeat(32);
@@ -31,6 +21,15 @@ process.env.AES_KEY_8 = 'i'.repeat(32);
 process.env.AES_KEY_9 = 'j'.repeat(32);
 process.env.NODE_ENV = 'test';
 
+// Mock dependencies
+jest.mock('@/services/user.service');
+jest.mock('@/modules/velog/velog.api');
+
+// logger 모킹
+jest.mock('@/configs/logger.config', () => ({
+  error: jest.fn(),
+  info: jest.fn(),
+}));
 
 describe('UserController', () => {
   let userController: UserController;
