@@ -18,6 +18,20 @@ jest.mock('@/configs/logger.config', () => ({
   info: jest.fn(),
 }));
 
+// 환경변수 모킹 (AES 키 설정, 첫 메모리 로드될때 util 함수쪽 key 세팅 이슈 방지)
+process.env.AES_KEY_0 = 'a'.repeat(32);
+process.env.AES_KEY_1 = 'b'.repeat(32);
+process.env.AES_KEY_2 = 'c'.repeat(32);
+process.env.AES_KEY_3 = 'd'.repeat(32);
+process.env.AES_KEY_4 = 'e'.repeat(32);
+process.env.AES_KEY_5 = 'f'.repeat(32);
+process.env.AES_KEY_6 = 'g'.repeat(32);
+process.env.AES_KEY_7 = 'h'.repeat(32);
+process.env.AES_KEY_8 = 'i'.repeat(32);
+process.env.AES_KEY_9 = 'j'.repeat(32);
+process.env.NODE_ENV = 'test';
+
+
 describe('UserController', () => {
   let userController: UserController;
   let mockUserService: jest.Mocked<UserService>;
@@ -26,6 +40,8 @@ describe('UserController', () => {
   let nextFunction: jest.Mock;
 
   beforeEach(() => {
+    process.env.NODE_ENV = 'development';
+
     // UserService 모킹
     const userRepo = new UserRepository(mockPool as unknown as Pool);
     const serviceInstance = new UserService(userRepo);
@@ -52,9 +68,6 @@ describe('UserController', () => {
     };
 
     nextFunction = jest.fn();
-
-    // 환경변수 모킹
-    process.env.NODE_ENV = 'development';
   });
 
   afterEach(() => {
