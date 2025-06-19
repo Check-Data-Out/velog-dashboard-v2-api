@@ -5,7 +5,7 @@ import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { DBError } from '@/exception';
 
 export class UserRepository {
-  constructor(private readonly pool: Pool) {}
+  constructor(private readonly pool: Pool) { }
 
   async findByUserId(id: number): Promise<User> {
     try {
@@ -42,15 +42,15 @@ export class UserRepository {
     }
   }
 
-  async updateTokens(uuid: string, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
+  async updateTokens(uuid: string, email: string | null, username: string | null, thumbnail: string | null, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
     try {
       const query = `
         UPDATE "users_user"
-        SET access_token = $1, refresh_token = $2, updated_at = NOW(), is_active = true
-        WHERE velog_uuid = $3
+        SET access_token = $1, refresh_token = $2, email = $3, username = $4, thumbnail = $5, updated_at = NOW(), is_active = true
+        WHERE velog_uuid = $6
         RETURNING *;
       `;
-      const values = [encryptedAccessToken, encryptedRefreshToken, uuid];
+      const values = [encryptedAccessToken, encryptedRefreshToken, email, username, thumbnail, uuid];
 
       const result = await this.pool.query(query, values);
 
@@ -67,6 +67,8 @@ export class UserRepository {
   async createUser(
     uuid: string,
     email: string | null,
+    username: string | null,
+    thumbnail: string | null,
     encryptedAccessToken: string,
     encryptedRefreshToken: string,
     groupId: number,
@@ -78,17 +80,19 @@ export class UserRepository {
         access_token,
         refresh_token,
         email,
+        username,
+        thumbnail,
         group_id,
         is_active,
         created_at,
         updated_at
       )
       VALUES (
-        $1, $2, $3, $4, $5, true, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW()
       )
       RETURNING *;
       `;
-      const values = [uuid, encryptedAccessToken, encryptedRefreshToken, email, groupId];
+      const values = [uuid, encryptedAccessToken, encryptedRefreshToken, email, username, thumbnail, groupId];
 
       const result = await this.pool.query(query, values);
       if (!result.rows[0]) {
