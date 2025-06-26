@@ -2,8 +2,10 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { SlackService } from '@/services/slack.service';
 import { SentryService } from '@/services/sentry.service';
 import { SentryWebhookData, SlackMessage } from '@/types';
+import { SentryActionData, SentryApiAction } from '@/types/models/Sentry.type';
 import logger from '@/configs/logger.config';
 import { formatSentryIssueForSlack, createStatusUpdateMessage } from '@/utils/slack.util';
+import { getNewStatusFromAction } from '@/utils/sentry.util';
 
 export class WebhookController {
   constructor(
@@ -33,6 +35,51 @@ export class WebhookController {
       res.status(200).json({ message: 'Webhook processed successfully' });
     } catch (error) {
       logger.error('Sentry webhook 처리 실패:', error instanceof Error ? error.message : '알 수 없는 오류');
+      next(error);
+    }
+  };
+
+  handleSlackInteractive: RequestHandler = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const payload = JSON.parse(req.body.payload);
+      
+      if (payload.type === 'interactive_message' && payload.actions && payload.actions[0]) {
+        const action = payload.actions[0];
+        
+        if (action.name === 'sentry_action') {
+          const [actionType, issueId, organizationSlug, projectSlug] = action.value.split(':');
+          
+          const actionData: SentryActionData = {
+            action: actionType as SentryApiAction,
+            issueId,
+            organizationSlug,
+            projectSlug,
+          };
+
+          if (actionData.issueId && actionData.organizationSlug && actionData.projectSlug) {
+            logger.info('Processing Sentry action:', actionData);
+
+            const result = await this.sentryService.handleIssueAction(actionData);
+            
+            if (result.success) {
+              const updatedMessage = this.createSuccessMessage(actionData, payload.original_message || {});
+              res.json(updatedMessage);
+            } else {
+              const errorMessage = this.createErrorMessage(result.error || 'Unknown error', payload.original_message || {});
+              res.json(errorMessage);
+            }
+            return;
+          }
+        }
+      }
+
+      res.json({ text: '❌ 잘못된 요청입니다.' });
+    } catch (error) {
+      logger.error('Slack Interactive 처리 실패:', error instanceof Error ? error.message : '알 수 없는 오류');
       next(error);
     }
   };
@@ -105,5 +152,53 @@ export class WebhookController {
     }
     
     return formatSentryIssueForSlack(sentryData, this.sentryService.hasSentryToken());
+  }
+
+  private createSuccessMessage(actionData: SentryActionData, originalMessage: unknown): unknown {
+    const { action } = actionData;
+
+    const updatedMessage = JSON.parse(JSON.stringify(originalMessage));
+    
+    if (updatedMessage.attachments && updatedMessage.attachments[0]) {
+      const newStatus = getNewStatusFromAction(action);
+      const statusColors = {
+        'resolved': 'good',
+        'ignored': 'warning',
+        'archived': '#808080',
+        'unresolved': 'danger',
+      };
+      
+      updatedMessage.attachments[0].color = statusColors[newStatus as keyof typeof statusColors] || 'good';
+      
+      const statusMapping = {
+        'resolved': 'RESOLVED',
+        'ignored': 'IGNORED',
+        'archived': 'ARCHIVED',
+        'unresolved': 'UNRESOLVED',
+      };
+      
+      const statusText = statusMapping[newStatus as keyof typeof statusMapping] || newStatus.toUpperCase();
+      updatedMessage.attachments[0].footer = `✅ ${statusText} | 처리 완료: ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`;
+      
+      delete updatedMessage.attachments[0].actions;
+    }
+
+    return updatedMessage;
+  }
+
+  private createErrorMessage(error: string, originalMessage: unknown): unknown {
+    const updatedMessage = JSON.parse(JSON.stringify(originalMessage));
+    
+    if (updatedMessage.attachments && updatedMessage.attachments[0]) {
+      updatedMessage.attachments[0].fields.push({
+        title: '❌ 오류 발생',
+        value: error,
+        short: false,
+      });
+
+      updatedMessage.attachments[0].color = 'danger';
+    }
+
+    return updatedMessage;
   }
 } 

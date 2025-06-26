@@ -55,4 +55,40 @@ const webhookController = new WebhookController(slackService, sentryService);
  */
 router.post('/webhook/sentry', webhookController.handleSentryWebhook);
 
+/**
+ * @swagger
+ * /webhook/slack/interactive:
+ *   post:
+ *     summary: Slack Interactive Components 처리
+ *     description: Slack에서 전송되는 버튼 클릭 등의 상호작용을 처리합니다.
+ *     tags: [Webhook]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               payload:
+ *                 type: string
+ *                 description: JSON 형태의 Slack payload (URL encoded)
+ *     responses:
+ *       200:
+ *         description: 상호작용 처리 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 text:
+ *                   type: string
+ *                   example: "버튼 클릭 처리 완료"
+ *                 response_type:
+ *                   type: string
+ *                   enum: [in_channel, ephemeral]
+ *       400:
+ *         description: 잘못된 요청
+ */
+router.post('/webhook/slack/interactive', webhookController.handleSlackInteractive);
+
 export default router; 

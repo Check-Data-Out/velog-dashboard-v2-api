@@ -71,10 +71,6 @@ export type {
 export type {
   SlackInteractiveRequestBody,
 } from '@/types/dto/requests/slackRequest.type';
-export {
-  PermissionCheckResponseDto,
-  SlackSuccessResponseDto,
-} from '@/types/dto/responses/slackResponse.type';
 
 // Common
 export { EmptyResponseDto } from '@/types/dto/responses/emptyReponse.type';
