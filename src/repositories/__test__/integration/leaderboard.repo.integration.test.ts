@@ -105,6 +105,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
       result.forEach((leaderboardUser) => {
         expect(leaderboardUser).toHaveProperty('id');
         expect(leaderboardUser).toHaveProperty('email');
+        expect(leaderboardUser).toHaveProperty('username');
         expect(leaderboardUser).toHaveProperty('total_views');
         expect(leaderboardUser).toHaveProperty('total_likes');
         expect(leaderboardUser).toHaveProperty('total_posts');
@@ -214,13 +215,13 @@ describe('LeaderboardRepository 통합 테스트', () => {
       }
     });
 
-    it('email이 null인 사용자는 제외되어야 한다', async () => {
+    it('username이 null인 사용자는 제외되어야 한다', async () => {
       const result = await repo.getUserLeaderboard(DEFAULT_PARAMS.USER_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
 
-      if (!isEnoughData(result, 1, '사용자 리더보드 email null 제외')) return;
+      if (!isEnoughData(result, 1, '사용자 리더보드 username null 제외')) return;
 
       result.forEach((user) => {
-        expect(user.email).not.toBeNull();
+        expect(user.username).not.toBeNull();
       });
     });
   });
@@ -241,6 +242,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
         expect(leaderboardPost).toHaveProperty('id');
         expect(leaderboardPost).toHaveProperty('title');
         expect(leaderboardPost).toHaveProperty('slug');
+        expect(leaderboardPost).toHaveProperty('username');
         expect(leaderboardPost).toHaveProperty('total_views');
         expect(leaderboardPost).toHaveProperty('total_likes');
         expect(leaderboardPost).toHaveProperty('view_diff');

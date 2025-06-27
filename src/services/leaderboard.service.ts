@@ -41,7 +41,8 @@ export class LeaderboardService {
   private mapRawUserResult(rawResult: RawUserResult[]): UserLeaderboardData {
     const users = rawResult.map((user) => ({
       id: user.id,
-      email: user.email,
+      email: user.email || null,
+      username: user.username,
       totalViews: Number(user.total_views),
       totalLikes: Number(user.total_likes),
       totalPosts: Number(user.total_posts),
@@ -58,6 +59,7 @@ export class LeaderboardService {
       id: post.id,
       title: post.title,
       slug: post.slug,
+      username: post.username || null,
       totalViews: Number(post.total_views),
       totalLikes: Number(post.total_likes),
       viewDiff: Number(post.view_diff),
@@ -69,24 +71,26 @@ export class LeaderboardService {
   }
 }
 
-interface RawPostResult {
-  id: string;
-  title: string;
-  slug: string;
-  total_views: string;
-  total_likes: string;
-  view_diff: string;
-  like_diff: string;
-  released_at: string;
-}
-
 interface RawUserResult {
   id: string;
-  email: string;
+  email: string | null;
+  username: string | null;
   total_views: string;
   total_likes: string;
   total_posts: string;
   view_diff: string;
   like_diff: string;
   post_diff: string;
+}
+
+interface RawPostResult {
+  id: string;
+  title: string;
+  slug: string;
+  username: string | null;
+  total_views: string;
+  total_likes: string;
+  view_diff: string;
+  like_diff: string;
+  released_at: string;
 }

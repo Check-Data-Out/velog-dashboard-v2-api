@@ -17,6 +17,7 @@ export class LeaderboardRepository {
         SELECT
           u.id AS id,
           u.email AS email,
+          u.username AS username,
           COALESCE(SUM(ts.today_view), 0) AS total_views,
           COALESCE(SUM(ts.today_like), 0) AS total_likes, 
           COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
@@ -27,8 +28,8 @@ export class LeaderboardRepository {
         LEFT JOIN posts_post p ON p.user_id = u.id
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
-        WHERE u.email IS NOT NULL
-        GROUP BY u.id, u.email
+        WHERE u.username IS NOT NULL
+        GROUP BY u.id, u.email, u.username
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, u.id
         LIMIT $1;
       `;
@@ -52,11 +53,13 @@ export class LeaderboardRepository {
           p.title,
           p.slug,
           p.released_at,
+          u.username AS username,
           COALESCE(ts.today_view, 0) AS total_views,
           COALESCE(ts.today_like, 0) AS total_likes,
           COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0)) AS view_diff,
           COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0)) AS like_diff
         FROM posts_post p
+        LEFT JOIN users_user u ON u.id = p.user_id
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE p.is_active = true

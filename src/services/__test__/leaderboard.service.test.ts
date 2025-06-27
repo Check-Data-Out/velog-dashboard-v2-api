@@ -30,6 +30,7 @@ describe('LeaderboardService', () => {
         {
           id: '1',
           email: 'test@test.com',
+          username: 'test',
           total_views: '100',
           total_likes: '50',
           total_posts: '1',
@@ -40,6 +41,7 @@ describe('LeaderboardService', () => {
         {
           id: '2',
           email: 'test2@test.com',
+          username: 'test2',
           total_views: '200',
           total_likes: '100',
           total_posts: '2',
@@ -54,6 +56,7 @@ describe('LeaderboardService', () => {
           {
             id: '1',
             email: 'test@test.com',
+            username: 'test',
             totalViews: 100,
             totalLikes: 50,
             totalPosts: 1,
@@ -64,6 +67,7 @@ describe('LeaderboardService', () => {
           {
             id: '2',
             email: 'test2@test.com',
+            username: 'test2',
             totalViews: 200,
             totalLikes: 100,
             totalPosts: 2,
@@ -121,6 +125,7 @@ describe('LeaderboardService', () => {
           id: '1',
           title: 'test',
           slug: 'test-slug',
+          username: 'test',
           total_views: '100',
           total_likes: '50',
           view_diff: '20',
@@ -131,6 +136,7 @@ describe('LeaderboardService', () => {
           id: '2',
           title: 'test2',
           slug: 'test2-slug',
+          username: 'test2',
           total_views: '200',
           total_likes: '100',
           view_diff: '10',
@@ -145,6 +151,7 @@ describe('LeaderboardService', () => {
             id: '1',
             title: 'test',
             slug: 'test-slug',
+            username: 'test',
             totalViews: 100,
             totalLikes: 50,
             viewDiff: 20,
@@ -155,6 +162,7 @@ describe('LeaderboardService', () => {
             id: '2',
             title: 'test2',
             slug: 'test2-slug',
+            username: 'test2',
             totalViews: 200,
             totalLikes: 100,
             viewDiff: 10,
