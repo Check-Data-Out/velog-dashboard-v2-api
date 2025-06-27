@@ -74,7 +74,7 @@ export class LeaderboardService {
 interface RawUserResult {
   id: string;
   email: string | null;
-  username: string | null;
+  username: string;
   total_views: string;
   total_likes: string;
   total_posts: string;
