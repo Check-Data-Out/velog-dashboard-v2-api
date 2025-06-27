@@ -6,7 +6,6 @@ import LeaderboardRouter from './leaderboard.router';
 import TotalStatsRouter from './totalStats.router';
 import WebhookRouter from './webhook.router';
 
-
 const router: Router = express.Router();
 
 router.use('/ping', (req, res) => {

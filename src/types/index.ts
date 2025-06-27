@@ -40,37 +40,14 @@ export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.
 
 // Sentry 관련
 export type {
-  SentryIssuePriority,
   SentryIssueStatus,
   SentryAction,
-  SentryApiAction,
 } from '@/types/models/Sentry.type';
 export type {
   SentryProject,
-  SentryIssueMetadata,
   SentryIssue,
-  SentryActor,
   SentryWebhookData,
-  SentryActionData,
-  SentryActionResult,
 } from '@/types/models/Sentry.type';
-
-// Slack 관련
-export type {
-  SlackAttachmentField,
-  SlackAction,
-  SlackAttachment,
-  SlackMessage,
-  SlackInteractiveAction,
-  SlackInteractivePayload,
-  StoredMessageInfo,
-  SlackApiResponse,
-  SlackPermissionsData,
-} from '@/types/models/Slack.type';
-
-export type {
-  SlackInteractiveRequestBody,
-} from '@/types/dto/requests/slackRequest.type';
 
 // Common
 export { EmptyResponseDto } from '@/types/dto/responses/emptyReponse.type';
