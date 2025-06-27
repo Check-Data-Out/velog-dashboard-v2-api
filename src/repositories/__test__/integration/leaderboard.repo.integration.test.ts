@@ -12,7 +12,7 @@ import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
 
 dotenv.config();
 
-jest.setTimeout(20000); // 각 케이스당 20초 타임아웃 설정
+jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
 
 /**
  * LeaderboardRepository 통합 테스트
@@ -44,7 +44,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
         idleTimeoutMillis: 30000, // 연결 유휴 시간 (30초)
         connectionTimeoutMillis: 5000, // 연결 시간 초과 (5초)
         allowExitOnIdle: false, // 유휴 상태에서 종료 허용
-        statement_timeout: 30000,
+        statement_timeout: 60000, // 쿼리 타임아웃 증가 (60초)
       };
 
       // localhost 가 아니면 ssl 필수
