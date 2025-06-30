@@ -13,6 +13,10 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  *         email:
  *           type: string
  *           description: 사용자 이메일
+ *           nullable: true
+ *         username:
+ *           type: string
+ *           description: 사용자 이름
  *         totalViews:
  *           type: integer
  *           description: 누적 조회수
@@ -34,7 +38,8 @@ import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
  */
 interface LeaderboardUser {
   id: string;
-  email: string;
+  email: string | null;
+  username: string;
   totalViews: number;
   totalLikes: number;
   totalPosts: number;
@@ -89,6 +94,10 @@ export class UserLeaderboardResponseDto extends BaseResponseDto<UserLeaderboardD
  *         slug:
  *           type: string
  *           description: 게시물 url slug 값
+ *         username:
+ *           type: string
+ *           nullable: true
+ *           description: 게시물 작성자 이름
  *         totalViews:
  *           type: integer
  *           description: 누적 조회수
@@ -110,6 +119,7 @@ interface LeaderboardPost {
   id: string;
   title: string;
   slug: string;
+  username: string | null;
   totalViews: number;
   totalLikes: number;
   viewDiff: number;

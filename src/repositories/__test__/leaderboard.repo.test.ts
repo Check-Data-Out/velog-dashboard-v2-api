@@ -6,7 +6,6 @@ import { mockPool, createMockQueryResult } from '@/utils/fixtures';
 
 jest.mock('pg');
 
-
 describe('LeaderboardRepository', () => {
   let repo: LeaderboardRepository;
 
@@ -20,6 +19,7 @@ describe('LeaderboardRepository', () => {
         {
           id: '1',
           email: 'test@test.com',
+          username: 'test',
           total_views: 100,
           total_likes: 50,
           total_posts: 1,
@@ -30,6 +30,7 @@ describe('LeaderboardRepository', () => {
         {
           id: '2',
           email: 'test2@test.com',
+          username: 'test2',
           total_views: 200,
           total_likes: 100,
           total_posts: 2,
@@ -79,7 +80,7 @@ describe('LeaderboardRepository', () => {
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
-        [expect.any(Number)] // limit
+        [expect.any(Number)], // limit
       );
     });
 
@@ -96,6 +97,7 @@ describe('LeaderboardRepository', () => {
           id: '2',
           title: 'test2',
           slug: 'test2',
+          username: 'test2',
           total_views: 200,
           total_likes: 100,
           view_diff: 20,
@@ -106,6 +108,7 @@ describe('LeaderboardRepository', () => {
           id: '1',
           title: 'test',
           slug: 'test',
+          username: 'test',
           total_views: 100,
           total_likes: 50,
           view_diff: 10,
@@ -154,7 +157,7 @@ describe('LeaderboardRepository', () => {
 
       expect(mockPool.query).toHaveBeenCalledWith(
         expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
-        [expect.any(Number)] // limit
+        [expect.any(Number)], // limit
       );
     });
 

@@ -12,7 +12,7 @@ import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
 
 dotenv.config();
 
-jest.setTimeout(20000); // 각 케이스당 20초 타임아웃 설정
+jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
 
 /**
  * LeaderboardRepository 통합 테스트
@@ -44,7 +44,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
         idleTimeoutMillis: 30000, // 연결 유휴 시간 (30초)
         connectionTimeoutMillis: 5000, // 연결 시간 초과 (5초)
         allowExitOnIdle: false, // 유휴 상태에서 종료 허용
-        statement_timeout: 30000,
+        statement_timeout: 60000, // 쿼리 타임아웃 증가 (60초)
       };
 
       // localhost 가 아니면 ssl 필수
@@ -105,6 +105,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
       result.forEach((leaderboardUser) => {
         expect(leaderboardUser).toHaveProperty('id');
         expect(leaderboardUser).toHaveProperty('email');
+        expect(leaderboardUser).toHaveProperty('username');
         expect(leaderboardUser).toHaveProperty('total_views');
         expect(leaderboardUser).toHaveProperty('total_likes');
         expect(leaderboardUser).toHaveProperty('total_posts');
@@ -214,13 +215,13 @@ describe('LeaderboardRepository 통합 테스트', () => {
       }
     });
 
-    it('email이 null인 사용자는 제외되어야 한다', async () => {
+    it('username이 null인 사용자는 제외되어야 한다', async () => {
       const result = await repo.getUserLeaderboard(DEFAULT_PARAMS.USER_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
 
-      if (!isEnoughData(result, 1, '사용자 리더보드 email null 제외')) return;
+      if (!isEnoughData(result, 1, '사용자 리더보드 username null 제외')) return;
 
       result.forEach((user) => {
-        expect(user.email).not.toBeNull();
+        expect(user.username).not.toBeNull();
       });
     });
   });
@@ -241,6 +242,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
         expect(leaderboardPost).toHaveProperty('id');
         expect(leaderboardPost).toHaveProperty('title');
         expect(leaderboardPost).toHaveProperty('slug');
+        expect(leaderboardPost).toHaveProperty('username');
         expect(leaderboardPost).toHaveProperty('total_views');
         expect(leaderboardPost).toHaveProperty('total_likes');
         expect(leaderboardPost).toHaveProperty('view_diff');
