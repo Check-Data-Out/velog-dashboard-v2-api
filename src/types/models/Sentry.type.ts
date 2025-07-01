@@ -1,3 +1,7 @@
+// 모든 상세 타입의 정보는 해당 문서 페이지에서 확인하실 수 있습니다.
+// Sentry AI 왈 내용이 문서와 실제 전송되는 값들이 조금씩 다를 수 있다고 하는데, 전체적인 구조와 각 값의 타입은 동일하다고 하네요
+// 참고: https://docs.sentry.io/organization/integrations/integration-platform/webhooks/issues/#statusdetails
+
 export type SentryIssueStatus = 'resolved' | 'unresolved' | 'ignored';
 export type SentryIssueSubStatus = "archived_until_escalating" | "archived_until_condition_met" | "archived_forever" | "escalating" | "ongoing" | "regressed" | "new"
 
@@ -62,8 +66,6 @@ export interface SentryIssue {
   lastSeen: string;
 }
 
-// 무조건 오류 생성(created) 메세지만 받도록 해 두었기 때문에, 무조건 해당 타입의 형태로 넘어옵니다
-// 참고: https://docs.sentry.io/organization/integrations/integration-platform/webhooks/issues/
 export interface SentryWebhookData {
   action: 'created';
   installation: { uuid: string };
