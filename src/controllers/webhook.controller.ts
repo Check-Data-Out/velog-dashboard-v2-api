@@ -1,7 +1,7 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { EmptyResponseDto, SentryWebhookData } from '@/types';
 import logger from '@/configs/logger.config';
-// import { sendSlackMessage } from '@/modules/slack/slack.notifier';
+import { sendSlackMessage } from '@/modules/slack/slack.notifier';
 
 export class WebhookController {
   private readonly STATUS_EMOJI = {
@@ -17,11 +17,14 @@ export class WebhookController {
     next: NextFunction,
   ): Promise<void> => {
     try {
+      if (!req.body || typeof req.body !== 'object' || req.body.action !== "created") { 
+        res.status(400).json(new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null));
+      }
+
       const sentryData: SentryWebhookData = req.body;
-      if(sentryData.action !== "created") res.status(400).json(new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null));
+
       const slackMessage = this.formatSentryMessage(sentryData);
-      console.log(slackMessage);
-      // await sendSlackMessage(slackMessage);
+      await sendSlackMessage(slackMessage);
 
       const response = new EmptyResponseDto(true, 'Sentry 웹훅 처리에 성공하였습니다.', {}, null);
       res.status(200).json(response);
@@ -34,7 +37,7 @@ export class WebhookController {
   private formatSentryMessage(sentryData: SentryWebhookData): string {
     const { data: { issue } } = sentryData;
 
-    if(!issue.status || !issue.title || !issue.culprit || !issue.permalink || !issue.id) throw new Error('Sentry 웹훅 데이터가 올바르지 않습니다');
+    if(!issue.status || !issue.title || !issue.culprit || !issue.id) throw new Error('Sentry 웹훅 데이터가 올바르지 않습니다');
 
     const { status, title: issueTitle, culprit, permalink, id } = issue;
     const statusEmoji = this.STATUS_EMOJI[status as keyof typeof this.STATUS_EMOJI];

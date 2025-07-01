@@ -70,4 +70,9 @@ export interface SentryWebhookData {
   data: {
     issue: SentryIssue;
   };
+  actor: {
+    type: string;
+    id: string;
+    name: string;
+  };
 } 
