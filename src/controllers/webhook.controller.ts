@@ -8,7 +8,6 @@ export class WebhookController {
     'unresolved': '🔴',
     'resolved': '✅',
     'ignored': '🔇',
-    'archived': '📦',
   } as const;
 
   handleSentryWebhook: RequestHandler = async (
@@ -18,7 +17,9 @@ export class WebhookController {
   ): Promise<void> => {
     try {
       if (!req.body || typeof req.body !== 'object' || req.body.action !== "created") { 
-        res.status(400).json(new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null));
+        const response = new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null);
+        res.status(400).json(response);
+        return;
       }
 
       const sentryData: SentryWebhookData = req.body;
