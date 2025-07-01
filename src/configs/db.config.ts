@@ -16,17 +16,17 @@ const poolConfig: pg.PoolConfig = {
   max: 10, // 최대 연결 수
   idleTimeoutMillis: 30000, // 연결 유휴 시간 (30초)
   connectionTimeoutMillis: 5000, // 연결 시간 초과 (5초)
-  ssl: false,
-  // ssl: {
-  //   rejectUnauthorized: false,
-  // },
+  // ssl: false,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 };
 
-// if (process.env.NODE_ENV === 'production') {
-//   poolConfig.ssl = {
-//     rejectUnauthorized: false,
-//   };
-// }
+if (process.env.NODE_ENV === 'production') {
+  poolConfig.ssl = {
+    rejectUnauthorized: false,
+  };
+}
 
 const pool = new Pool(poolConfig);
 
