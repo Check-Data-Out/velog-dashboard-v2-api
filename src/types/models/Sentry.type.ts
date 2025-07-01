@@ -18,8 +18,8 @@ export interface SentryIssueStatusDetails {
   inRelease: string;
   inNextRelease: boolean;
   inCommit: string;
-  ignoreCount: string;
-  ignoreWindow: string;
+  ignoreCount: number;
+  ignoreWindow: number;
 }
 
 export interface SentryIssue {
