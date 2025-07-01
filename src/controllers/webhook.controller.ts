@@ -16,7 +16,8 @@ export class WebhookController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      if (!req.body || typeof req.body !== 'object' || req.body.action !== "created") { 
+      
+      if (req.body?.action !== "created") { 
         const response = new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null);
         res.status(400).json(response);
         return;
