@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { Request, Response } from 'express';
 import { WebhookController } from '@/controllers/webhook.controller';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
-import { SentryWebhookData } from '@/types';
 
 // Mock dependencies
 jest.mock('@/modules/slack/slack.notifier');
@@ -44,7 +43,8 @@ describe('WebhookController', () => {
   });
 
   describe('handleSentryWebhook', () => {
-    const mockSentryData: SentryWebhookData = {
+    // 실제 동작에 필요한 필수 값만 사용하도록 타입 미적용
+    const mockSentryData = {
       action: 'created',
       data: {
         issue: {
@@ -52,7 +52,7 @@ describe('WebhookController', () => {
           title: '테스트 오류입니다',
           culprit: 'TestFile.js:10',
           status: 'unresolved',
-          count: 5,
+          count: "5",
           userCount: 3,
           firstSeen: '2024-01-01T12:00:00.000Z',
           permalink: 'https://velog-dashboardv2.sentry.io/issues/test-issue-123/',
@@ -179,6 +179,61 @@ describe('WebhookController', () => {
       );
     });
 
+    it('assigned 액션에 대해 올바른 메시지를 생성해야 한다', async () => {
+      const assignedData = {
+        ...mockSentryData,
+        action: 'assigned' as const,
+        data: {
+          ...mockSentryData.data,
+          issue: {
+            ...mockSentryData.data.issue,
+            status: 'unresolved' as const
+          }
+        }
+      };
+      mockRequest.body = assignedData;
+      mockSendSlackMessage.mockResolvedValue();
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockSendSlackMessage).toHaveBeenCalledWith(
+        expect.stringContaining('🚨 *오류가 할당되었습니다*')
+      );
+    });
+
+    it('archived 액션에 대해 올바른 메시지를 생성해야 한다', async () => {
+      const archivedData = {
+        ...mockSentryData,
+        action: 'archived' as const,
+        data: {
+          ...mockSentryData.data,
+          issue: {
+            ...mockSentryData.data.issue,
+            status: 'archived' as const
+          }
+        }
+      };
+      mockRequest.body = archivedData;
+      mockSendSlackMessage.mockResolvedValue();
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockSendSlackMessage).toHaveBeenCalledWith(
+        expect.stringContaining('🚨 *오류가 아카이브되었습니다*')
+      );
+      expect(mockSendSlackMessage).toHaveBeenCalledWith(
+        expect.stringContaining('📦 *제목:*')
+      );
+    });
+
     it('알 수 없는 액션에 대해 기본 메시지를 생성해야 한다', async () => {
       const unknownActionData = {
         ...mockSentryData,
@@ -281,7 +336,8 @@ describe('WebhookController', () => {
 
   describe('formatSentryMessage (private method integration test)', () => {
     it('완전한 Sentry 데이터로 올바른 형식의 메시지를 생성해야 한다', async () => {
-      const completeData: SentryWebhookData = {
+      // 실제 동작에 필요한 필수 값만 사용하도록 타입 미적용
+      const completeData = {
         action: 'created',
         data: {
           issue: {
@@ -289,7 +345,7 @@ describe('WebhookController', () => {
             title: 'TypeError: Cannot read property of undefined',
             culprit: 'components/UserProfile.tsx:25',
             status: 'unresolved',
-            count: 12,
+            count: "12",
             userCount: 8,
             firstSeen: '2024-01-15T14:30:00.000Z',
             permalink: 'https://velog-dashboardv2.sentry.io/issues/issue-456/',
