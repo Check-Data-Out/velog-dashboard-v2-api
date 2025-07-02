@@ -76,7 +76,7 @@ describe('WebhookController', () => {
       );
 
       expect(mockSendSlackMessage).toHaveBeenCalledWith(
-        expect.stringContaining('🚨 *새로운 오류가 발생했습니다*')
+        expect.stringContaining('🚨 *새로운 오류가 발생하였습니다*')
       );
       expect(mockSendSlackMessage).toHaveBeenCalledWith(
         expect.stringContaining('🔴 *제목:* 테스트 오류입니다')
@@ -135,6 +135,133 @@ describe('WebhookController', () => {
       expect(nextFunction).toHaveBeenCalledWith(slackError);
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
+
+    // Invalid Body 케이스 테스트들
+    it('action이 created가 아닌 경우 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = { action: 'resolved' };
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Sentry 웹훅 처리에 실패했습니다',
+        data: {},
+        error: null
+      });
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('빈 body인 경우 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = {};
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Sentry 웹훅 처리에 실패했습니다',
+        data: {},
+        error: null
+      });
+    });
+
+    it('action이 없는 경우 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = { data: { issue: {} } };
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Sentry 웹훅 처리에 실패했습니다',
+        data: {},
+        error: null
+      });
+    });
+
+    it('전혀 다른 형태의 객체인 경우 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = {
+        username: 'test',
+        password: '123456',
+        email: 'test@example.com'
+      };
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Sentry 웹훅 처리에 실패했습니다',
+        data: {},
+        error: null
+      });
+    });
+
+    it('action은 created이지만 필수 필드가 없는 경우 에러를 전달해야 한다', async () => {
+      mockRequest.body = {
+        action: 'created',
+        data: {
+          issue: {
+            // 필수 필드들이 누락됨
+          }
+        }
+      };
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(nextFunction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Sentry 웹훅 데이터가 올바르지 않습니다'
+        })
+      );
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
+
+    it('action은 created이지만 data가 없는 경우 에러를 전달해야 한다', async () => {
+      mockRequest.body = { action: 'created' };
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(nextFunction).toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
+
+    it('잘못된 타입의 body인 경우 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = 'invalid string body';
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+    });
   });
 
   describe('formatSentryMessage (private method integration test)', () => {
@@ -170,7 +297,7 @@ describe('WebhookController', () => {
         nextFunction
       );
 
-      const expectedMessage = `🚨 *새로운 오류가 발생했습니다*
+      const expectedMessage = `🚨 *새로운 오류가 발생하였습니다*
 
 🔴 *제목:* TypeError: Cannot read property of undefined
 
