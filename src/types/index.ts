@@ -41,7 +41,6 @@ export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.
 // Sentry 관련
 export type {
   SentryIssueStatus,
-  SentryAction,
 } from '@/types/models/Sentry.type';
 export type {
   SentryProject,
