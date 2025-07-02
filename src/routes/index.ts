@@ -4,6 +4,7 @@ import PostRouter from './post.router';
 import NotiRouter from './noti.router';
 import LeaderboardRouter from './leaderboard.router';
 import TotalStatsRouter from './totalStats.router';
+import WebhookRouter from './webhook.router';
 
 const router: Router = express.Router();
 
@@ -16,5 +17,6 @@ router.use('/', PostRouter);
 router.use('/', NotiRouter);
 router.use('/', LeaderboardRouter);
 router.use('/', TotalStatsRouter);
+router.use('/', WebhookRouter);
 
 export default router;
