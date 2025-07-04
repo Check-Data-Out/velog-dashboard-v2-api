@@ -2,6 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { EmptyResponseDto, SentryWebhookData } from '@/types';
 import logger from '@/configs/logger.config';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
+import { verifySignature } from '@/utils/verify.util';
 
 export class WebhookController {
   private readonly STATUS_EMOJI = {
@@ -16,8 +17,8 @@ export class WebhookController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      
-      if (req.body?.action !== "created") { 
+      // 시그니처 검증 과정 추가
+      if (req.body?.action !== "created" || !verifySignature(req)) { 
         const response = new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null);
         res.status(400).json(response);
         return;
