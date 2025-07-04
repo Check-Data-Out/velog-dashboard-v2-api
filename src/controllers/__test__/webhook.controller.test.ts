@@ -2,9 +2,11 @@ import 'reflect-metadata';
 import { Request, Response } from 'express';
 import { WebhookController } from '@/controllers/webhook.controller';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
+import { verifySignature } from '@/utils/verify.util';
 
 // Mock dependencies
 jest.mock('@/modules/slack/slack.notifier');
+jest.mock('@/utils/verify.util');
 
 // logger 모킹
 jest.mock('@/configs/logger.config', () => ({
@@ -18,6 +20,7 @@ describe('WebhookController', () => {
   let mockResponse: Partial<Response>;
   let nextFunction: jest.Mock;
   let mockSendSlackMessage: jest.MockedFunction<typeof sendSlackMessage>;
+  let mockVerifySignature: jest.MockedFunction<typeof verifySignature>;
 
   beforeEach(() => {
     // WebhookController 인스턴스 생성
@@ -36,6 +39,10 @@ describe('WebhookController', () => {
 
     nextFunction = jest.fn();
     mockSendSlackMessage = sendSlackMessage as jest.MockedFunction<typeof sendSlackMessage>;
+    mockVerifySignature = verifySignature as jest.MockedFunction<typeof verifySignature>;
+    
+    // 기본적으로 시그니처 검증이 성공하도록 설정
+    mockVerifySignature.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -306,6 +313,110 @@ describe('WebhookController', () => {
 🔗 *상세 보기:* https://velog-dashboardv2.sentry.io/issues/issue-456/`;
 
       expect(mockSendSlackMessage).toHaveBeenCalledWith(expectedMessage);
+    });
+  });
+
+  describe('Signature Verification', () => {
+    const mockSentryData = {
+      action: 'created',
+      data: {
+        issue: {
+          id: 'test-issue-123',
+          title: '시그니처 테스트 오류',
+          culprit: 'TestFile.js:10',
+          status: 'unresolved',
+          count: "1",
+          userCount: 1,
+          firstSeen: '2024-01-01T12:00:00.000Z',
+          permalink: 'https://velog-dashboardv2.sentry.io/issues/test-issue-123/',
+          project: {
+            id: 'project-123',
+            name: 'Velog Dashboard',
+            slug: 'velog-dashboard'
+          }
+        }
+      }
+    };
+
+    it('유효한 시그니처로 웹훅 처리에 성공해야 한다', async () => {
+      mockRequest.body = mockSentryData;
+      mockRequest.headers = {
+        'sentry-hook-signature': 'valid-signature'
+      };
+      mockVerifySignature.mockReturnValue(true);
+      mockSendSlackMessage.mockResolvedValue();
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockVerifySignature).toHaveBeenCalledWith(mockRequest);
+      expect(mockSendSlackMessage).toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+    });
+
+    it('잘못된 시그니처로 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = mockSentryData;
+      mockRequest.headers = {
+        'sentry-hook-signature': 'invalid-signature'
+      };
+      mockVerifySignature.mockReturnValue(false);
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockVerifySignature).toHaveBeenCalledWith(mockRequest);
+      expect(mockSendSlackMessage).not.toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Sentry 웹훅 처리에 실패했습니다',
+        data: {},
+        error: null
+      });
+    });
+
+    it('시그니처 헤더가 누락된 경우 400 에러를 반환해야 한다', async () => {
+      mockRequest.body = mockSentryData;
+      mockRequest.headers = {}; // 시그니처 헤더 누락
+      mockVerifySignature.mockReturnValue(false);
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockVerifySignature).toHaveBeenCalledWith(mockRequest);
+      expect(mockSendSlackMessage).not.toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+    });
+
+    it('시그니처 검증 중 예외 발생 시 에러를 전달해야 한다', async () => {
+      mockRequest.body = mockSentryData;
+      mockRequest.headers = {
+        'sentry-hook-signature': 'some-signature'
+      };
+      const verificationError = new Error('SENTRY_CLIENT_SECRET is not defined');
+      mockVerifySignature.mockImplementation(() => {
+        throw verificationError;
+      });
+
+      await webhookController.handleSentryWebhook(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockVerifySignature).toHaveBeenCalledWith(mockRequest);
+      expect(nextFunction).toHaveBeenCalledWith(verificationError);
+      expect(mockSendSlackMessage).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
   });
 }); 
