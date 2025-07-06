@@ -1,5 +1,6 @@
 import express, { Router } from 'express';
 import { WebhookController } from '@/controllers/webhook.controller';
+import { authMiddleware } from '@/middlewares/auth.middleware';
 
 const router: Router = express.Router();
 
@@ -47,6 +48,6 @@ const webhookController = new WebhookController();
  *       500:
  *         description: 서버 오류
  */
-router.post('/webhook/sentry', webhookController.handleSentryWebhook);
+router.post('/webhook/sentry', authMiddleware.verifySignature, webhookController.handleSentryWebhook);
 
 export default router; 
