@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { isUUID } from 'class-validator';
 import logger from '@/configs/logger.config';
 import pool from '@/configs/db.config';
-import { DBError, InvalidTokenError } from '@/exception';
+import { CustomError, DBError, InvalidTokenError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 import crypto from "crypto";
 
@@ -92,7 +92,7 @@ function verifySignature(request: Request, res: Response, next: NextFunction) {
     hmac.update(bodyToVerify, "utf8");
     const digest = hmac.digest("hex");
 
-    if(digest !== sentrySignature) throw new Error(`유효하지 않은 시그니처 헤더입니다.`);
+    if(digest !== sentrySignature) throw new CustomError("유효하지 않은 시그니처 헤더입니다.", "INVALID_SIGNATURE", 400);
     
     next();
   } catch (error) {

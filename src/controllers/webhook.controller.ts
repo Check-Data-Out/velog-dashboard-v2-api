@@ -2,6 +2,7 @@ import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { EmptyResponseDto, SentryWebhookData } from '@/types';
 import logger from '@/configs/logger.config';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
+import { BadRequestError } from '@/exception';
 
 export class WebhookController {
   private readonly STATUS_EMOJI = {
@@ -17,7 +18,7 @@ export class WebhookController {
   ): Promise<void> => {
     try {
       if (req.body?.action !== "created") { 
-        const response = new EmptyResponseDto(true, 'Sentry 웹훅 처리에 실패했습니다', {}, null);
+        const response = new BadRequestError('Sentry 웹훅 처리에 실패했습니다');
         res.status(400).json(response);
         return;
       }
@@ -38,7 +39,7 @@ export class WebhookController {
   private formatSentryMessage(sentryData: SentryWebhookData): string {
     const { data: { issue } } = sentryData;
 
-    if(!issue.status || !issue.title || !issue.culprit || !issue.id) throw new Error('Sentry 웹훅 데이터가 올바르지 않습니다');
+    if(!issue.status || !issue.title || !issue.culprit || !issue.id) throw new BadRequestError('Sentry 웹훅 처리에 실패했습니다');
 
     const { status, title: issueTitle, culprit, permalink, id } = issue;
     const statusEmoji = this.STATUS_EMOJI[status as keyof typeof this.STATUS_EMOJI];
