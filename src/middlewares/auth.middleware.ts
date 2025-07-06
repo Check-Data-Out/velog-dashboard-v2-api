@@ -77,19 +77,28 @@ const verifyBearerTokens = () => {
 function verifySignature(request: Request, res: Response, next: NextFunction) {
   try {
     if(!process.env.SENTRY_CLIENT_SECRET) throw new Error("SENTRY_CLIENT_SECRET가 env에 없습니다");
+    
     const hmac = crypto.createHmac("sha256", process.env.SENTRY_CLIENT_SECRET);
-    hmac.update(JSON.stringify(request.body), "utf8");
+    
+    // Raw body 사용 - Express에서 파싱되기 전의 원본 데이터 필요
+    // request.rawBody가 없다면 fallback으로 JSON.stringify 사용 (완벽하지 않음)
+    // @ts-expect-error - rawBody는 커스텀 미들웨어에서 추가되는 속성
+    const bodyToVerify = request.rawBody || JSON.stringify(request.body);
+    const sentrySignature = request.headers["sentry-hook-signature"];
+    
+    if (!bodyToVerify) throw new Error("요청 본문이 없습니다.");    
+    if(!sentrySignature) throw new Error("시그니처 헤더가 없습니다.");
+
+    hmac.update(bodyToVerify, "utf8");
     const digest = hmac.digest("hex");
 
-    if(digest !== request.headers["sentry-hook-signature"]) {
-      throw new Error("유효하지 않은 시그니처 헤더입니다.");
-    }
+    if(digest !== sentrySignature) throw new Error(`유효하지 않은 시그니처 헤더입니다.`);
+    
     next();
-  }  catch (error) {
+  } catch (error) {
     logger.error('시그니처 검증 중 오류가 발생하였습니다. : ', error);
     next(error);
   }
-  
 }
 
 /**
