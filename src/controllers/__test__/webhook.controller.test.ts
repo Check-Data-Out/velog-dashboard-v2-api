@@ -147,12 +147,13 @@ describe('WebhookController', () => {
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Sentry 웹훅 처리에 실패했습니다',
-        data: {},
-        error: null
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Sentry 웹훅 처리에 실패했습니다',
+          statusCode: 400,
+          code: 'INVALID_SYNTAX'
+        })
+      );
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
@@ -166,12 +167,13 @@ describe('WebhookController', () => {
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Sentry 웹훅 처리에 실패했습니다',
-        data: {},
-        error: null
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Sentry 웹훅 처리에 실패했습니다',
+          statusCode: 400,
+          code: 'INVALID_SYNTAX'
+        })
+      );
     });
 
     it('action이 없는 경우 400 에러를 반환해야 한다', async () => {
@@ -184,12 +186,13 @@ describe('WebhookController', () => {
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Sentry 웹훅 처리에 실패했습니다',
-        data: {},
-        error: null
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Sentry 웹훅 처리에 실패했습니다',
+          statusCode: 400,
+          code: 'INVALID_SYNTAX'
+        })
+      );
     });
 
     it('전혀 다른 형태의 객체인 경우 400 에러를 반환해야 한다', async () => {
@@ -206,12 +209,13 @@ describe('WebhookController', () => {
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Sentry 웹훅 처리에 실패했습니다',
-        data: {},
-        error: null
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Sentry 웹훅 처리에 실패했습니다',
+          statusCode: 400,
+          code: 'INVALID_SYNTAX'
+        })
+      );
     });
 
     it('action은 created이지만 필수 필드가 없는 경우 에러를 전달해야 한다', async () => {
@@ -232,7 +236,9 @@ describe('WebhookController', () => {
 
       expect(nextFunction).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Sentry 웹훅 데이터가 올바르지 않습니다'
+          message: 'Sentry 웹훅 처리에 실패했습니다',
+          statusCode: 400,
+          code: 'INVALID_SYNTAX'
         })
       );
       expect(mockResponse.json).not.toHaveBeenCalled();
