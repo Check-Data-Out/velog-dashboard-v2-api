@@ -9,8 +9,12 @@ import swaggerJSDoc from 'swagger-jsdoc';
 import { options } from '@/configs/swagger.config';
 import { errorHandlingMiddleware } from './middlewares/errorHandling.middleware';
 import { NotFoundError } from './exception';
+import { initSentry } from '@/configs/sentry.config';
 
 dotenv.config();
+
+// Sentry 초기화
+initSentry();
 
 const app: Application = express();
 // 실제 클라이언트 IP를 알기 위한 trust proxy 설정
@@ -34,6 +38,7 @@ app.use('/api', router);
 app.use((req) => {
   throw new NotFoundError(`${req.url} not found`);
 });
+
 app.use(errorHandlingMiddleware);
 
 export default app;
