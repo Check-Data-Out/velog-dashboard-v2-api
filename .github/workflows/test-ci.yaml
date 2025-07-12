@@ -59,6 +59,7 @@ jobs:
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
           echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
           echo "SENTRY_CLIENT_SECRET=${{ secrets.SENTRY_CLIENT_SECRET }}" >> .env
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           # AES 키들 추가 (테스트용 더미 키)
           echo "AES_KEY_0=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" >> .env
           echo "AES_KEY_1=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" >> .env
