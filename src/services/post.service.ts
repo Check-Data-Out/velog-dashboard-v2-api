@@ -5,7 +5,7 @@ import { RawPostType } from '@/types';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class PostService {
-  constructor(private postRepo: PostRepository) { }
+  constructor(private postRepo: PostRepository) {}
 
   async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
@@ -43,7 +43,7 @@ export class PostService {
       // if (results.posts.length > 0) {
       //   await cache.set(cacheKey, results, 300);
       // }
-      return results
+      return results;
     } catch (error) {
       logger.error('PostService getAllposts error : ', error);
       throw error;
