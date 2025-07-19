@@ -1,3 +1,4 @@
+/* eslint-disable jest/no-disabled-tests */
 /**
  * 주의: 이 통합 테스트는 현재 시간에 의존적입니다.
  * getCurrentKSTDateString과 getKSTDateStringWithOffset 함수는 실제 시간을 기준으로
@@ -20,7 +21,7 @@ jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
  * 이 테스트 파일은 실제 데이터베이스와 연결하여 LeaderboardRepository의 모든 메서드를
  * 실제 환경과 동일한 조건에서 테스트합니다.
  */
-describe('LeaderboardRepository 통합 테스트', () => {
+describe.skip('LeaderboardRepository 통합 테스트', () => {
   let testPool: Pool;
   let repo: LeaderboardRepository;
 

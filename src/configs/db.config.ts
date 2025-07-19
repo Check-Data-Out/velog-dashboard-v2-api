@@ -19,11 +19,11 @@ const poolConfig: pg.PoolConfig = {
   connectionTimeoutMillis: 5000, // 연결 시간 초과 (5초)
 };
 
-if (process.env.NODE_ENV === 'production') {
-  poolConfig.ssl = {
-    rejectUnauthorized: false,
-  };
-}
+// if (process.env.NODE_ENV === 'production') {
+poolConfig.ssl = {
+  rejectUnauthorized: false,
+};
+// }
 
 const pool = new Pool(poolConfig);
 
