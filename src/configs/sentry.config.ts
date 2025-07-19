@@ -25,10 +25,7 @@ export const initSentry = () => {
       enabled: true,
 
       // Capture 100% of the transactions for performance monitoring
-      integrations: [
-        Sentry.httpIntegration(),
-        Sentry.expressIntegration(),
-      ],
+      integrations: [Sentry.httpIntegration(), Sentry.expressIntegration()],
     });
 
     sentryInitialized = true;

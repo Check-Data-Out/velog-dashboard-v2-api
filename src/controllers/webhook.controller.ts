@@ -6,18 +6,14 @@ import { BadRequestError } from '@/exception';
 
 export class WebhookController {
   private readonly STATUS_EMOJI = {
-    'unresolved': '🔴',
-    'resolved': '✅',
-    'ignored': '🔇',
+    unresolved: '🔴',
+    resolved: '✅',
+    ignored: '🔇',
   } as const;
 
-  handleSentryWebhook: RequestHandler = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  handleSentryWebhook: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (req.body?.action !== "created") { 
+      if (req.body?.action !== 'created') {
         const response = new BadRequestError('Sentry 웹훅 처리에 실패했습니다');
         res.status(400).json(response);
         return;
@@ -37,9 +33,12 @@ export class WebhookController {
   };
 
   private formatSentryMessage(sentryData: SentryWebhookData): string {
-    const { data: { issue } } = sentryData;
+    const {
+      data: { issue },
+    } = sentryData;
 
-    if(!issue.status || !issue.title || !issue.culprit || !issue.id) throw new BadRequestError('Sentry 웹훅 처리에 실패했습니다');
+    if (!issue.status || !issue.title || !issue.culprit || !issue.id)
+      throw new BadRequestError('Sentry 웹훅 처리에 실패했습니다');
 
     const { status, title: issueTitle, culprit, permalink, id } = issue;
     const statusEmoji = this.STATUS_EMOJI[status as keyof typeof this.STATUS_EMOJI];
@@ -54,4 +53,4 @@ export class WebhookController {
 
     return message;
   }
-} 
+}

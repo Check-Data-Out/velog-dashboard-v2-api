@@ -3,7 +3,6 @@ import logger from '@/configs/logger.config';
 import { ICache, CacheConfig } from '@/modules/cache/cache.type';
 import { RedisCache } from '@/modules/cache/redis.cache';
 
-
 const cacheConfig: CacheConfig = {
   host: process.env.REDIS_HOST || '152.67.198.7',
   port: parseInt(process.env.REDIS_PORT || '6379'),

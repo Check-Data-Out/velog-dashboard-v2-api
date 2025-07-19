@@ -4,7 +4,7 @@ import logger from '@/configs/logger.config';
 import pool from '@/configs/db.config';
 import { CustomError, DBError, InvalidTokenError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
-import crypto from "crypto";
+import crypto from 'crypto';
 
 /**
  * 요청에서 토큰을 추출하는 함수
@@ -69,36 +69,37 @@ const verifyBearerTokens = () => {
 
 /**
  * Sentry 웹훅 요청의 시그니처 헤더를 검증합니다.
- * HMAC SHA256과 Sentry의 Client Secret를 사용하여 요청 본문을 해시화하고, 
+ * HMAC SHA256과 Sentry의 Client Secret를 사용하여 요청 본문을 해시화하고,
  * Sentry에서 제공하는 시그니처 헤더와 비교하여 요청의 무결성을 확인합니다.
  */
 function verifySentrySignature() {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!process.env.SENTRY_CLIENT_SECRET) throw new Error("SENTRY_CLIENT_SECRET가 env에 없습니다");
-      
-      const hmac = crypto.createHmac("sha256", process.env.SENTRY_CLIENT_SECRET);
-      
+      if (!process.env.SENTRY_CLIENT_SECRET) throw new Error('SENTRY_CLIENT_SECRET가 env에 없습니다');
+
+      const hmac = crypto.createHmac('sha256', process.env.SENTRY_CLIENT_SECRET);
+
       // Raw body 사용 - Express에서 파싱되기 전의 원본 데이터 필요
       // req.rawBody가 없다면 fallback으로 JSON.stringify 사용 (완벽하지 않음)
       // @ts-expect-error - rawBody는 커스텀 미들웨어에서 추가되는 속성
       const bodyToVerify = req.rawBody || JSON.stringify(req.body);
-      const sentrySignature = req.headers["sentry-hook-signature"];
-      
-      if (!bodyToVerify) throw new Error("요청 본문이 없습니다.");    
-      if (!sentrySignature) throw new Error("시그니처 헤더가 없습니다.");
-  
-      hmac.update(bodyToVerify, "utf8");
-      const digest = hmac.digest("hex");
-  
-      if (digest !== sentrySignature) throw new CustomError("유효하지 않은 시그니처 헤더입니다.", "INVALID_SIGNATURE", 400);
-      
+      const sentrySignature = req.headers['sentry-hook-signature'];
+
+      if (!bodyToVerify) throw new Error('요청 본문이 없습니다.');
+      if (!sentrySignature) throw new Error('시그니처 헤더가 없습니다.');
+
+      hmac.update(bodyToVerify, 'utf8');
+      const digest = hmac.digest('hex');
+
+      if (digest !== sentrySignature)
+        throw new CustomError('유효하지 않은 시그니처 헤더입니다.', 'INVALID_SIGNATURE', 400);
+
       next();
     } catch (error) {
       logger.error('시그니처 검증 중 오류가 발생하였습니다. : ', error);
       next(error);
     }
-  }
+  };
 }
 
 /**
