@@ -11,8 +11,8 @@ import router from '@/routes';
 import { NotFoundError } from '@/exception';
 
 import { options } from '@/configs/swagger.config';
-import { initSentry } from '@/configs/sentry.config';
-import { initCache } from '@/configs/cache.config';
+import { initSentry, getSentryStatus } from '@/configs/sentry.config';
+import { initCache, getCacheStatus } from '@/configs/cache.config';
 import { errorHandlingMiddleware } from '@/middlewares/errorHandling.middleware';
 
 dotenv.config();
@@ -58,7 +58,6 @@ app.get('/health', async (req: Request, res: Response) => {
 
   // Sentry 상태 확인
   try {
-    const { getSentryStatus } = await import('./configs/sentry.config.ts');
     healthData.services.sentry = getSentryStatus();
   } catch (error) {
     healthData.services.sentry = false;
@@ -67,7 +66,6 @@ app.get('/health', async (req: Request, res: Response) => {
 
   // Cache 상태 확인
   try {
-    const { getCacheStatus } = await import('./configs/cache.config.ts');
     healthData.services.cache = await getCacheStatus();
   } catch (error) {
     healthData.services.cache = false;
