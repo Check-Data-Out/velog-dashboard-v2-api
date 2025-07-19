@@ -1,7 +1,7 @@
 import logger from '@/configs/logger.config';
 
-import { ICache, CacheConfig } from './cache.type';
-import { RedisCache } from "./redis.cache";
+import { ICache, CacheConfig } from '@/modules/cache/cache.type';
+import { RedisCache } from '@/modules/cache/redis.cache';
 
 
 const cacheConfig: CacheConfig = {
