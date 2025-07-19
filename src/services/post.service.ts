@@ -1,6 +1,7 @@
 import logger from '@/configs/logger.config';
 import { PostRepository } from '@/repositories/post.repository';
 import { RawPostType } from '@/types';
+// import { cache } from '@/configs/cache.config';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 export class PostService {
@@ -8,6 +9,12 @@ export class PostService {
 
   async getAllposts(userId: number, cursor?: string, sort: string = '', isAsc?: boolean, limit: number = 15) {
     try {
+      // const cacheKey = `posts:user:${userId}:${cursor || 'first'}:${sort}:${isAsc}:${limit}`;
+      // const cachedResult = await cache.get(cacheKey);
+      // if (cachedResult) {
+      //   return cachedResult;
+      // }
+
       let result = null;
       if (sort === 'viewGrowth') {
         result = await this.postRepo.findPostsByUserIdWithGrowthMetrics(userId, cursor, isAsc, limit);
@@ -27,10 +34,16 @@ export class PostService {
         releasedAt: post.post_released_at,
       }));
 
-      return {
+      const results = {
         posts: transformedPosts,
         nextCursor: result.nextCursor,
       };
+
+      // // 결과가 빈 값이 아니라면 캐시에 저장 (5분 TTL)
+      // if (results.posts.length > 0) {
+      //   await cache.set(cacheKey, results, 300);
+      // }
+      return results;
     } catch (error) {
       logger.error('PostService getAllposts error : ', error);
       throw error;
@@ -39,6 +52,12 @@ export class PostService {
 
   async getAllPostsStatistics(userId: number) {
     try {
+      // const cacheKey = `posts:stats:${userId}`;
+      // const cachedResult = await cache.get(cacheKey);
+      // if (cachedResult) {
+      //   return cachedResult;
+      // }
+
       const postsStatistics = await this.postRepo.getYesterdayAndTodayViewLikeStats(userId);
 
       const transformedStatistics = {
@@ -48,6 +67,11 @@ export class PostService {
         yesterdayLikes: parseInt(postsStatistics.yesterday_likes) || 0,
         lastUpdatedDate: postsStatistics.last_updated_date,
       };
+
+      // // 결과가 빈 값이 아니라면 캐시에 저장 (5분 TTL)
+      // if (transformedStatistics.totalViews > 0) {
+      //   await cache.set(cacheKey, transformedStatistics, 300);
+      // }
 
       return transformedStatistics;
     } catch (error) {

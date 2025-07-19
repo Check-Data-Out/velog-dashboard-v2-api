@@ -5,7 +5,7 @@ import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { DBError } from '@/exception';
 
 export class UserRepository {
-  constructor(private readonly pool: Pool) { }
+  constructor(private readonly pool: Pool) {}
 
   async findByUserId(id: number): Promise<User> {
     try {
@@ -42,7 +42,14 @@ export class UserRepository {
     }
   }
 
-  async updateTokens(uuid: string, email: string | null, username: string | null, thumbnail: string | null, encryptedAccessToken: string, encryptedRefreshToken: string): Promise<User> {
+  async updateTokens(
+    uuid: string,
+    email: string | null,
+    username: string | null,
+    thumbnail: string | null,
+    encryptedAccessToken: string,
+    encryptedRefreshToken: string,
+  ): Promise<User> {
     try {
       const query = `
         UPDATE "users_user"

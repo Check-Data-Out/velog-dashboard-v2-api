@@ -48,7 +48,7 @@ export default typescriptEslint.config(
         },
         {
           selector: 'variable',
-          format: ['camelCase'],
+          format: ['camelCase', 'UPPER_CASE'],
           leadingUnderscore: 'allow',
         },
         {

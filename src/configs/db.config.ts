@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import pg from 'pg';
-import logger from './logger.config';
+import logger from '@/configs/logger.config';
+
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const { Pool } = pg;
 
