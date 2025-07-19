@@ -34,10 +34,10 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 // 예상치 못한 에러 처리
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
-  process.exit(1);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });

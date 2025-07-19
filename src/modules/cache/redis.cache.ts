@@ -96,7 +96,18 @@ export class RedisCache implements ICache {
       }
 
       const value = await this.client.get(this.getFullKey(key));
-      return value ? JSON.parse(value) : null;
+      if (!value) return null;
+
+      // JSON.parse가 실패할 경우를 명시적으로 처리
+      try {
+        return JSON.parse(value);
+      } catch (parseError) {
+        logger.error(`Failed to parse cached value for key ${key}:`, parseError);
+        // 손상된 캐시 데이터 삭제
+        await this.delete(key);
+        return null;
+      }
+
     } catch (error) {
       logger.error(`Cache GET error for key ${key}:`, error);
       return null;
