@@ -107,7 +107,6 @@ export class RedisCache implements ICache {
         await this.delete(key);
         return null;
       }
-
     } catch (error) {
       logger.error(`Cache GET error for key ${key}:`, error);
       return null;
@@ -165,20 +164,39 @@ export class RedisCache implements ICache {
     }
   }
 
-  async clear(pattern?: string): Promise<void> {
+  async clear(pattern?: string, batchSize: number = 100): Promise<void> {
     try {
       if (!this.connected) {
         logger.warn('Redis not connected, skipping cache clear');
         return;
       }
 
-      const searchPattern = pattern
-        ? `${this.keyPrefix}${pattern}`
-        : `${this.keyPrefix}*`;
+      const searchPattern = pattern ? `${this.keyPrefix}${pattern}` : `${this.keyPrefix}*`;
 
-      const keys = await this.client.keys(searchPattern);
-      if (keys.length > 0) {
-        await this.client.del(keys);
+      let cursor = '0';
+      let totalDeleted = 0;
+
+      do {
+        const result = await this.client.scan(cursor, {
+          MATCH: searchPattern,
+          COUNT: batchSize,
+        });
+
+        cursor = result.cursor;
+        const keys = result.keys;
+
+        if (keys.length > 0) {
+          await this.client.del(keys);
+          totalDeleted += keys.length;
+        }
+
+        if (cursor !== '0') {
+          await new Promise((resolve) => setImmediate(resolve));
+        }
+      } while (cursor !== '0');
+
+      if (totalDeleted > 0) {
+        logger.info(`Cache cleared: ${totalDeleted} keys deleted`);
       }
     } catch (error) {
       logger.error(`Cache CLEAR error for pattern ${pattern}:`, error);
@@ -191,8 +209,25 @@ export class RedisCache implements ICache {
         return 0;
       }
 
-      const keys = await this.client.keys(`${this.keyPrefix}*`);
-      return keys.length;
+      let cursor = '0';
+      let count = 0;
+      const batchSize = 100;
+
+      do {
+        const result = await this.client.scan(cursor, {
+          MATCH: `${this.keyPrefix}*`,
+          COUNT: batchSize,
+        });
+
+        cursor = result.cursor;
+        count += result.keys.length;
+
+        if (cursor !== '0') {
+          await new Promise((resolve) => setImmediate(resolve));
+        }
+      } while (cursor !== '0');
+
+      return count;
     } catch (error) {
       logger.error('Cache SIZE error:', error);
       return 0;

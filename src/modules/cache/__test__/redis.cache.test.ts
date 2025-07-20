@@ -13,6 +13,7 @@ interface MockRedisClient {
   del: jest.Mock;
   exists: jest.Mock;
   keys: jest.Mock;
+  scan: jest.Mock;
 }
 
 // Redis 모킹
@@ -45,6 +46,7 @@ describe('RedisCache', () => {
       del: jest.fn(),
       exists: jest.fn(),
       keys: jest.fn(),
+      scan: jest.fn(),
     };
 
     mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
@@ -223,11 +225,7 @@ describe('RedisCache', () => {
 
       await redisCache.set('test-key', testData, 600);
 
-      expect(mockClient.setEx).toHaveBeenCalledWith(
-        'test:cache:test-key',
-        600,
-        JSON.stringify(testData)
-      );
+      expect(mockClient.setEx).toHaveBeenCalledWith('test:cache:test-key', 600, JSON.stringify(testData));
     });
 
     it('TTL 없이 값을 성공적으로 저장해야 한다 (기본 TTL 사용)', async () => {
@@ -239,7 +237,7 @@ describe('RedisCache', () => {
       expect(mockClient.setEx).toHaveBeenCalledWith(
         'test:cache:test-key',
         300, // 기본 TTL
-        JSON.stringify(testData)
+        JSON.stringify(testData),
       );
     });
 
@@ -249,10 +247,7 @@ describe('RedisCache', () => {
 
       await redisCache.set('test-key', testData, 0);
 
-      expect(mockClient.set).toHaveBeenCalledWith(
-        'test:cache:test-key',
-        JSON.stringify(testData)
-      );
+      expect(mockClient.set).toHaveBeenCalledWith('test:cache:test-key', JSON.stringify(testData));
     });
 
     it('연결되지 않은 상태에서는 저장하지 않아야 한다', async () => {
@@ -367,32 +362,43 @@ describe('RedisCache', () => {
 
     it('패턴에 맞는 키들을 성공적으로 삭제해야 한다', async () => {
       const matchingKeys = ['test:cache:key1', 'test:cache:key2'];
-      mockClient.keys.mockResolvedValue(matchingKeys);
+      mockClient.scan
+        .mockResolvedValueOnce({ cursor: '10', keys: matchingKeys })
+        .mockResolvedValueOnce({ cursor: '0', keys: [] });
       mockClient.del.mockResolvedValue(2);
 
       await redisCache.clear('user:*');
 
-      expect(mockClient.keys).toHaveBeenCalledWith('test:cache:user:*');
+      expect(mockClient.scan).toHaveBeenCalledWith('0', {
+        MATCH: 'test:cache:user:*',
+        COUNT: 100,
+      });
       expect(mockClient.del).toHaveBeenCalledWith(matchingKeys);
     });
 
     it('패턴 없이 모든 키를 삭제해야 한다', async () => {
-      const allKeys = ['test:cache:key1', 'test:cache:key2', 'test:cache:key3'];
-      mockClient.keys.mockResolvedValue(allKeys);
-      mockClient.del.mockResolvedValue(3);
+      const allKeys = ['test:cache:key1', 'test:cache:key2'];
+      mockClient.scan.mockResolvedValueOnce({ cursor: '0', keys: allKeys });
+      mockClient.del.mockResolvedValue(2);
 
       await redisCache.clear();
 
-      expect(mockClient.keys).toHaveBeenCalledWith('test:cache:*');
+      expect(mockClient.scan).toHaveBeenCalledWith('0', {
+        MATCH: 'test:cache:*',
+        COUNT: 100,
+      });
       expect(mockClient.del).toHaveBeenCalledWith(allKeys);
     });
 
     it('매칭되는 키가 없는 경우 삭제하지 않아야 한다', async () => {
-      mockClient.keys.mockResolvedValue([]);
+      mockClient.scan.mockResolvedValue({ cursor: '0', keys: [] });
 
       await redisCache.clear('non-existent:*');
 
-      expect(mockClient.keys).toHaveBeenCalledWith('test:cache:non-existent:*');
+      expect(mockClient.scan).toHaveBeenCalledWith('0', {
+        MATCH: 'test:cache:non-existent:*',
+        COUNT: 100,
+      });
       expect(mockClient.del).not.toHaveBeenCalled();
     });
 
@@ -403,12 +409,12 @@ describe('RedisCache', () => {
 
       await redisCache.clear('test:*');
 
-      expect(mockClient.keys).not.toHaveBeenCalled();
+      expect(mockClient.scan).not.toHaveBeenCalled();
       expect(mockClient.del).not.toHaveBeenCalled();
     });
 
     it('Redis 에러 발생 시 조용히 실패해야 한다', async () => {
-      mockClient.keys.mockRejectedValue(new Error('Redis error'));
+      mockClient.scan.mockRejectedValue(new Error('Redis error'));
 
       await expect(redisCache.clear('test:*')).resolves.not.toThrow();
     });
@@ -421,17 +427,23 @@ describe('RedisCache', () => {
     });
 
     it('캐시 크기를 올바르게 반환해야 한다', async () => {
-      const keys = ['test:cache:key1', 'test:cache:key2', 'test:cache:key3'];
-      mockClient.keys.mockResolvedValue(keys);
+      const keys1 = ['test:cache:key1', 'test:cache:key2'];
+      const keys2 = ['test:cache:key3'];
+      mockClient.scan
+        .mockResolvedValueOnce({ cursor: '10', keys: keys1 })
+        .mockResolvedValueOnce({ cursor: '0', keys: keys2 });
 
       const result = await redisCache.size();
 
-      expect(mockClient.keys).toHaveBeenCalledWith('test:cache:*');
+      expect(mockClient.scan).toHaveBeenCalledWith('0', {
+        MATCH: 'test:cache:*',
+        COUNT: 100,
+      });
       expect(result).toBe(3);
     });
 
     it('빈 캐시의 크기는 0이어야 한다', async () => {
-      mockClient.keys.mockResolvedValue([]);
+      mockClient.scan.mockResolvedValue({ cursor: '0', keys: [] });
 
       const result = await redisCache.size();
 
@@ -446,11 +458,11 @@ describe('RedisCache', () => {
       const result = await redisCache.size();
 
       expect(result).toBe(0);
-      expect(mockClient.keys).not.toHaveBeenCalled();
+      expect(mockClient.scan).not.toHaveBeenCalled();
     });
 
     it('Redis 에러 발생 시 0을 반환해야 한다', async () => {
-      mockClient.keys.mockRejectedValue(new Error('Redis error'));
+      mockClient.scan.mockRejectedValue(new Error('Redis error'));
 
       const result = await redisCache.size();
 
@@ -460,7 +472,9 @@ describe('RedisCache', () => {
 
   describe('이벤트 핸들러', () => {
     it('연결 이벤트 시 상태를 업데이트해야 한다', () => {
-      const connectCall = mockClient.on.mock.calls.find((call: [string, (...args: unknown[]) => void]) => call[0] === 'connect');
+      const connectCall = mockClient.on.mock.calls.find(
+        (call: [string, (...args: unknown[]) => void]) => call[0] === 'connect',
+      );
       const connectHandler = connectCall?.[1];
 
       expect(connectHandler).toBeDefined();
@@ -470,12 +484,16 @@ describe('RedisCache', () => {
 
     it('에러 이벤트 시 상태를 업데이트해야 한다', () => {
       // 먼저 연결 상태로 만들기
-      const connectCall = mockClient.on.mock.calls.find((call: [string, (...args: unknown[]) => void]) => call[0] === 'connect');
+      const connectCall = mockClient.on.mock.calls.find(
+        (call: [string, (...args: unknown[]) => void]) => call[0] === 'connect',
+      );
       const connectHandler = connectCall?.[1];
       expect(connectHandler).toBeDefined();
       connectHandler?.();
 
-      const errorCall = mockClient.on.mock.calls.find((call: [string, (...args: unknown[]) => void]) => call[0] === 'error');
+      const errorCall = mockClient.on.mock.calls.find(
+        (call: [string, (...args: unknown[]) => void]) => call[0] === 'error',
+      );
       const errorHandler = errorCall?.[1];
 
       expect(errorHandler).toBeDefined();
@@ -485,12 +503,16 @@ describe('RedisCache', () => {
 
     it('연결 해제 이벤트 시 상태를 업데이트해야 한다', () => {
       // 먼저 연결 상태로 만들기
-      const connectCall = mockClient.on.mock.calls.find((call: [string, (...args: unknown[]) => void]) => call[0] === 'connect');
+      const connectCall = mockClient.on.mock.calls.find(
+        (call: [string, (...args: unknown[]) => void]) => call[0] === 'connect',
+      );
       const connectHandler = connectCall?.[1];
       expect(connectHandler).toBeDefined();
       connectHandler?.();
 
-      const disconnectCall = mockClient.on.mock.calls.find((call: [string, (...args: unknown[]) => void]) => call[0] === 'disconnect');
+      const disconnectCall = mockClient.on.mock.calls.find(
+        (call: [string, (...args: unknown[]) => void]) => call[0] === 'disconnect',
+      );
       const disconnectHandler = disconnectCall?.[1];
 
       expect(disconnectHandler).toBeDefined();
@@ -498,7 +520,6 @@ describe('RedisCache', () => {
       expect(redisCache.isConnected()).toBe(false);
     });
   });
-
 
   describe('private getFullKey', () => {
     it('키에 접두사를 올바르게 추가해야 한다', async () => {
