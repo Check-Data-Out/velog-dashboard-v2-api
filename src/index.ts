@@ -1,5 +1,6 @@
 import app from '@/app';
 import logger from '@/configs/logger.config';
+import { closeCache } from './configs/cache.config';
 
 const port = parseInt(process.env.PORT || '8080', 10);
 
@@ -13,8 +14,9 @@ const server = app.listen(port, () => {
 });
 
 // 기본적인 graceful shutdown 추가
-const gracefulShutdown = (signal: string) => {
+const gracefulShutdown = async (signal: string) => {
   logger.info(`${signal} received, shutting down gracefully`);
+  await closeCache();
 
   server.close(() => {
     logger.info('HTTP server closed');
@@ -28,16 +30,16 @@ const gracefulShutdown = (signal: string) => {
   }, 10000);
 };
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', async () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', async () => gracefulShutdown('SIGINT'));
 
 // 예상치 못한 에러 처리
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', async (error) => {
   logger.error('Uncaught Exception:', error);
-  gracefulShutdown('UNCAUGHT_EXCEPTION');
+  await gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', async (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  gracefulShutdown('UNHANDLED_REJECTION');
+  await gracefulShutdown('UNHANDLED_REJECTION');
 });
