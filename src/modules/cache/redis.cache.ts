@@ -71,15 +71,15 @@ export class RedisCache implements ICache {
     }
   }
 
-  async disconnect(): Promise<void> {
+  async destroy(): Promise<void> {
     try {
       if (this.connected) {
-        await this.client.disconnect();
+        this.client.destroy();
         this.connected = false;
         logger.info('Redis cache connection closed');
       }
     } catch (error) {
-      logger.error('Failed to disconnect from Redis cache:', error);
+      logger.error('Failed to destroy from Redis cache:', error);
       throw error;
     }
   }
@@ -153,6 +153,7 @@ export class RedisCache implements ICache {
   async exists(key: string): Promise<boolean> {
     try {
       if (!this.connected) {
+        logger.warn('Redis not connected, skipping cache exists');
         return false;
       }
 
@@ -206,6 +207,7 @@ export class RedisCache implements ICache {
   async size(): Promise<number> {
     try {
       if (!this.connected) {
+        logger.warn('Redis not connected, skipping cache size, return 0');
         return 0;
       }
 

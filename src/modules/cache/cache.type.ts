@@ -70,7 +70,7 @@ export interface ICache {
   /**
    * 캐시 서버와 연결을 끊습니다.
    */
-  disconnect(): Promise<void>;
+  destroy(): Promise<void>;
 
   /**
    * 캐시 서버와 연결되어 있는지 확인합니다.
