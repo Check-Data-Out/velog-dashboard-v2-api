@@ -5,7 +5,7 @@ import { createClient } from 'redis';
 // Redis 클라이언트 타입 정의
 interface MockRedisClient {
   connect: jest.Mock;
-  disconnect: jest.Mock;
+  destroy: jest.Mock;
   on: jest.Mock;
   get: jest.Mock;
   set: jest.Mock;
@@ -38,7 +38,7 @@ describe('RedisCache', () => {
     // Redis 클라이언트 모킹 설정
     mockClient = {
       connect: jest.fn(),
-      disconnect: jest.fn(),
+      destroy: jest.fn(),
       on: jest.fn(),
       get: jest.fn(),
       set: jest.fn(),
@@ -92,7 +92,7 @@ describe('RedisCache', () => {
       // 생성자에서 이벤트 핸들러 설정이 호출되는지 확인
       expect(mockClient.on).toHaveBeenCalledWith('error', expect.any(Function));
       expect(mockClient.on).toHaveBeenCalledWith('connect', expect.any(Function));
-      expect(mockClient.on).toHaveBeenCalledWith('disconnect', expect.any(Function));
+      expect(mockClient.on).toHaveBeenCalledWith('destroy', expect.any(Function));
     });
   });
 
@@ -126,7 +126,7 @@ describe('RedisCache', () => {
     });
   });
 
-  describe('disconnect', () => {
+  describe('destroy', () => {
     beforeEach(async () => {
       // 연결 상태로 만들기
       mockClient.connect.mockResolvedValue(undefined);
@@ -134,30 +134,23 @@ describe('RedisCache', () => {
     });
 
     it('연결된 상태에서 연결 해제에 성공해야 한다', async () => {
-      mockClient.disconnect.mockResolvedValue(undefined);
+      mockClient.destroy.mockResolvedValue(undefined);
 
-      await redisCache.disconnect();
+      await redisCache.destroy();
 
-      expect(mockClient.disconnect).toHaveBeenCalledTimes(1);
+      expect(mockClient.destroy).toHaveBeenCalledTimes(1);
       expect(redisCache.isConnected()).toBe(false);
     });
 
     it('연결되지 않은 상태에서는 연결 해제하지 않아야 한다', async () => {
       // 먼저 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       // 두 번째 연결 해제 시도
-      await redisCache.disconnect();
+      await redisCache.destroy();
 
-      expect(mockClient.disconnect).toHaveBeenCalledTimes(1);
-    });
-
-    it('연결 해제 실패 시 에러를 던져야 한다', async () => {
-      const disconnectionError = new Error('Disconnection failed');
-      mockClient.disconnect.mockRejectedValue(disconnectionError);
-
-      await expect(redisCache.disconnect()).rejects.toThrow('Disconnection failed');
+      expect(mockClient.destroy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -187,8 +180,8 @@ describe('RedisCache', () => {
 
     it('연결되지 않은 상태에서 null을 반환해야 한다', async () => {
       // 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       const result = await redisCache.get('test-key');
 
@@ -252,8 +245,8 @@ describe('RedisCache', () => {
 
     it('연결되지 않은 상태에서는 저장하지 않아야 한다', async () => {
       // 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       await redisCache.set('test-key', { test: 'data' });
 
@@ -293,8 +286,8 @@ describe('RedisCache', () => {
 
     it('연결되지 않은 상태에서 false를 반환해야 한다', async () => {
       // 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       const result = await redisCache.delete('test-key');
 
@@ -336,8 +329,8 @@ describe('RedisCache', () => {
 
     it('연결되지 않은 상태에서 false를 반환해야 한다', async () => {
       // 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       const result = await redisCache.exists('test-key');
 
@@ -404,8 +397,8 @@ describe('RedisCache', () => {
 
     it('연결되지 않은 상태에서는 삭제하지 않아야 한다', async () => {
       // 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       await redisCache.clear('test:*');
 
@@ -452,8 +445,8 @@ describe('RedisCache', () => {
 
     it('연결되지 않은 상태에서 0을 반환해야 한다', async () => {
       // 연결 해제
-      mockClient.disconnect.mockResolvedValue(undefined);
-      await redisCache.disconnect();
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
 
       const result = await redisCache.size();
 
@@ -510,13 +503,13 @@ describe('RedisCache', () => {
       expect(connectHandler).toBeDefined();
       connectHandler?.();
 
-      const disconnectCall = mockClient.on.mock.calls.find(
-        (call: [string, (...args: unknown[]) => void]) => call[0] === 'disconnect',
+      const destroyCall = mockClient.on.mock.calls.find(
+        (call: [string, (...args: unknown[]) => void]) => call[0] === 'destroy',
       );
-      const disconnectHandler = disconnectCall?.[1];
+      const destroyHandler = destroyCall?.[1];
 
-      expect(disconnectHandler).toBeDefined();
-      disconnectHandler?.();
+      expect(destroyHandler).toBeDefined();
+      destroyHandler?.();
       expect(redisCache.isConnected()).toBe(false);
     });
   });

@@ -42,8 +42,8 @@ export class RedisCache implements ICache {
       this.connected = true;
     });
 
-    this.client.on('disconnect', () => {
-      logger.warn('Redis Client Disconnected');
+    this.client.on('destroy', () => {
+      logger.warn('Redis Client Destroyed');
       this.connected = false;
     });
   }

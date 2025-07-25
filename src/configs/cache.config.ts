@@ -36,7 +36,7 @@ export const initCache = async (): Promise<void> => {
 // 종료 함수
 export const closeCache = async (): Promise<void> => {
   try {
-    await cache.disconnect();
+    cache.destroy();
     cacheInitialized = false;
     logger.info('Cache system closed successfully');
   } catch (error) {
