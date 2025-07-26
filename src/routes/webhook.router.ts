@@ -50,4 +50,4 @@ const webhookController = new WebhookController();
  */
 router.post('/webhook/sentry', authMiddleware.verifySignature, webhookController.handleSentryWebhook);
 
-export default router; 
+export default router;

@@ -41,8 +41,8 @@ pnpm dev
 ```bash
 pnpm dev  # 개발 서버 실행
 pnpm test  # 테스트 실행
-pnpm lint  # 린트 검사
-pnpm lint:fix  # 린트 자동 수정
+pnpm lint  # 린트 검사 (eslint + prettier)
+pnpm lint-staged  # 린트 자동 수정
 
 pnpm build # 프로젝트 빌드
 pnpm start # 빌드된 프로젝트 시작

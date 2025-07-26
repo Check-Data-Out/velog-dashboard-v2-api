@@ -39,14 +39,8 @@ export { GetTotalStatsQueryDto } from '@/types/dto/requests/getTotalStatsQuery.t
 export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
 
 // Sentry 관련
-export type {
-  SentryIssueStatus,
-} from '@/types/models/Sentry.type';
-export type {
-  SentryProject,
-  SentryIssue,
-  SentryWebhookData,
-} from '@/types/models/Sentry.type';
+export type { SentryIssueStatus } from '@/types/models/Sentry.type';
+export type { SentryProject, SentryIssue, SentryWebhookData } from '@/types/models/Sentry.type';
 
 // Common
 export { EmptyResponseDto } from '@/types/dto/responses/emptyReponse.type';

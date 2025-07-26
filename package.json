@@ -1,14 +1,12 @@
 {
   "name": "velog-dashboard",
   "version": "1.0.0",
-  "description": "",
+  "description": "Velog Dashboard Project, velog의 모든 게시글, 통계 데이터를 한 눈에 편하게 확인할 수 있는 대시보드입니다.",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc && tsc-alias -p tsconfig.json",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/**/*.ts",
+    "lint": "eslint src/**/*.ts && prettier --check src/**/*.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -20,8 +18,21 @@
       "prettier --write"
     ]
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "velog",
+    "dashboard",
+    "analytics",
+    "blog",
+    "monitoring",
+    "typescript",
+    "express",
+    "node.js",
+    "redis",
+    "postgresql",
+    "api",
+    "swagger"
+  ],
+  "author": "Nuung",
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^9.36.0",
@@ -33,6 +44,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "pg": "^8.13.1",
+    "redis": "^5.6.0",
     "reflect-metadata": "^0.2.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
