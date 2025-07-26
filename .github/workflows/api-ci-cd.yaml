@@ -80,3 +80,49 @@ jobs:
 
       - name: Run build
         run: pnpm run build
+
+      # Docker 로그인
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Docker 이미지 빌드
+      - name: Build Docker Image
+        run: |
+          docker build -t velog-dashboard-v2-fe:latest .
+
+      # Docker Hub에 푸시
+      - name: Push Docker Image
+        run: |
+          docker tag velog-dashboard-v2-fe:latest ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-fe:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-fe:latest
+
+  docker-deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    # 하나의 버전이라도 성공하면 실행 (일부 실패해도 진행)
+    if: ${{ !cancelled() && contains(needs.build-and-test.result, 'success') }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Docker 로그인
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Docker 이미지 빌드
+      - name: Build Docker Image
+        run: |
+          docker build -t velog-dashboard-v2-api:latest .
+
+      # Docker Hub에 푸시
+      - name: Push Docker Image
+        run: |
+          docker tag velog-dashboard-v2-api:latest ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-api:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-api:latest
