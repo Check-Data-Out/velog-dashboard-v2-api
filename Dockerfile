@@ -5,6 +5,8 @@ FROM node:23-alpine AS builder
 
 WORKDIR /usr/src/app
 
+ENV NODE_OPTIONS="--max-old-space-size=768"
+
 # pnpm 설치
 RUN npm install -g pnpm
 

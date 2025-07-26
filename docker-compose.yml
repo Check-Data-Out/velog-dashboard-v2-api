@@ -1,7 +1,5 @@
 # docker-compose.yml
 name: velog-dashboard-v2-app
-version: '3.9'
-
 services:
   api:
     build:
