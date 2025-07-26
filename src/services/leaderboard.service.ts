@@ -1,3 +1,4 @@
+import { cache } from '@/configs/cache.config';
 import logger from '@/configs/logger.config';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import {
@@ -6,6 +7,8 @@ import {
   UserLeaderboardData,
   PostLeaderboardData,
 } from '@/types/index';
+
+export const LEADERBOARD_CACHE_TTL = 60 * 30; // 30분
 
 export class LeaderboardService {
   constructor(private leaderboardRepo: LeaderboardRepository) {}
@@ -16,8 +19,18 @@ export class LeaderboardService {
     limit: number = 10,
   ): Promise<UserLeaderboardData> {
     try {
+      const cacheKey = `leaderboard:user:${sort}:${dateRange}:${limit}`;
+      const cachedResult = await cache.get(cacheKey);
+
+      if (cachedResult) {
+        return cachedResult as UserLeaderboardData;
+      }
+
       const rawResult = await this.leaderboardRepo.getUserLeaderboard(sort, dateRange, limit);
-      return this.mapRawUserResult(rawResult);
+      const result = this.mapRawUserResult(rawResult);
+      cache.set(cacheKey, result, LEADERBOARD_CACHE_TTL);
+
+      return result;
     } catch (error) {
       logger.error('LeaderboardService getUserLeaderboard error : ', error);
       throw error;
@@ -30,8 +43,18 @@ export class LeaderboardService {
     limit: number = 10,
   ): Promise<PostLeaderboardData> {
     try {
+      const cacheKey = `leaderboard:post:${sort}:${dateRange}:${limit}`;
+      const cachedResult = await cache.get(cacheKey);
+
+      if (cachedResult) {
+        return cachedResult as PostLeaderboardData;
+      }
+
       const rawResult = await this.leaderboardRepo.getPostLeaderboard(sort, dateRange, limit);
-      return this.mapRawPostResult(rawResult);
+      const result = this.mapRawPostResult(rawResult);
+      cache.set(cacheKey, result, LEADERBOARD_CACHE_TTL);
+
+      return result;
     } catch (error) {
       logger.error('LeaderboardService getPostLeaderboard error : ', error);
       throw error;
