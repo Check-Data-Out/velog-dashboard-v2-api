@@ -2,10 +2,12 @@
 name: velog-dashboard-v2-app
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: velog-dashboard-v2-api
+    # 아래는 직접 local 에 dockerfile 기반 image 를 만들 때 사용
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    # image: velog-dashboard-v2-api
+    image: nuung/velog-dashboard-v2-api:latest
     hostname: velog-dashboard-v2-api
     container_name: velog-dashboard-v2-api
     ports:
