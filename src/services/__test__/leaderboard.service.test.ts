@@ -88,10 +88,6 @@ describe('LeaderboardService', () => {
       ],
     };
 
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
     it('응답 형식에 맞게 변환된 사용자 리더보드 데이터를 반환해야 한다', async () => {
       mockCache.get.mockResolvedValue(null);
       mockRepo.getUserLeaderboard.mockResolvedValue(mockRawResult);
@@ -213,10 +209,6 @@ describe('LeaderboardService', () => {
         },
       ],
     };
-
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
 
     it('응답 형식에 맞게 변환된 게시물 리더보드 데이터를 반환해야 한다', async () => {
       mockCache.get.mockResolvedValue(null);
