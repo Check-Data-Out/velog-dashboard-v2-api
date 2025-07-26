@@ -38,6 +38,21 @@ stop_services() {
     docker compose down || true
 }
 
+cleanup_docker() {
+    print_step "0.5. 사용하지 않는 Docker 리소스 정리"
+    
+    # 중지된 컨테이너 제거
+    docker container prune -f
+    
+    # dangling 이미지 제거 (태그가 없는 이미지)
+    docker image prune -f
+    
+    # 사용하지 않는 네트워크 제거
+    docker network prune -f
+    
+    echo -e "${GREEN}Docker 정리 완료${NC}"
+}
+
 # 이미지 업데이트
 update_images() {
     print_step "1. 외부 이미지 업데이트 (fe, nginx)..."
@@ -62,6 +77,7 @@ main() {
     
     check_docker
     stop_services
+    cleanup_docker
     update_images
     build_api
     start_services
