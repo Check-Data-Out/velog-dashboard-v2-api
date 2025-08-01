@@ -27,7 +27,14 @@ if (process.env.NODE_ENV === 'production') {
 
 const pool = new Pool(poolConfig);
 
-async function initializeDatabase(): Promise<void> {
+/**
+ * 데이터베이스 연결을 초기화하고 TimescaleDB 확장을 보장
+ * 최대 3회 재시도하며, 실패 시 서버를 종료
+ *
+ * @throws 연결에 3회 실패하면 서버가 종료
+ * @returns {Promise<void>} 연결 및 확장 완료 시 resolve되는 프로미스
+ */
+export async function initializeDatabase(): Promise<void> {
   const maxRetries = 3;
   let delay = 800;
 
@@ -65,9 +72,21 @@ async function initializeDatabase(): Promise<void> {
   }
 }
 
-initializeDatabase().catch((error) => {
-  logger.error('데이터베이스 초기화 중 예상치 못한 오류:', error);
-  process.exit(1); // 치명적 오류시 서버 종료
-});
+
+/**
+ * 데이터베이스 커넥션 풀을 안정적으로 직접 종료하는 함수
+ *
+ * @throws 데이터베이스 연결 종료에 실패할 경우 에러
+ * @returns {Promise<void>} 데이터베이스 연결이 종료되면 resolve되는 프로미스
+ */
+export async function closeDatabase(): Promise<void> {
+  try {
+    await pool.end();
+    logger.info('데이터베이스 연결이 정상적으로 종료되었습니다.');
+  } catch (error) {
+    logger.error('데이터베이스 연결 종료 중 오류 발생:', error);
+    throw error;
+  }
+}
 
 export default pool;
