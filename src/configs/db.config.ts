@@ -17,7 +17,6 @@ const poolConfig: pg.PoolConfig = {
   max: 10, // 최대 연결 수
   idleTimeoutMillis: 30000, // 연결 유휴 시간 (30초)
   connectionTimeoutMillis: 10000, // 연결 시간 초과 (10초)
-
 };
 
 if (process.env.NODE_ENV === 'production') {
@@ -48,11 +47,9 @@ async function initializeDatabase(): Promise<void> {
         logger.info('TimescaleDB 확장 성공');
 
         return; // 성공
-
       } finally {
         client.release();
       }
-
     } catch (error) {
       logger.error(`데이터베이스 연결 실패 (시도 ${attempt}/${maxRetries}):`, error);
 
@@ -62,13 +59,13 @@ async function initializeDatabase(): Promise<void> {
       }
 
       logger.info(`${delay}ms 후 재시도...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       delay = Math.floor(delay * 1.5);
     }
   }
 }
 
-initializeDatabase().catch(error => {
+initializeDatabase().catch((error) => {
   logger.error('데이터베이스 초기화 중 예상치 못한 오류:', error);
   process.exit(1); // 치명적 오류시 서버 종료
 });
