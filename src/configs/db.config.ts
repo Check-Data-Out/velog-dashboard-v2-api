@@ -72,7 +72,6 @@ export async function initializeDatabase(): Promise<void> {
   }
 }
 
-
 /**
  * 데이터베이스 커넥션 풀을 안정적으로 직접 종료하는 함수
  *

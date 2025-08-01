@@ -6,7 +6,6 @@ import { Server } from 'http';
 
 const port = parseInt(process.env.PORT || '8080', 10);
 
-
 async function startServer() {
   try {
     // 데이터베이스 초기화
@@ -25,7 +24,6 @@ async function startServer() {
 
     // Graceful shutdown 핸들러 설정
     setupGracefulShutdown(server);
-
   } catch (error) {
     logger.error('서버 시작 중 오류 발생:', error);
     process.exit(1);
