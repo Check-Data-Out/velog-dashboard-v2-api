@@ -16,7 +16,7 @@ class GracefulShutdownManager implements ShutdownHandler {
   private isShuttingDown = false;
   private readonly shutdownTimeout = 10000; // 10초 강제 종료 타이머
 
-  constructor(private server: Server) { }
+  constructor(private server: Server) {}
 
   /**
    * 모든 연결을 안전하게 정리하고 서버를 종료

@@ -30,9 +30,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(
   cors({
-    origin: process.env.NODE_ENV === 'production'
-      ? process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim())
-      : 'http://localhost:3000',
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? process.env.ALLOWED_ORIGINS?.split(',').map((origin) => origin.trim())
+        : 'http://localhost:3000',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'access_token', 'refresh_token'],
     credentials: true,
@@ -49,8 +50,8 @@ app.get('/health', async (req: Request, res: Response) => {
     environment: process.env.NODE_ENV,
     services: {
       sentry: false,
-      cache: false
-    }
+      cache: false,
+    },
   };
 
   // Sentry 상태 확인
