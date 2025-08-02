@@ -33,11 +33,12 @@ check_docker() {
 
 # 서비스 중지
 stop_services() {
-    print_step "0. 현재 사용 중 이미지 stop, down"
+    print_step "0. 현재 사용 중인 서비스 중지"
     docker compose stop || true
     docker compose down || true
 }
 
+# Docker 리소스 정리
 cleanup_docker() {
     print_step "0.5. 사용하지 않는 Docker 리소스 정리"
     
@@ -53,37 +54,82 @@ cleanup_docker() {
     echo -e "${GREEN}Docker 정리 완료${NC}"
 }
 
-# 이미지 업데이트
+# 모든 이미지 업데이트 (API 포함)
 update_images() {
-    print_step "1. 외부 이미지 업데이트 (fe, nginx)..."
-    docker compose pull fe nginx
-}
-
-# API 빌드
-build_api() {
-    print_step "2. 로컬 이미지 빌드 (api)..."
-    docker compose build api
+    print_step "1. Docker Hub에서 최신 이미지 다운로드 중..."
+    
+    # 모든 서비스의 이미지를 Docker Hub에서 최신 버전으로 pull
+    docker compose pull
+    
+    echo -e "${GREEN}모든 이미지 업데이트 완료${NC}"
 }
 
 # 서비스 시작
 start_services() {
-    print_step "3. 서비스 재시작..."
+    print_step "2. 서비스 시작 중..."
     docker compose up -d
+    
+    echo -e "${GREEN}모든 서비스가 시작되었습니다${NC}"
+}
+
+# 서비스 상태 확인
+check_services() {
+    print_step "3. 서비스 상태 확인"
+    
+    # 잠시 대기 (서비스 시작 시간 확보)
+    sleep 5
+    
+    # 실행 중인 컨테이너 확인
+    echo -e "${YELLOW}실행 중인 컨테이너:${NC}"
+    docker compose ps
+    
+    # 각 서비스 헬스체크
+    echo -e "\n${YELLOW}서비스 헬스체크:${NC}"
+    
+    # API 서비스 확인
+    if curl -f http://localhost:8080/health &>/dev/null; then
+        echo -e "✅ API 서비스: ${GREEN}정상${NC}"
+    else
+        echo -e "❌ API 서비스: ${RED}응답 없음${NC}"
+    fi
+    
+    # Frontend 서비스 확인 (포트 3000)
+    if curl -f http://localhost:3000 &>/dev/null; then
+        echo -e "✅ Frontend 서비스: ${GREEN}정상${NC}"
+    else
+        echo -e "❌ Frontend 서비스: ${RED}응답 없음${NC}"
+    fi
+    
+    # Nginx 서비스 확인 (포트 80)
+    if curl -f http://localhost &>/dev/null; then
+        echo -e "✅ Nginx 서비스: ${GREEN}정상${NC}"
+    else
+        echo -e "❌ Nginx 서비스: ${RED}응답 없음${NC}"
+    fi
 }
 
 # 메인 실행 로직
 main() {
     set -e  # 스크립트 실행 중 오류 발생 시 종료
     
+    print_step "Velog Dashboard V2 배포 스크립트 시작"
+    
     check_docker
     stop_services
     cleanup_docker
     update_images
-    build_api
     start_services
+    check_services
 
-    print_step "모든 작업이 완료되었습니다! 로그 모니터링을 시작합니다."
-    sleep 1
+    print_step "🎉 모든 작업이 완료되었습니다!"
+    echo -e "${GREEN}서비스 접속 정보:${NC}"
+    echo -e "• 메인 사이트: ${YELLOW}http://localhost${NC}"
+    echo -e "• API 서버: ${YELLOW}http://localhost:8080${NC}"
+    echo -e "• Frontend: ${YELLOW}http://localhost:3000${NC}"
+    echo -e "• API Health Check: ${YELLOW}http://localhost:8080/health${NC}"
+    
+    echo -e "\n${YELLOW}로그 모니터링을 시작합니다... (Ctrl+C로 종료)${NC}"
+    sleep 2
     docker compose logs -f
 }
 
