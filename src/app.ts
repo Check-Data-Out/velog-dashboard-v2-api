@@ -11,14 +11,11 @@ import router from '@/routes';
 import { NotFoundError } from '@/exception';
 
 import { options } from '@/configs/swagger.config';
-import { initSentry, getSentryStatus } from '@/configs/sentry.config';
-import { initCache, getCacheStatus } from '@/configs/cache.config';
+import { getSentryStatus } from '@/configs/sentry.config';
+import { getCacheStatus } from '@/configs/cache.config';
 import { errorHandlingMiddleware } from '@/middlewares/errorHandling.middleware';
 
 dotenv.config();
-
-initSentry();  // Sentry 초기화
-initCache();  // Redis 캐시 초기화
 
 const app: Application = express();
 
