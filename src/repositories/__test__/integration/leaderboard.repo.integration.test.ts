@@ -1,4 +1,3 @@
-/* eslint-disable jest/no-disabled-tests */
 /**
  * 주의: 이 통합 테스트는 현재 시간에 의존적입니다.
  * getCurrentKSTDateString과 getKSTDateStringWithOffset 함수는 실제 시간을 기준으로
@@ -10,10 +9,10 @@ import dotenv from 'dotenv';
 import pg, { Pool } from 'pg';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
+import { getKSTDateStringWithOffset } from '@/utils/date.util';
 
 dotenv.config();
-
-jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
+jest.setTimeout(30000); // 각 케이스당 30초 타임아웃 설정
 
 /**
  * LeaderboardRepository 통합 테스트
@@ -21,11 +20,10 @@ jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
  * 이 테스트 파일은 실제 데이터베이스와 연결하여 LeaderboardRepository의 모든 메서드를
  * 실제 환경과 동일한 조건에서 테스트합니다.
  */
-describe.skip('LeaderboardRepository 통합 테스트', () => {
+describe('LeaderboardRepository 통합 테스트', () => {
   let testPool: Pool;
   let repo: LeaderboardRepository;
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const DEFAULT_PARAMS = {
     USER_SORT: 'viewCount' as UserLeaderboardSortType,
     POST_SORT: 'viewCount' as PostLeaderboardSortType,
@@ -45,7 +43,7 @@ describe.skip('LeaderboardRepository 통합 테스트', () => {
         idleTimeoutMillis: 30000, // 연결 유휴 시간 (30초)
         connectionTimeoutMillis: 5000, // 연결 시간 초과 (5초)
         allowExitOnIdle: false, // 유휴 상태에서 종료 허용
-        statement_timeout: 60000, // 쿼리 타임아웃 증가 (60초)
+        statement_timeout: 30000, // 쿼리 타임아웃 증가 (30초)
       };
 
       // localhost 가 아니면 ssl 필수
@@ -80,10 +78,17 @@ describe.skip('LeaderboardRepository 통합 테스트', () => {
 
   afterAll(async () => {
     try {
-      jest.clearAllMocks();
-
-      // 풀 완전 종료
-      await testPool.end();
+        // 모든 쿼리 완료 대기
+        await new Promise(resolve => setTimeout(resolve, 1000));
+  
+        // 풀 완전 종료
+        if (testPool) {
+          // 강제 종료: 모든 활성 쿼리와 연결 중지
+          await testPool.end();
+        }
+  
+        // 추가 정리 시간
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
       logger.info('LeaderboardRepository 통합 테스트 DB 연결 종료');
     } catch (error) {
@@ -225,6 +230,16 @@ describe.skip('LeaderboardRepository 통합 테스트', () => {
         expect(user.username).not.toBeNull();
       });
     });
+
+    it('데이터 수집이 비정상적인 유저는 리더보드에 포함되지 않아야 한다', async () => {
+      const result = await repo.getUserLeaderboard(DEFAULT_PARAMS.USER_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
+
+      if (!isEnoughData(result, 1, '사용자 리더보드 비정상 유저 필터링')) return;
+
+      result.forEach((user) => {
+        expect(Number(user.total_views)).not.toBe(Number(user.view_diff));
+      });
+    });
   });
 
   describe('getPostLeaderboard', () => {
@@ -341,6 +356,20 @@ describe.skip('LeaderboardRepository 통합 테스트', () => {
         // eslint-disable-next-line jest/no-conditional-expect
         expect(areDifferent).toBe(true);
       }
+    });
+
+    it('데이터 수집이 비정상적인 게시물은 리더보드에 포함되지 않아야 한다', async () => {
+      const result = await repo.getPostLeaderboard(DEFAULT_PARAMS.POST_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
+      const pastDateKST = getKSTDateStringWithOffset(-DEFAULT_PARAMS.DATE_RANGE * 24 * 60);
+
+      if (!isEnoughData(result, 1, '게시물 리더보드 비정상 게시물 필터링')) return;
+
+      result.forEach((post) => {
+        if (post.released_at < pastDateKST) {
+          // eslint-disable-next-line jest/no-conditional-expect
+          expect(Number(post.total_views)).not.toBe(Number(post.view_diff));
+        }
+      });
     });
   });
 });
