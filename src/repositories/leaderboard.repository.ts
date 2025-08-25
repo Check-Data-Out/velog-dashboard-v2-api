@@ -21,8 +21,8 @@ export class LeaderboardRepository {
           COALESCE(SUM(ts.today_view), 0) AS total_views,
           COALESCE(SUM(ts.today_like), 0) AS total_likes, 
           COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
-          SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0))) AS view_diff,
-          SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0))) AS like_diff,
+          SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)) AS view_diff,
+          SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, 0)) AS like_diff,
           COUNT(DISTINCT CASE WHEN p.released_at >= '${pastDateKST}' AND p.is_active = true THEN p.id END) AS post_diff
         FROM users_user u
         LEFT JOIN posts_post p ON p.user_id = u.id
@@ -30,6 +30,7 @@ export class LeaderboardRepository {
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE u.username IS NOT NULL
         GROUP BY u.id, u.email, u.username
+        HAVING SUM(COALESCE(ts.today_view, 0)) != SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0))
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, u.id
         LIMIT $1;
       `;
@@ -44,6 +45,7 @@ export class LeaderboardRepository {
 
   async getPostLeaderboard(sort: PostLeaderboardSortType, dateRange: number, limit: number) {
     try {
+      const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
       const cteQuery = this.buildLeaderboardCteQuery(dateRange);
 
       const query = `
@@ -56,13 +58,18 @@ export class LeaderboardRepository {
           u.username AS username,
           COALESCE(ts.today_view, 0) AS total_views,
           COALESCE(ts.today_like, 0) AS total_likes,
-          COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, COALESCE(ts.today_view, 0)) AS view_diff,
-          COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, COALESCE(ts.today_like, 0)) AS like_diff
+          COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0) AS view_diff,
+          COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, 0) AS like_diff
         FROM posts_post p
         LEFT JOIN users_user u ON u.id = p.user_id
         LEFT JOIN today_stats ts ON ts.post_id = p.id
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE p.is_active = true
+          AND (
+            p.released_at >= '${pastDateKST}'
+            OR 
+            COALESCE(ts.today_view, 0) != COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)
+          )
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, p.id
         LIMIT $1;
       `;
@@ -89,8 +96,7 @@ export class LeaderboardRepository {
           daily_view_count AS today_view,
           daily_like_count AS today_like
         FROM posts_postdailystatistics
-        WHERE date <= '${nowDateKST}'
-        ORDER BY post_id, date DESC
+        WHERE date = '${nowDateKST}'
       ),
       start_stats AS (
         SELECT DISTINCT ON (post_id)
@@ -98,8 +104,7 @@ export class LeaderboardRepository {
           daily_view_count AS start_view,
           daily_like_count AS start_like
         FROM posts_postdailystatistics
-        WHERE date >= '${pastDateKST}'
-        ORDER BY post_id, date ASC
+        WHERE date = '${pastDateKST}'
       )
     `;
   }

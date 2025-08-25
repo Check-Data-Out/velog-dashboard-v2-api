@@ -79,8 +79,17 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
+        expect.stringContaining('WHERE date ='), // pastDateKST를 사용하는 부분 확인
         [expect.any(Number)], // limit
+      );
+    });
+
+    it('데이터 수집이 비정상적인 유저는 리더보드에 포함되지 않아야 한다', async () => {
+      await repo.getUserLeaderboard('viewCount', 30, 10);
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('HAVING SUM(COALESCE(ts.today_view, 0)) != SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0))'),
+        expect.anything(),
       );
     });
 
@@ -156,8 +165,17 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE date >='), // pastDateKST를 사용하는 부분 확인
+        expect.stringContaining('WHERE date ='), // pastDateKST를 사용하는 부분 확인
         [expect.any(Number)], // limit
+      );
+    });
+
+    it('데이터 수집이 비정상적인 게시물은 리더보드에 포함되지 않아야 한다', async () => {
+      await repo.getPostLeaderboard('viewCount', 30, 10);
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('COALESCE(ts.today_view, 0) != COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)'),
+        expect.anything()
       );
     });
 
