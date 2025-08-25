@@ -10,7 +10,7 @@ export class LeaderboardRepository {
   async getUserLeaderboard(sort: UserLeaderboardSortType, dateRange: number, limit: number) {
     try {
       const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
-      const cteQuery = this.buildLeaderboardCteQuery(dateRange);
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange, pastDateKST);
 
       const query = `
         ${cteQuery}
@@ -46,7 +46,7 @@ export class LeaderboardRepository {
   async getPostLeaderboard(sort: PostLeaderboardSortType, dateRange: number, limit: number) {
     try {
       const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
-      const cteQuery = this.buildLeaderboardCteQuery(dateRange);
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange, pastDateKST);
 
       const query = `
         ${cteQuery}
@@ -83,10 +83,11 @@ export class LeaderboardRepository {
   }
 
   // 오늘 날짜와 기준 날짜의 통계를 가져오는 CTE(임시 결과 집합) 쿼리 빌드
-  private buildLeaderboardCteQuery(dateRange: number) {
+  private buildLeaderboardCteQuery(dateRange: number, pastDateKST?: string) {
     const nowDateKST = getCurrentKSTDateString();
-    // 과거 날짜 계산 (dateRange일 전)
-    const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
+    if (!pastDateKST) {
+      pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
+    }
 
     return `
       WITH 
