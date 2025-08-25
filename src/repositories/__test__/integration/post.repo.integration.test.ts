@@ -19,7 +19,6 @@ describe('PostRepository 통합 테스트', () => {
   let repo: PostRepository;
 
   // 테스트에 사용할 기본 데이터 ID
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const TEST_DATA = {
     USER_ID: 1,
     POST_ID: 2445,

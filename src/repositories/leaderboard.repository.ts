@@ -85,9 +85,10 @@ export class LeaderboardRepository {
   // 오늘 날짜와 기준 날짜의 통계를 가져오는 CTE(임시 결과 집합) 쿼리 빌드
   private buildLeaderboardCteQuery(dateRange: number, pastDateKST?: string) {
     // KST 기준 00시~01시 (UTC 15:00~16:00) 사이라면 전날 데이터를 사용
-    const nowDateKST = new Date().getUTCHours() === 15
-      ? getKSTDateStringWithOffset(-24 * 60) // 전날 데이터
-      : getCurrentKSTDateString();
+    const nowDateKST =
+      new Date().getUTCHours() === 15
+        ? getKSTDateStringWithOffset(-24 * 60) // 전날 데이터
+        : getCurrentKSTDateString();
 
     if (!pastDateKST) {
       pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);

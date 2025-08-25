@@ -8,7 +8,6 @@ import { fetchVelogApi } from '@/modules/velog/velog.api';
 
 type Token10 = string & { __lengthBrand: 10 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const THREE_WEEKS_IN_MS = 21 * 24 * 60 * 60 * 1000;
 
 export class UserController {
