@@ -30,7 +30,7 @@ export class LeaderboardRepository {
         LEFT JOIN start_stats ss ON ss.post_id = p.id
         WHERE u.username IS NOT NULL
         GROUP BY u.id, u.email, u.username
-        HAVING SUM(COALESCE(ts.today_view, 0)) != SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0))
+        HAVING SUM(COALESCE(ss.start_view, 0)) != 0
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, u.id
         LIMIT $1;
       `;
@@ -68,7 +68,7 @@ export class LeaderboardRepository {
           AND (
             p.released_at >= '${pastDateKST}'
             OR 
-            COALESCE(ts.today_view, 0) != COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)
+            ss.post_id IS NOT NULL
           )
         ORDER BY ${this.SORT_COL_MAPPING[sort]} DESC, p.id
         LIMIT $1;

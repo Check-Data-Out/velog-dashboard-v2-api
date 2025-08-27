@@ -88,7 +88,7 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', 30, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('HAVING SUM(COALESCE(ts.today_view, 0)) != SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0))'),
+        expect.stringContaining('HAVING SUM(COALESCE(ss.start_view, 0)) != 0'),
         expect.anything(),
       );
     });
@@ -174,7 +174,7 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', 30, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('COALESCE(ts.today_view, 0) != COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)'),
+        expect.stringContaining('ss.post_id IS NOT NULL'),
         expect.anything()
       );
     });
