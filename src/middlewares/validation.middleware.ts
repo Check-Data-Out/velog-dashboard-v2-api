@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import logger from '@/configs/logger.config';
 import { BadRequestError } from '@/exception';
 
 type RequestKey = 'body' | 'user' | 'query';
@@ -23,7 +22,6 @@ export const validateRequestDto = <T extends object>(
       req[key] = value as T;
       next();
     } catch (error) {
-      logger.error(`${key} Dto 검증 중 오류 발생 : `, error);
       next(error);
     }
   };
