@@ -8,6 +8,8 @@ declare global {
         accessToken: string;
         refreshToken: string;
       };
+      requestId: string;
+      startTime: number;
     }
   }
 }

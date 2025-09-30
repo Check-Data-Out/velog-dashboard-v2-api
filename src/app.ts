@@ -14,6 +14,7 @@ import { options } from '@/configs/swagger.config';
 import { getSentryStatus } from '@/configs/sentry.config';
 import { getCacheStatus } from '@/configs/cache.config';
 import { errorHandlingMiddleware } from '@/middlewares/errorHandling.middleware';
+import { accessLogMiddleware } from '@/middlewares/accessLog.middleware';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.set('trust proxy', process.env.NODE_ENV === 'production');
 
 const swaggerSpec = swaggerJSDoc(options);
 
+app.use(accessLogMiddleware);
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' })); // 파일 업로드 대비
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
