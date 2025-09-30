@@ -3,7 +3,7 @@
  */
 export interface LogContext {
   requestId: string;
-  userId?: string;
+  userId?: number;
   method: string;
   url: string;
   userAgent?: string;

@@ -22,7 +22,7 @@ export const getClientIp = (req: Request): string => {
 export const createLogContext = (req: Request): LogContext => {
   return {
     requestId: req.requestId || randomUUID(),
-    userId: req.user?.velog_uuid,
+    userId: req.user?.id,
     method: req.method,
     url: req.originalUrl || req.url,
     userAgent: req.headers['user-agent'],
