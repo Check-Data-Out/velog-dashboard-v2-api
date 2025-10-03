@@ -170,4 +170,19 @@ export class UserService {
     );
     return { decryptedAccessToken, decryptedRefreshToken };
   }
+
+  async unsubscribeNewsletter(email: string) {
+    try {
+      const user = await this.userRepo.findByUserEmail(email);
+      if (!user) {
+        logger.error(`유저를 찾을 수 없습니다. [email: ${email}]`);
+        return; // 일반적인 실패시 리디렉션
+      }
+
+      await this.userRepo.unsubscribeNewsletter(user.id);
+    } catch (error) {
+      logger.error('User Service unsubscribeNewsletter Error : ', error);
+      throw error;
+    }
+  }
 }

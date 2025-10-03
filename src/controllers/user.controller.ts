@@ -5,6 +5,7 @@ import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception/token.exception';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
+import { BadRequestError } from '@/exception';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -166,6 +167,21 @@ export class UserController {
       res.redirect('/main');
     } catch (error) {
       logger.error(`QR 토큰 로그인 처리 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
+      next(error);
+    }
+  };
+
+  unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
+    try { 
+      const email = req.query.email as string;
+      if (!email) {
+        throw new BadRequestError('이메일이 필요합니다.');
+      }
+
+      await this.userService.unsubscribeNewsletter(email);
+      res.redirect('/main');
+    } catch (error) {
+      logger.error(`뉴스레터 구독 해제 실패: [email: ${req.query.email}]`, error);
       next(error);
     }
   };

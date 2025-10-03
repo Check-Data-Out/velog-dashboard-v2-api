@@ -7,7 +7,7 @@ import { DBError } from '@/exception';
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
-  async findByUserId(id: number): Promise<User> {
+  async findByUserId(id: number): Promise<User | null> {
     try {
       const user = await this.pool.query('SELECT * FROM "users_user" WHERE id = $1', [id]);
       return user.rows[0] || null;
@@ -17,12 +17,22 @@ export class UserRepository {
     }
   }
 
-  async findByUserVelogUUID(uuid: string): Promise<User> {
+  async findByUserVelogUUID(uuid: string): Promise<User | null> {
     try {
       const user = await this.pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [uuid]);
       return user.rows[0] || null;
     } catch (error) {
       logger.error('Velog UUID로 유저를 조회 중 오류 : ', error);
+      throw new DBError('유저 조회 중 문제가 발생했습니다.');
+    }
+  }
+
+  async findByUserEmail(email: string): Promise<User | null> {
+    try {
+      const user = await this.pool.query('SELECT * FROM "users_user" WHERE email = $1', [email]);
+      return user.rows[0] || null;
+    } catch (error) {
+      logger.error('Email로 유저를 조회 중 오류 : ', error);
       throw new DBError('유저 조회 중 문제가 발생했습니다.');
     }
   }
@@ -150,6 +160,16 @@ export class UserRepository {
     } catch (error) {
       logger.error('QRLoginToken Repo mark as used Error : ', error);
       throw new DBError('QR 코드 사용 처리 중 문제가 발생했습니다.');
+    }
+  }
+
+  async unsubscribeNewsletter(id: number): Promise<void> {
+    try {
+      const query = `UPDATE "users_user" SET newsletter_subscribed = false WHERE id = $1`;
+      await this.pool.query(query, [id]);
+    } catch (error) {
+      logger.error('User Repo unsubscribeNewsletter Error : ', error);
+      throw new DBError('뉴스레터 구독 해제 중 문제가 발생했습니다.');
     }
   }
 }
