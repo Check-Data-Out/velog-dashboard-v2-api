@@ -37,6 +37,7 @@ export const mockUser: User = {
   is_active: true,
   created_at: new Date('2024-01-01T00:00:00Z'),
   updated_at: new Date('2024-01-01T00:00:00Z'),
+  newsletter_subscribed: true,
 };
 
 /**
