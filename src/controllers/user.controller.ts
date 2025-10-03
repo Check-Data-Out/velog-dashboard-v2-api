@@ -3,9 +3,8 @@ import logger from '@/configs/logger.config';
 import { EmptyResponseDto, LoginResponseDto } from '@/types';
 import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
-import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception/token.exception';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { BadRequestError } from '@/exception';
+import { QRTokenExpiredError, QRTokenInvalidError, BadRequestError } from '@/exception';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -172,7 +171,7 @@ export class UserController {
   };
 
   unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
-    try { 
+    try {
       const email = req.query.email as string;
       if (!email) {
         throw new BadRequestError('이메일이 필요합니다.');
