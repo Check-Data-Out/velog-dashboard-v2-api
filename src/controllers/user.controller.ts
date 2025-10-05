@@ -4,7 +4,7 @@ import { EmptyResponseDto, LoginResponseDto } from '@/types';
 import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { QRTokenExpiredError, QRTokenInvalidError, BadRequestError } from '@/exception';
+import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -173,11 +173,14 @@ export class UserController {
   unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
     try {
       const email = req.query.email as string;
-      if (!email) {
-        throw new BadRequestError('이메일이 필요합니다.');
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!email || !emailRegex.test(email)) {
+        logger.error(`올바르지 않은 이메일: [email: ${req.query.email}]`);
+      } else {
+        await this.userService.unsubscribeNewsletter(email);
       }
 
-      await this.userService.unsubscribeNewsletter(email);
       res.redirect('/main');
     } catch (error) {
       logger.error(`뉴스레터 구독 해제 실패: [email: ${req.query.email}]`, error);

@@ -412,7 +412,7 @@ describe('UserController', () => {
       mockResponse.redirect = jest.fn().mockReturnThis();
     });
 
-    it('이메일이 없으면 BadRequestError를 던져야 한다', async () => {
+    it('이메일이 없으면 메인 페이지로 리다이렉트해야 한다', async () => {
       mockRequest.query = {};
 
       await userController.unsubscribeNewsletter(
@@ -421,12 +421,23 @@ describe('UserController', () => {
         nextFunction
       );
 
-      expect(nextFunction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: '이메일이 필요합니다.',
-        })
+      expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('잘못된 이메일 형식이면 메인 페이지로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { email: 'invalid-email' };
+
+      await userController.unsubscribeNewsletter(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
       );
-      expect(mockResponse.redirect).not.toHaveBeenCalled();
+
+      expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(nextFunction).not.toHaveBeenCalled();
     });
 
     it('구독 해제 완료시 메인 페이지로 리다이렉트해야 한다', async () => {
