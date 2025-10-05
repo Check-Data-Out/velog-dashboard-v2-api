@@ -14,7 +14,7 @@ export interface LogContext {
  * 에러 로그 데이터
  */
 export interface ErrorLogData extends LogContext {
-  logger: string;
+  logger: 'error';
   message: string;
   statusCode: number;
   errorCode?: string;
@@ -26,7 +26,7 @@ export interface ErrorLogData extends LogContext {
  * 액세스 로그 데이터
  */
 export interface AccessLogData extends LogContext {
-  logger: string;
+  logger: 'access';
   statusCode: number;
   responseTime: number;
   responseSize?: number;

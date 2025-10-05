@@ -13,21 +13,13 @@ if (!fs.existsSync(errorLogDir)) {
 }
 
 const jsonFormat = winston.format.printf((info) => {
-  // info.message가 객체인 경우
-  if (typeof info.message === 'object' && info.message !== null) {
-    return JSON.stringify({
-      timestamp: info.timestamp,
-      level: info.level.toUpperCase(),
-      logger: info.logger || 'default',
-      ...info.message, // 로그 데이터 평탄화
-    });
-  }
+  const message = typeof info.message === 'object' && info.message !== null ? info.message : { message: info.message };
 
   return JSON.stringify({
     timestamp: info.timestamp,
     level: info.level.toUpperCase(),
-    logger: 'default',
-    message: info.message,
+    logger: info.logger || 'default',
+    ...message,
   });
 });
 

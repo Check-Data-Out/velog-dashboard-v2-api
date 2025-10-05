@@ -12,7 +12,7 @@ export const accessLogMiddleware = (req: Request, res: Response, next: NextFunct
   // 응답 완료 시 액세스 로그 기록
   res.on('finish', () => {
     if (res.statusCode < 400) {
-      // 400 이상은 에러 로그로 처리
+      // 400 미만만 액세스 로그, 그 외 에러 로깅
       logAccess(req, res);
     }
   });
