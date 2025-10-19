@@ -405,4 +405,55 @@ describe('UserController', () => {
       expect(mockResponse.redirect).not.toHaveBeenCalled();
     });
   });
+
+  describe('unsubscribeNewsletter', () => {
+    beforeEach(() => {
+      mockRequest.query = {};
+      mockResponse.redirect = jest.fn().mockReturnThis();
+    });
+
+    it('이메일이 없으면 메인 페이지로 리다이렉트해야 한다', async () => {
+      mockRequest.query = {};
+
+      await userController.unsubscribeNewsletter(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('잘못된 이메일 형식이면 메인 페이지로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { email: 'invalid-email' };
+
+      await userController.unsubscribeNewsletter(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('구독 해제 완료시 메인 페이지로 리다이렉트해야 한다', async () => {
+      const email = 'test@example.com';
+      mockRequest.query = { email };
+      mockUserService.unsubscribeNewsletter.mockResolvedValue(undefined);
+
+      await userController.unsubscribeNewsletter(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockUserService.unsubscribeNewsletter).toHaveBeenCalledWith(email);
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+  });
 });

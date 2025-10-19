@@ -11,6 +11,8 @@ export interface User {
   // 250607 추가
   username: string | null;
   thumbnail: string | null;
+  // 251004 추가
+  newsletter_subscribed: boolean;
 }
 
 

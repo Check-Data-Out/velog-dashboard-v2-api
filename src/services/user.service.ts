@@ -170,4 +170,31 @@ export class UserService {
     );
     return { decryptedAccessToken, decryptedRefreshToken };
   }
+
+  async unsubscribeNewsletter(email: string) {
+    try {
+      const user = await this.userRepo.findByUserEmail(email);
+
+      if (!user) {
+        logger.error(`유저를 찾을 수 없습니다. [email: ${email}]`);
+        return; // 일반적인 실패시 조용히 리디렉션
+      }
+
+      if (!user.newsletter_subscribed) {
+        logger.error(`이미 구독이 해제된 이메일입니다. [email: ${email}]`);
+        return; // 일반적인 실패시 조용히 리디렉션
+      }
+
+      await this.userRepo.unsubscribeNewsletter(user.id);
+
+      try {
+        await sendSlackMessage(`뉴스레터 구독 취소: ${email} (id: ${user.id})`);
+      } catch (error) {
+        logger.error('Slack 알림 전송 실패:', error);
+      }
+    } catch (error) {
+      logger.error('User Service unsubscribeNewsletter Error : ', error);
+      throw error;
+    }
+  }
 }
