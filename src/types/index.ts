@@ -42,5 +42,8 @@ export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.
 export type { SentryIssueStatus } from '@/types/models/Sentry.type';
 export type { SentryProject, SentryIssue, SentryWebhookData } from '@/types/models/Sentry.type';
 
+// Logging 관련
+export type { LogContext, ErrorLogData, AccessLogData } from '@/types/logging';
+
 // Common
 export { EmptyResponseDto } from '@/types/dto/responses/emptyReponse.type';

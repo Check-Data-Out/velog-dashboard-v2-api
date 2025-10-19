@@ -13,11 +13,13 @@ if (!fs.existsSync(errorLogDir)) {
 }
 
 const jsonFormat = winston.format.printf((info) => {
+  const message = typeof info.message === 'object' && info.message !== null ? info.message : { message: info.message };
+
   return JSON.stringify({
     timestamp: info.timestamp,
     level: info.level.toUpperCase(),
-    logger: 'default',
-    message: info.message,
+    logger: info.logger || 'default',
+    ...message,
   });
 });
 
