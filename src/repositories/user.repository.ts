@@ -101,11 +101,12 @@ export class UserRepository {
         thumbnail,
         group_id,
         is_active,
+        newsletter_subscribed,
         created_at,
         updated_at
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, true, true, NOW(), NOW()
       )
       RETURNING *;
       `;
