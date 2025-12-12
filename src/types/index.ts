@@ -38,6 +38,10 @@ export type { TotalStatsItem } from '@/types/dto/responses/totalStatsResponse.ty
 export { GetTotalStatsQueryDto } from '@/types/dto/requests/getTotalStatsQuery.type';
 export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
 
+// SVG 관련
+export type { GetSvgBadgeParams, GetSvgBadgeQuery, SvgBadgeType } from '@/types/dto/requests/svgRequest.type';
+export { GetSvgBadgeQueryDto } from '@/types/dto/requests/svgRequest.type';
+
 // Sentry 관련
 export type { SentryIssueStatus } from '@/types/models/Sentry.type';
 export type { SentryProject, SentryIssue, SentryWebhookData } from '@/types/models/Sentry.type';
