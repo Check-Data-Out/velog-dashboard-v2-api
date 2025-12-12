@@ -28,7 +28,7 @@ export class SvgRepository {
                 WHERE u.username = $1
                 GROUP BY u.username
             `;
-            const userStatsResult = await this.pool.query(userStatsQuery, [username, dateRange]);
+            const userStatsResult = await this.pool.query(userStatsQuery, [username]);
 
             if (userStatsResult.rows.length === 0) {
                 throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
