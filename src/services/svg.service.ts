@@ -1,26 +1,41 @@
 import logger from '@/configs/logger.config';
-import { SvgBadgeType } from '@/types';
-import { SvgRepository } from '@/repositories/svg.repository';
+import { BadgeDataResponseDto, SvgBadgeType } from '@/types';
+import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 
 export class SvgService {
-    constructor(private svgRepo: SvgRepository) {}
+    constructor(private leaderboardRepo: LeaderboardRepository) {}
 
-    async generateBadgeSvg(
+    async getBadgeData(
         username: string,
         type: SvgBadgeType,
-        assets: string,
-        withRank: boolean,
-    ): Promise<string> {
+        dateRange: number = 30,
+    ): Promise<BadgeDataResponseDto> {
         try {
-            const data = await this.svgRepo.getUserBadgeData(username, withRank);
+            const userStats = await this.leaderboardRepo.getUserStats(username, dateRange);
+            const recentPosts = type === 'default'
+                ? await this.leaderboardRepo.getRecentPosts(username, dateRange, 3)
+                : [];
 
-            if (type === 'simple') {
-                return this.generateSimpleSvg(data, assets);
-            } else {
-                return this.generateDefaultSvg(data, assets, withRank);
-            }
+            return new BadgeDataResponseDto(
+                {
+                    username: userStats.username,
+                    totalViews: Number(userStats.total_views),
+                    totalLikes: Number(userStats.total_likes),
+                    totalPosts: Number(userStats.total_posts),
+                    viewDiff: Number(userStats.view_diff),
+                    likeDiff: Number(userStats.like_diff),
+                    postDiff: Number(userStats.post_diff),
+                },
+                recentPosts.map(post => ({
+                    title: post.title,
+                    releasedAt: post.released_at,
+                    viewCount: Number(post.today_view),
+                    likeCount: Number(post.today_like),
+                    viewDiff: Number(post.view_diff),
+                }))
+            )
         } catch (error) {
-            logger.error('SvgService generateBadgeSvg error: ', error);
+            logger.error('SvgService getBadgeData error: ', error);
             throw error;
         }
     }
@@ -42,17 +57,5 @@ export class SvgService {
             <text x="20" y="90" fill="white">Recent Posts: ${data.recent_posts?.length || 0}</text>
             ${withRank ? `<text x="20" y="120" fill="white">Rank: #${data.view_rank || 'N/A'}</text>` : ''}
         </svg>`;
-    }
-
-    private formatNumber(num: number): string {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'm';
-        }
-
-        if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'k';
-        }
-
-        return num.toString();
     }
 }

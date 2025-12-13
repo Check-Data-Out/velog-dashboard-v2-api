@@ -41,6 +41,8 @@ export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.
 // SVG 관련
 export type { GetSvgBadgeParams, GetSvgBadgeQuery, SvgBadgeType } from '@/types/dto/requests/svgRequest.type';
 export { GetSvgBadgeQueryDto } from '@/types/dto/requests/svgRequest.type';
+export type { BadgeUserData, BadgeRecentPost } from '@/types/dto/responses/svgResponse.type';
+export { BadgeDataResponseDto } from '@/types/dto/responses/svgResponse.type';
 
 // Sentry 관련
 export type { SentryIssueStatus } from '@/types/models/Sentry.type';

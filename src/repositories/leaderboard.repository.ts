@@ -1,6 +1,6 @@
 import logger from '@/configs/logger.config';
 import { Pool } from 'pg';
-import { DBError } from '@/exception';
+import { DBError, NotFoundError } from '@/exception';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types/index';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
@@ -79,6 +79,74 @@ export class LeaderboardRepository {
     } catch (error) {
       logger.error(`Leaderboard Repo getPostLeaderboard error:`, error);
       throw new DBError(`게시물 리더보드 조회 중 문제가 발생했습니다.`);
+    }
+  }
+
+  async getUserStats(username: string, dateRange: number = 30) {
+    try {
+      const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange, pastDateKST);
+
+      const query = `
+      ${cteQuery}
+      SELECT
+        u.username,
+        COALESCE(SUM(ts.today_view), 0) AS total_views,
+        COALESCE(SUM(ts.today_like), 0) AS total_likes,
+        COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
+        SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)) AS view_diff,
+        SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, 0)) AS like_diff,
+        COUNT(DISTINCT CASE WHEN p.released_at >= '${pastDateKST}' AND p.is_active = true THEN p.id END) AS post_diff
+      FROM users_user u
+      LEFT JOIN posts_post p ON p.user_id = u.id
+      LEFT JOIN today_stats ts ON ts.post_id = p.id
+      LEFT JOIN start_stats ss ON ss.post_id = p.id
+      WHERE u.username = $1
+      GROUP BY u.username
+    `;
+
+      const result = await this.pool.query(query, [username]);
+
+      if (result.rows.length === 0) {
+        throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
+      logger.error('LeaderboardRepository getUserStats error:', error);
+      throw new DBError('사용자 통계 조회 중 문제가 발생했습니다.');
+    }
+  }
+
+  async getRecentPosts(username: string, dateRange: number = 30, limit: number = 3) {
+    try {
+      const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
+      const cteQuery = this.buildLeaderboardCteQuery(dateRange, pastDateKST);
+
+      const query = `
+      ${cteQuery}
+      SELECT
+        p.title,
+        p.released_at,
+        COALESCE(ts.today_view, 0) AS today_view,
+        COALESCE(ts.today_like, 0) AS today_like,
+        (COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)) AS view_diff
+      FROM posts_post p
+      JOIN users_user u ON u.id = p.user_id
+      LEFT JOIN today_stats ts ON ts.post_id = p.id
+      LEFT JOIN start_stats ss ON ss.post_id = p.id
+      WHERE u.username = $1
+        AND p.is_active = true
+      ORDER BY p.released_at DESC
+      LIMIT $2
+    `;
+
+      const result = await this.pool.query(query, [username, limit]);
+      return result.rows;
+    } catch (error) {
+      logger.error('LeaderboardRepository getRecentPosts error:', error);
+      throw new DBError('최근 게시글 조회 중 문제가 발생했습니다.');
     }
   }
 

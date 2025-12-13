@@ -8,8 +8,6 @@ export interface GetSvgBadgeParams {
 
 export interface GetSvgBadgeQuery {
     type?: SvgBadgeType;
-    assets?: string;
-    withrank?: string;
 }
 
 export class GetSvgBadgeQueryDto {
@@ -25,9 +23,7 @@ export class GetSvgBadgeQueryDto {
     @IsEnum(['true', 'false'])
     withrank?: string;
 
-    constructor(type?: SvgBadgeType, assets?: string, withrank?: string) {
+    constructor(type?: SvgBadgeType) {
         this.type = type || 'default';
-        this.assets = assets || 'views,likes,posts'
-        this.withrank = withrank || 'false';
     }
 }

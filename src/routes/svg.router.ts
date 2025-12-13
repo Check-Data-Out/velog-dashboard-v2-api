@@ -1,6 +1,6 @@
 import pool from '@/configs/db.config';
 import express, { Router } from 'express';
-import { SvgRepository } from '@/repositories/svg.repository';
+import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { SvgService } from '@/services/svg.service';
 import { SvgController } from '@/controllers/svg.controller';
 import { validateRequestDto } from '@/middlewares/validation.middleware';
@@ -8,15 +8,15 @@ import { GetSvgBadgeQueryDto } from '@/types';
 
 const router: Router = express.Router();
 
-const svgRepository = new SvgRepository(pool);
-const svgService = new SvgService(svgRepository);
+const leaderboardRepository = new LeaderboardRepository(pool);
+const svgService = new SvgService(leaderboardRepository);
 const svgController = new SvgController(svgService);
 
 /**
  * @swagger
  * /api/{username}/badge:
  *   get:
- *     summary: 사용자 배지 SVG 조회
+ *     summary: 사용자 배지 데이터 조회
  *     tags:
  *       - SVG
  *     security: []
@@ -27,37 +27,46 @@ const svgController = new SvgController(svgService);
  *         schema:
  *           type: string
  *         description: 조회할 사용자명
- *         example: six-standard
+ *         example: ljh3478
  *       - in: query
  *         name: type
  *         schema:
  *           type: string
  *           enum: [default, simple]
  *           default: default
- *       - in: query
- *         name: assets
- *         schema:
- *           type: string
- *           default: views,likes,posts
- *           example: views,likes,posts
- *       - in: query
- *         name: withrank
- *         schema:
- *           type: string
- *           enum: [true, false]
- *           default: false
  *     responses:
  *       '200':
- *         description: SVG 배지 생성 성공
+ *         description: 배지 데이터 조회 성공
  *         content:
- *           image/svg+xml:
+ *           application/json:
  *             schema:
- *               type: string
- *               example: <svg>...</svg>
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     username:
+ *                       type: string
+ *                     totalViews:
+ *                       type: number
+ *                     totalLikes:
+ *                       type: number
+ *                     totalPosts:
+ *                       type: number
+ *                     viewDiff:
+ *                       type: number
+ *                     likeDiff:
+ *                       type: number
+ *                     postDiff:
+ *                       type: number
+ *                 recentPosts:
+ *                   type: array
+ *                   items:
+ *                     type: object
  *       '404':
  *         description: 사용자를 찾을 수 없음
  *       '500':
- *         description: 서버 오류 / 데이터 베이스 조회 오류
+ *         description: 서버 오류
  */
 router.get(
   '/:username/badge',

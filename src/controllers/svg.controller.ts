@@ -13,18 +13,11 @@ export class SvgController {
     ) => {
         try {
             const { username } = req.params;
-            const { type = 'default', assets = 'views,likes,posts', withrank = 'false'} = req.query;
+            const { type = 'default'} = req.query;
 
-            const svgString = await this.svgService.generateBadgeSvg(
-                username,
-                type,
-                assets,
-                withrank === 'true',
-            );
+            const data = await this.svgService.getBadgeData(username, type);
 
-            res.setHeader('Content-Type', 'image/svg+xml');
-            res.setHeader('Cache-Control', 'public, max-age=1800');
-            res.send(svgString);
+            res.json(data);
         } catch (error) {
             logger.error('SVG Badge 생성 실패: ', error);
             next(error);
