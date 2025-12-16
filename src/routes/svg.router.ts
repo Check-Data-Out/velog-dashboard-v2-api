@@ -71,7 +71,7 @@ const svgController = new SvgController(svgService);
 router.get(
   '/:username/badge',
   validateRequestDto(GetSvgBadgeQueryDto, 'query'),
-  svgController.getSvgBadge as any,
+  svgController.getSvgBadge,
 );
 
 export default router;

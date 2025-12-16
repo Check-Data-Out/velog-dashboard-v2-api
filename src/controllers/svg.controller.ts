@@ -6,13 +6,13 @@ import { SvgService } from '@/services/svg.service';
 export class SvgController {
     constructor(private svgService: SvgService) {}
 
-    getSvgBadge: RequestHandler<{ username: string }, BadgeDataResponseDto, object, GetSvgBadgeQuery> = async (
-        req: Request<{ username: string }, BadgeDataResponseDto, object, GetSvgBadgeQuery>,
+    getSvgBadge: RequestHandler = async (
+        req: Request<object, object, object, GetSvgBadgeQuery>,
         res: Response<BadgeDataResponseDto>,
         next: NextFunction,
     ) => {
         try {
-            const { username } = req.params;
+            const { username } = req.params as { username: string };
             const { type = 'default'} = req.query;
 
             const data = await this.svgService.getBadgeData(username, type);
