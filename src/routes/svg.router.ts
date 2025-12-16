@@ -68,10 +68,6 @@ const svgController = new SvgController(svgService);
  *       '500':
  *         description: 서버 오류
  */
-router.get(
-  '/:username/badge',
-  validateRequestDto(GetSvgBadgeQueryDto, 'query'),
-  svgController.getSvgBadge,
-);
+router.get('/:username/badge', validateRequestDto(GetSvgBadgeQueryDto, 'query'), svgController.getSvgBadge);
 
 export default router;
