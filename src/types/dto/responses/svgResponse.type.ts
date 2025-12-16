@@ -1,3 +1,5 @@
+import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
+
 export interface BadgeUserData {
     username: string;
     totalViews: number;
@@ -16,12 +18,13 @@ export interface BadgeRecentPost {
     viewDiff: number;
 }
 
-export class BadgeDataResponseDto {
+export interface BadgeData {
     user: BadgeUserData;
     recentPosts: BadgeRecentPost[];
+}
 
-    constructor(user: BadgeUserData, recentPosts: BadgeRecentPost[]) {
-        this.user = user;
-        this.recentPosts = recentPosts;
+export class BadgeDataResponseDto extends BaseResponseDto<BadgeData | null> {
+    constructor(success: boolean, message: string, data: BadgeData | null, error: string | null) {
+        super(success, message, data, error);
     }
 }

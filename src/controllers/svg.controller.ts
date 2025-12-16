@@ -1,14 +1,14 @@
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { NextFunction, RequestHandler, Request, Response } from "express";
 import logger from '@/configs/logger.config'
-import { GetSvgBadgeParams, GetSvgBadgeQuery } from "@/types";
+import { GetSvgBadgeQuery, BadgeDataResponseDto } from "@/types";
 import { SvgService } from '@/services/svg.service';
 
 export class SvgController {
     constructor(private svgService: SvgService) {}
 
-    getSvgBadge: RequestHandler<GetSvgBadgeParams, any, any, GetSvgBadgeQuery> = async (
-        req: Request<GetSvgBadgeParams, object, object, GetSvgBadgeQuery>,
-        res: Response,
+    getSvgBadge: RequestHandler<{ username: string }, BadgeDataResponseDto, object, GetSvgBadgeQuery> = async (
+        req: Request<{ username: string }, BadgeDataResponseDto, object, GetSvgBadgeQuery>,
+        res: Response<BadgeDataResponseDto>,
         next: NextFunction,
     ) => {
         try {
@@ -16,10 +16,11 @@ export class SvgController {
             const { type = 'default'} = req.query;
 
             const data = await this.svgService.getBadgeData(username, type);
+            const response = new BadgeDataResponseDto(true, '배지 데이터 조회에 성공하였습니다.', data, null);
 
-            res.json(data);
+            res.status(200).json(response);
         } catch (error) {
-            logger.error('SVG Badge 생성 실패: ', error);
+            logger.error('SVG Badge 조회 실패:', error);
             next(error);
         }
     }
