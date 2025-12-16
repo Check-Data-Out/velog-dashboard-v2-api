@@ -2,7 +2,7 @@ import logger from '@/configs/logger.config';
 import { SvgBadgeType, BadgeData } from '@/types';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 
-const safeNumber = (value: any, defaultValue: number = 0): number => {
+const safeNumber = (value: string | number | null | undefined, defaultValue: number = 0): number => {
   const num = Number(value);
   return isNaN(num) ? defaultValue : num;
 };
