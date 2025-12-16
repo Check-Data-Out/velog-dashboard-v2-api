@@ -15,14 +15,6 @@ export class GetSvgBadgeQueryDto {
     @IsEnum(['default', 'simple'])
     type?: SvgBadgeType;
 
-    @IsOptional()
-    @IsString()
-    assets?: string;
-
-    @IsOptional()
-    @IsEnum(['true', 'false'])
-    withrank?: string;
-
     constructor(type?: SvgBadgeType) {
         this.type = type || 'default';
     }
