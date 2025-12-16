@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { DBError } from '@/exception';
+import { DBError, NotFoundError } from '@/exception';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { mockPool, createMockQueryResult } from '@/utils/fixtures';
@@ -182,6 +182,120 @@ describe('LeaderboardRepository', () => {
     it('에러 발생 시 DBError를 던져야 한다', async () => {
       mockPool.query.mockRejectedValue(new Error('DB connection failed'));
       await expect(repo.getPostLeaderboard('viewCount', 30, 10)).rejects.toThrow(DBError);
+    });
+  });
+
+  describe('getUserStats', () => {
+    const mockUserStats = {
+      username: 'test-user',
+      total_views: '1000',
+      total_likes: '50',
+      total_posts: '10',
+      view_diff: '100',
+      like_diff: '5',
+      post_diff: '2',
+    };
+
+    it('특정 사용자의 통계를 반환해야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([mockUserStats]));
+
+      const result = await repo.getUserStats('test-user', 30);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('WHERE u.username = $1'), ['test-user']);
+      expect(result).toEqual(mockUserStats);
+    });
+
+    it('username 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([mockUserStats]));
+
+      await repo.getUserStats('test-user', 30);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('GROUP BY u.username'), ['test-user']);
+    });
+
+    it('사용자가 존재하지 않으면 NotFoundError를 던져야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([]));
+
+      await expect(repo.getUserStats('non-existent', 30)).rejects.toThrow(NotFoundError);
+      await expect(repo.getUserStats('non-existent', 30)).rejects.toThrow('사용자를 찾을 수 없습니다: non-existent');
+    });
+
+    it('CTE 쿼리가 포함되어야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([mockUserStats]));
+
+      await repo.getUserStats('test-user', 30);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('WITH'), expect.anything());
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('today_stats'), expect.anything());
+    });
+
+    it('쿼리 에러 발생 시 DBError를 던져야 한다', async () => {
+      mockPool.query.mockRejectedValue(new Error('DB connection failed'));
+
+      await expect(repo.getUserStats('test-user', 30)).rejects.toThrow(DBError);
+      await expect(repo.getUserStats('test-user', 30)).rejects.toThrow('사용자 통계 조회 중 문제가 발생했습니다.');
+    });
+  });
+
+  describe('getRecentPosts', () => {
+    const mockRecentPosts = [
+      {
+        title: 'Test Post 1',
+        released_at: '2025-01-01',
+        today_view: '100',
+        today_like: '10',
+        view_diff: '20',
+      },
+      {
+        title: 'Test Post 2',
+        released_at: '2025-01-02',
+        today_view: '200',
+        today_like: '20',
+        view_diff: '30',
+      },
+    ];
+
+    it('특정 사용자의 최근 게시글을 반환해야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockRecentPosts));
+
+      const result = await repo.getRecentPosts('test-user', 30, 3);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('WHERE u.username = $1'), ['test-user', 3]);
+      expect(result).toEqual(mockRecentPosts);
+    });
+
+    it('limit 파라미터가 쿼리에 올바르게 적용되어야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockRecentPosts));
+
+      await repo.getRecentPosts('test-user', 30, 5);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('LIMIT $2'), ['test-user', 5]);
+    });
+
+    it('released_at 기준 내림차순 정렬이 포함되어야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockRecentPosts));
+
+      await repo.getRecentPosts('test-user', 30, 3);
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY p.released_at DESC'),
+        expect.anything(),
+      );
+    });
+
+    it('CTE 쿼리가 포함되어야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult(mockRecentPosts));
+
+      await repo.getRecentPosts('test-user', 30, 3);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('WITH'), expect.anything());
+    });
+
+    it('쿼리 에러 발생 시 DBError를 던져야 한다', async () => {
+      mockPool.query.mockRejectedValue(new Error('DB connection failed'));
+
+      await expect(repo.getRecentPosts('test-user', 30, 3)).rejects.toThrow(DBError);
+      await expect(repo.getRecentPosts('test-user', 30, 3)).rejects.toThrow('최근 게시글 조회 중 문제가 발생했습니다.');
     });
   });
 });
