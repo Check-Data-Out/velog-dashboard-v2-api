@@ -19,7 +19,9 @@ describe('TotalStatsRepository', () => {
   let mockGetKSTDateStringWithOffset: jest.MockedFunction<typeof getKSTDateStringWithOffset>;
 
   beforeEach(() => {
-    mockGetKSTDateStringWithOffset = getKSTDateStringWithOffset as jest.MockedFunction<typeof getKSTDateStringWithOffset>;
+    mockGetKSTDateStringWithOffset = getKSTDateStringWithOffset as jest.MockedFunction<
+      typeof getKSTDateStringWithOffset
+    >;
 
     repository = new TotalStatsRepository(mockPool as unknown as Pool);
     jest.clearAllMocks();
@@ -51,10 +53,10 @@ describe('TotalStatsRepository', () => {
         // Then
         expect(result).toEqual(mockViewStats);
         expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period * 24 * 60);
-        expect(mockPool.query).toHaveBeenCalledWith(
-          expect.stringContaining('SUM(pds.daily_view_count)'),
-          [userId, mockStartDate]
-        );
+        expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('SUM(pds.daily_view_count)'), [
+          userId,
+          mockStartDate,
+        ]);
       });
 
       it('조회수 통계 조회 시 DB 에러가 발생하면 DBError를 던져야 한다', async () => {
@@ -63,7 +65,7 @@ describe('TotalStatsRepository', () => {
 
         // When & Then
         await expect(repository.getTotalStats(userId, period, 'view')).rejects.toThrow(
-          new DBError('조회수 통계 조회 중 문제가 발생했습니다.')
+          new DBError('조회수 통계 조회 중 문제가 발생했습니다.'),
         );
       });
     });
@@ -85,10 +87,10 @@ describe('TotalStatsRepository', () => {
         // Then
         expect(result).toEqual(mockLikeStats);
         expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period * 24 * 60);
-        expect(mockPool.query).toHaveBeenCalledWith(
-          expect.stringContaining('SUM(pds.daily_like_count)'),
-          [userId, mockStartDate]
-        );
+        expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('SUM(pds.daily_like_count)'), [
+          userId,
+          mockStartDate,
+        ]);
       });
 
       it('좋아요 통계 조회 시 DB 에러가 발생하면 DBError를 던져야 한다', async () => {
@@ -97,7 +99,7 @@ describe('TotalStatsRepository', () => {
 
         // When & Then
         await expect(repository.getTotalStats(userId, period, 'like')).rejects.toThrow(
-          new DBError('좋아요 통계 조회 중 문제가 발생했습니다.')
+          new DBError('좋아요 통계 조회 중 문제가 발생했습니다.'),
         );
       });
     });
@@ -119,14 +121,14 @@ describe('TotalStatsRepository', () => {
         // Then
         expect(result).toEqual(mockPostStats);
         expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period * 24 * 60);
-        expect(mockPool.query).toHaveBeenCalledWith(
-          expect.stringContaining('WITH date_series AS'),
-          [userId, mockStartDate]
-        );
-        expect(mockPool.query).toHaveBeenCalledWith(
-          expect.stringContaining('SELECT COUNT(id)'),
-          [userId, mockStartDate]
-        );
+        expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('WITH date_series AS'), [
+          userId,
+          mockStartDate,
+        ]);
+        expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('SELECT COUNT(id)'), [
+          userId,
+          mockStartDate,
+        ]);
       });
 
       it('게시글 통계 조회 시 DB 에러가 발생하면 DBError를 던져야 한다', async () => {
@@ -135,7 +137,7 @@ describe('TotalStatsRepository', () => {
 
         // When & Then
         await expect(repository.getTotalStats(userId, period, 'post')).rejects.toThrow(
-          new DBError('게시글 통계 조회 중 문제가 발생했습니다.')
+          new DBError('게시글 통계 조회 중 문제가 발생했습니다.'),
         );
       });
     });
@@ -143,9 +145,9 @@ describe('TotalStatsRepository', () => {
     describe('잘못된 타입 처리', () => {
       it('지원되지 않는 통계 타입이 전달되면 DBError를 던져야 한다', async () => {
         // When & Then
-        await expect(
-          repository.getTotalStats(userId, period, 'invalid' as unknown as TotalStatsType)
-        ).rejects.toThrow(new DBError('지원되지 않는 통계 타입입니다.'));
+        await expect(repository.getTotalStats(userId, period, 'invalid' as unknown as TotalStatsType)).rejects.toThrow(
+          new DBError('지원되지 않는 통계 타입입니다.'),
+        );
 
         expect(mockPool.query).not.toHaveBeenCalled();
       });
@@ -218,6 +220,38 @@ describe('TotalStatsRepository', () => {
         expect(calledQuery).toContain('WITH date_series AS');
         expect(calledQuery).toContain('generate_series');
       });
+    });
+  });
+
+  describe('getLatestUpdatedAt', () => {
+    const userId = 1;
+
+    it('사용자의 가장 최근 통계 업데이트 시간을 성공적으로 조회해야 한다', async () => {
+      const mockUpdatedAt = '2025-05-30T12:00:00.000Z';
+      mockPool.query.mockResolvedValue(createMockQueryResult([{ updated_at: mockUpdatedAt }]));
+
+      const result = await repository.getLatestUpdatedAt(userId);
+      const calledQuery = mockPool.query.mock.calls[0][0] as string;
+
+      expect(result).toBe(mockUpdatedAt);
+      expect(calledQuery).toContain('SELECT pds.updated_at');
+      expect(calledQuery).toContain('ORDER BY pds.updated_at DESC');
+    });
+
+    it('통계 데이터가 없는 경우 null을 반환해야 한다', async () => {
+      mockPool.query.mockResolvedValue(createMockQueryResult([]));
+
+      const result = await repository.getLatestUpdatedAt(userId);
+
+      expect(result).toBeNull();
+    });
+
+    it('DB 에러 발생 시 DBError를 던져야 한다', async () => {
+      mockPool.query.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(repository.getLatestUpdatedAt(userId)).rejects.toThrow(
+        new DBError('최근 통계 업데이트 시간 조회 중 문제가 발생했습니다.'),
+      );
     });
   });
 });

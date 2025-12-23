@@ -41,7 +41,7 @@ export class TotalStatsService {
         const now = new Date();
         const timeDiff = now.getTime() - new Date(latestUpdatedAt).getTime();
 
-        if (timeDiff < this.STATS_REFRESH_INTERVAL) {
+        if (timeDiff <= this.STATS_REFRESH_INTERVAL) {
           return { success: false, reason: 'up-to-date', lastUpdatedAt: latestUpdatedAt };
         }
       }
