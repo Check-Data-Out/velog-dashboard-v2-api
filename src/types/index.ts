@@ -37,6 +37,7 @@ export type {
 export type { TotalStatsItem } from '@/types/dto/responses/totalStatsResponse.type';
 export { GetTotalStatsQueryDto } from '@/types/dto/requests/getTotalStatsQuery.type';
 export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
+export { StatsRefreshResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
 
 // Sentry 관련
 export type { SentryIssueStatus } from '@/types/models/Sentry.type';

@@ -235,4 +235,65 @@ export class RedisCache implements ICache {
       return 0;
     }
   }
+
+  /**
+   * Redis List에 데이터를 추가합니다 (LPUSH).
+   * @param queueKey 큐 키
+   * @param data 추가할 데이터 (JSON으로 직렬화됨)
+   * @returns 추가 후 리스트의 길이
+   */
+  async pushToQueue<T>(queueKey: string, data: T): Promise<number | null> {
+    try {
+      if (!this.connected) {
+        logger.warn('Redis not connected, skipping queue push');
+        return null;
+      }
+
+      const fullKey = `vd2:queue:${queueKey}`;
+      const serializedData = JSON.stringify(data);
+
+      const length = await this.client.lPush(fullKey, serializedData);
+      return length;
+    } catch (error) {
+      logger.error(`Queue PUSH error for key ${queueKey}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Redis List에서 특정 userId가 존재하는지 확인합니다.
+   * @param queueKey 큐 키
+   * @param userId 확인할 사용자 ID
+   * @returns userId가 큐에 존재하면 true, 아니면 false
+   */
+  async isUserInQueue(queueKey: string, userId: number): Promise<boolean> {
+    try {
+      if (!this.connected) {
+        logger.warn('Redis not connected, skipping queue check');
+        return false;
+      }
+
+      const fullKey = `vd2:queue:${queueKey}`;
+
+      // LRANGE로 큐의 모든 항목 조회
+      const items = await this.client.lRange(fullKey, 0, -1);
+
+      // 각 항목을 파싱하여 userId 확인
+      for (const item of items) {
+        try {
+          const parsedItem = JSON.parse(item);
+          if (parsedItem.userId === userId) {
+            return true;
+          }
+        } catch (parseError) {
+          logger.warn(`Failed to parse queue item: ${item}`, parseError);
+        }
+      }
+
+      return false;
+    } catch (error) {
+      logger.error(`Queue CHECK error for key ${queueKey}:`, error);
+      return false;
+    }
+  }
 }
