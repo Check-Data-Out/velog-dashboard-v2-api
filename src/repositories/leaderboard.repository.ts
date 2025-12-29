@@ -1,6 +1,6 @@
 import logger from '@/configs/logger.config';
 import { Pool } from 'pg';
-import { DBError, NotFoundError } from '@/exception';
+import { DBError } from '@/exception';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types/index';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
