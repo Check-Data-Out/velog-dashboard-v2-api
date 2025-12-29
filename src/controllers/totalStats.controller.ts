@@ -3,6 +3,10 @@ import logger from '@/configs/logger.config';
 import { GetTotalStatsQuery, TotalStatsResponseDto, BadgeDataResponseDto } from '@/types';
 import { TotalStatsService } from '@/services/totalStats.service';
 
+interface BadgeParams {
+  username: string;
+}
+
 export class TotalStatsController {
   constructor(private totalStatsService: TotalStatsService) {}
 
@@ -27,13 +31,13 @@ export class TotalStatsController {
     }
   };
 
-  getBadge: RequestHandler = async (
-    req: Request<object, object, object, object>,
+  getBadge: RequestHandler<BadgeParams, BadgeDataResponseDto, object, object> = async (
+    req: Request<BadgeParams, BadgeDataResponseDto, object, object>,
     res: Response<BadgeDataResponseDto>,
     next: NextFunction,
   ) => {
     try {
-      const { username } = req.params as { username: string };
+      const { username } = req.params;
 
       const data = await this.totalStatsService.getBadgeData(username);
       const response = new BadgeDataResponseDto(true, '배지 데이터 조회에 성공하였습니다.', data, null);
