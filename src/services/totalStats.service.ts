@@ -1,4 +1,5 @@
 import logger from '@/configs/logger.config';
+import { NotFoundError } from '@/exception';
 import { TotalStatsPeriod, TotalStatsType, TotalStatsItem, BadgeData } from '@/types';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 
@@ -40,6 +41,10 @@ export class TotalStatsService {
   async getBadgeData(username: string, dateRange: number = 30): Promise<BadgeData> {
     try {
       const userStats = await this.totalStatsRepo.getUserBadgeStats(username, dateRange);
+      if (!userStats) {
+        throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
+      }
+
       const recentPosts = await this.totalStatsRepo.getUserRecentPosts(username, dateRange, 4);
 
       return {

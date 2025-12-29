@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
-import { DBError, NotFoundError } from '@/exception';
+import { DBError } from '@/exception';
 import { TotalStatsType } from '@/types';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
@@ -148,14 +148,8 @@ export class TotalStatsRepository {
       `;
 
       const result = await this.pool.query(query, [username]);
-
-      if (result.rows.length === 0) {
-        throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
-      }
-
-      return result.rows[0];
+      return result.rows[0] || null;
     } catch (error) {
-      if (error instanceof NotFoundError) throw error;
       logger.error('TotalStatsRepository getUserBadgeStats error:', error);
       throw new DBError('사용자 배지 통계 조회 중 문제가 발생했습니다.');
     }
