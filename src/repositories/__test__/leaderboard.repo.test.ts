@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { DBError, NotFoundError } from '@/exception';
+import { DBError } from '@/exception';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { mockPool, createMockQueryResult } from '@/utils/fixtures';
