@@ -1,6 +1,6 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '@/configs/logger.config';
-import { GetTotalStatsQuery, TotalStatsResponseDto } from '@/types';
+import { GetTotalStatsQuery, TotalStatsResponseDto, BadgeDataResponseDto } from '@/types';
 import { TotalStatsService } from '@/services/totalStats.service';
 
 export class TotalStatsController {
@@ -23,6 +23,24 @@ export class TotalStatsController {
       res.status(200).json(response);
     } catch (error) {
       logger.error('전체 통계 조회 실패:', error);
+      next(error);
+    }
+  };
+
+  getBadge: RequestHandler = async (
+    req: Request<object, object, object, object>,
+    res: Response<BadgeDataResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      const { username } = req.params as { username: string };
+
+      const data = await this.totalStatsService.getBadgeData(username);
+      const response = new BadgeDataResponseDto(true, '배지 데이터 조회에 성공하였습니다.', data, null);
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('배지 데이터 조회 실패:', error);
       next(error);
     }
   };

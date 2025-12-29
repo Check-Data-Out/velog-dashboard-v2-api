@@ -70,4 +70,54 @@ router.get(
   totalStatsController.getTotalStats,
 );
 
+/**
+ * @swagger
+ * /total-stats/{username}/badge:
+ *   get:
+ *     summary: 사용자 배지 데이터 조회
+ *     description: 최근 30일 기준 사용자 통계 및 최근 게시글 4개를 반환합니다
+ *     tags:
+ *       - TotalStats
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 조회할 사용자명
+ *         example: ljh3478
+ *     responses:
+ *       '200':
+ *         description: 배지 데이터 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BadgeDataResponseDto'
+ *             example:
+ *               success: true
+ *               message: "배지 데이터 조회에 성공하였습니다."
+ *               data:
+ *                 user:
+ *                   username: "ljh3478"
+ *                   totalViews: 6238
+ *                   totalLikes: 150
+ *                   totalPosts: 10
+ *                   viewDiff: 100
+ *                   likeDiff: 20
+ *                   postDiff: 2
+ *                 recentPosts:
+ *                   - title: "Velog Dashboard 회고"
+ *                     releasedAt: "2025-02-28T14:43:58.599Z"
+ *                     viewCount: 67
+ *                     likeCount: 4
+ *                     viewDiff: 20
+ *               error: null
+ *       '404':
+ *         description: 사용자를 찾을 수 없음
+ *       '500':
+ *         description: 서버 오류
+ */
+router.get('/total-stats/:username/badge', totalStatsController.getBadge);
+
 export default router;
