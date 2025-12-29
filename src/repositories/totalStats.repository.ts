@@ -121,7 +121,7 @@ export class TotalStatsRepository {
             daily_view_count AS today_view,
             daily_like_count AS today_like
           FROM posts_postdailystatistics
-          WHERE date = '${nowDateKST}'
+          WHERE date = $2
         ),
         start_stats AS (
           SELECT DISTINCT ON (post_id)
@@ -129,7 +129,7 @@ export class TotalStatsRepository {
             daily_view_count AS start_view,
             daily_like_count AS start_like
           FROM posts_postdailystatistics
-          WHERE date = '${pastDateKST}'
+          WHERE date = $3
         )
         SELECT
           u.username,
@@ -138,7 +138,7 @@ export class TotalStatsRepository {
           COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
           SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)) AS view_diff,
           SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, 0)) AS like_diff,
-          COUNT(DISTINCT CASE WHEN p.released_at >= '${pastDateKST}' AND p.is_active = true THEN p.id END) AS post_diff
+          COUNT(DISTINCT CASE WHEN p.released_at >= $3 AND p.is_active = true THEN p.id END) AS post_diff
         FROM users_user u
         LEFT JOIN posts_post p ON p.user_id = u.id
         LEFT JOIN today_stats ts ON ts.post_id = p.id
@@ -147,7 +147,7 @@ export class TotalStatsRepository {
         GROUP BY u.username
       `;
 
-      const result = await this.pool.query(query, [username]);
+      const result = await this.pool.query(query, [username, nowDateKST, pastDateKST]);
       return result.rows[0] || null;
     } catch (error) {
       logger.error('TotalStatsRepository getUserBadgeStats error:', error);
@@ -169,7 +169,7 @@ export class TotalStatsRepository {
             daily_view_count AS today_view,
             daily_like_count AS today_like
           FROM posts_postdailystatistics
-          WHERE date = '${nowDateKST}'
+          WHERE date = $3
         ),
         start_stats AS (
           SELECT DISTINCT ON (post_id)
@@ -177,7 +177,7 @@ export class TotalStatsRepository {
             daily_view_count AS start_view,
             daily_like_count AS start_like
           FROM posts_postdailystatistics
-          WHERE date = '${pastDateKST}'
+          WHERE date = $4
         )
         SELECT
           p.title,
@@ -195,7 +195,7 @@ export class TotalStatsRepository {
         LIMIT $2
       `;
 
-      const result = await this.pool.query(query, [username, limit]);
+      const result = await this.pool.query(query, [username, limit, nowDateKST, pastDateKST]);
       return result.rows;
     } catch (error) {
       logger.error('TotalStatsRepository getUserRecentPosts error:', error);
