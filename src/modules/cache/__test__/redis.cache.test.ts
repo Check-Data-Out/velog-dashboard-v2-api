@@ -62,7 +62,7 @@ describe('RedisCache', () => {
       port: 6379,
       password: 'test-password',
       db: 0,
-      keyPrefix: 'test:cache:',
+      keyPrefix: 'test:',
       defaultTTL: 300,
     };
 
@@ -554,7 +554,7 @@ describe('RedisCache', () => {
 
       const result = await redisCache.pushToQueue('stats-refresh', testData);
 
-      expect(mockClient.lPush).toHaveBeenCalledWith('vd2:queue:stats-refresh', JSON.stringify(testData));
+      expect(mockClient.lPush).toHaveBeenCalledWith('test:queue:stats-refresh', JSON.stringify(testData));
       expect(result).toBe(1);
     });
 
@@ -596,7 +596,7 @@ describe('RedisCache', () => {
 
       await redisCache.pushToQueue('complex-queue', complexData);
 
-      expect(mockClient.lPush).toHaveBeenCalledWith('vd2:queue:complex-queue', JSON.stringify(complexData));
+      expect(mockClient.lPush).toHaveBeenCalledWith('test:queue:complex-queue', JSON.stringify(complexData));
     });
   });
 
@@ -615,7 +615,7 @@ describe('RedisCache', () => {
 
       const result = await redisCache.isUserInQueue('stats-refresh', 123);
 
-      expect(mockClient.lRange).toHaveBeenCalledWith('vd2:queue:stats-refresh', 0, -1);
+      expect(mockClient.lRange).toHaveBeenCalledWith('test:queue:stats-refresh', 0, -1);
       expect(result).toBe(true);
     });
 
@@ -659,10 +659,7 @@ describe('RedisCache', () => {
     });
 
     it('잘못된 JSON 항목이 있어도 계속 검색해야 한다', async () => {
-      const queueItems = [
-        'invalid json',
-        JSON.stringify({ userId: 123, requestedAt: '2025-05-30T12:00:00.000Z' }),
-      ];
+      const queueItems = ['invalid json', JSON.stringify({ userId: 123, requestedAt: '2025-05-30T12:00:00.000Z' })];
       mockClient.lRange.mockResolvedValue(queueItems);
 
       const result = await redisCache.isUserInQueue('stats-refresh', 123);
