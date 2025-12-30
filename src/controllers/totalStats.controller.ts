@@ -33,27 +33,24 @@ export class TotalStatsController {
 
       const result = await this.totalStatsService.refreshStats(id);
 
-      if (!result.success) {
-        if (result.reason === 'up-to-date') {
-          const response = new StatsRefreshResponseDto(
-            false,
-            '통계가 최신 상태입니다.',
-            { lastUpdatedAt: result.lastUpdatedAt as string },
-            null,
-          );
-          res.status(409).json(response);
-        }
+      if (result.reason === 'up-to-date') {
+        const response = new StatsRefreshResponseDto(
+          false,
+          '통계가 최신 상태입니다.',
+          { lastUpdatedAt: result.lastUpdatedAt },
+          null,
+        );
+        res.status(409).json(response);
+        return;
+      }
 
-        if (result.reason === 'in-progress') {
-          const response = new StatsRefreshResponseDto(false, '이미 통계 새로고침이 진행 중입니다.', {}, null);
-          res.status(409).json(response);
-        }
-
+      if (result.reason === 'in-progress') {
+        const response = new StatsRefreshResponseDto(false, '이미 통계 새로고침이 진행 중입니다.', {}, null);
+        res.status(409).json(response);
         return;
       }
 
       const response = new StatsRefreshResponseDto(true, '통계 새로고침 요청이 성공적으로 등록되었습니다.', {}, null);
-
       res.status(202).json(response);
     } catch (error) {
       logger.error('통계 새로고침 실패:', error);
