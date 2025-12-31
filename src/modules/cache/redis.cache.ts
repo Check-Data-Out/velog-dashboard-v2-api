@@ -283,7 +283,7 @@ export class RedisCache implements ICache {
       for (const item of items) {
         try {
           const parsedItem = JSON.parse(item);
-          if (parsedItem.userId === userId) {
+          if (parsedItem.userId == userId) {
             return true;
           }
         } catch (parseError) {
