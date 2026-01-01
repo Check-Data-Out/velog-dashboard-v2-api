@@ -122,6 +122,7 @@ export class TotalStatsRepository {
             daily_like_count AS today_like
           FROM posts_postdailystatistics
           WHERE date = $2
+          ORDER BY post_id, date DESC
         ),
         start_stats AS (
           SELECT DISTINCT ON (post_id)
@@ -130,6 +131,7 @@ export class TotalStatsRepository {
             daily_like_count AS start_like
           FROM posts_postdailystatistics
           WHERE date = $3
+          ORDER BY post_id, date DESC
         )
         SELECT
           u.username,
@@ -170,6 +172,7 @@ export class TotalStatsRepository {
             daily_like_count AS today_like
           FROM posts_postdailystatistics
           WHERE date = $3
+          ORDER BY post_id, date DESC
         ),
         start_stats AS (
           SELECT DISTINCT ON (post_id)
@@ -178,6 +181,7 @@ export class TotalStatsRepository {
             daily_like_count AS start_like
           FROM posts_postdailystatistics
           WHERE date = $4
+          ORDER BY post_id, date DESC
         )
         SELECT
           p.title,
