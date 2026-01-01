@@ -38,14 +38,20 @@ export class TotalStatsService {
     return messages[type];
   }
 
-  async getBadgeData(username: string, dateRange: number = 30): Promise<BadgeData> {
+  async getBadgeData(
+    username: string,
+    type: 'default' | 'simple' = 'default',
+    dateRange: number = 30,
+  ): Promise<BadgeData> {
     try {
       const userStats = await this.totalStatsRepo.getUserBadgeStats(username, dateRange);
+
       if (!userStats) {
         throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
       }
 
-      const recentPosts = await this.totalStatsRepo.getUserRecentPosts(username, dateRange, 4);
+      const recentPosts =
+        type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, dateRange, 4) : [];
 
       return {
         user: {

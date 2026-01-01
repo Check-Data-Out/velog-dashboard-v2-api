@@ -7,6 +7,10 @@ interface BadgeParams {
   username: string;
 }
 
+interface BadgeQuery {
+  type?: 'default' | 'simple';
+}
+
 export class TotalStatsController {
   constructor(private totalStatsService: TotalStatsService) {}
 
@@ -31,15 +35,16 @@ export class TotalStatsController {
     }
   };
 
-  getBadge: RequestHandler<BadgeParams, BadgeDataResponseDto, object, object> = async (
-    req: Request<BadgeParams, BadgeDataResponseDto, object, object>,
+  getBadge: RequestHandler<BadgeParams, BadgeDataResponseDto, object, BadgeQuery> = async (
+    req: Request<BadgeParams, BadgeDataResponseDto, object, BadgeQuery>,
     res: Response<BadgeDataResponseDto>,
     next: NextFunction,
   ) => {
     try {
       const { username } = req.params;
+      const { type = 'default' } = req.query;
 
-      const data = await this.totalStatsService.getBadgeData(username);
+      const data = await this.totalStatsService.getBadgeData(username, type);
       const response = new BadgeDataResponseDto(true, '배지 데이터 조회에 성공하였습니다.', data, null);
 
       res.status(200).json(response);
