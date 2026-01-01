@@ -75,7 +75,7 @@ router.get(
  * /total-stats/{username}/badge:
  *   get:
  *     summary: 사용자 배지 데이터 조회
- *     description: 최근 30일 기준 사용자 통계 및 최근 게시글 4개를 반환합니다
+ *     description: 최근 30일 기준 사용자 통계 및 배지 타입에 따른 게시글 정보를 반환합니다
  *     tags:
  *       - TotalStats
  *     security: []
@@ -87,6 +87,14 @@ router.get(
  *           type: string
  *         description: 조회할 사용자명
  *         example: ljh3478
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [default, simple]
+ *           default: default
+ *         description: 배지 타입 (default=통계+최근게시글4개, simple=통계만)
+ *         example: default
  *     responses:
  *       '200':
  *         description: 배지 데이터 조회 성공
