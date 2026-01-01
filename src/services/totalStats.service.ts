@@ -8,6 +8,8 @@ const safeNumber = (value: string | number | null | undefined, defaultValue: num
   return isNaN(num) ? defaultValue : num;
 };
 
+const BADGE_DATE_RANGE = 30;
+
 export class TotalStatsService {
   constructor(private totalStatsRepo: TotalStatsRepository) {}
 
@@ -38,20 +40,16 @@ export class TotalStatsService {
     return messages[type];
   }
 
-  async getBadgeData(
-    username: string,
-    type: 'default' | 'simple' = 'default',
-    dateRange: number = 30,
-  ): Promise<BadgeData> {
+  async getBadgeData(username: string, type: 'default' | 'simple' = 'default'): Promise<BadgeData> {
     try {
-      const userStats = await this.totalStatsRepo.getUserBadgeStats(username, dateRange);
+      const userStats = await this.totalStatsRepo.getUserBadgeStats(username, BADGE_DATE_RANGE);
 
       if (!userStats) {
         throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
       }
 
       const recentPosts =
-        type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, dateRange, 4) : [];
+        type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, BADGE_DATE_RANGE, 4) : [];
 
       return {
         user: {
