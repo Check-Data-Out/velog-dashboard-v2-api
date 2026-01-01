@@ -34,9 +34,14 @@ export type {
   TotalStatsType,
   GetTotalStatsQuery,
 } from '@/types/dto/requests/getTotalStatsQuery.type';
-export type { TotalStatsItem } from '@/types/dto/responses/totalStatsResponse.type';
+export type {
+  TotalStatsItem,
+  BadgeUserData,
+  BadgeRecentPost,
+  BadgeData,
+} from '@/types/dto/responses/totalStatsResponse.type';
 export { GetTotalStatsQueryDto } from '@/types/dto/requests/getTotalStatsQuery.type';
-export { TotalStatsResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
+export { TotalStatsResponseDto, BadgeDataResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
 
 // Sentry 관련
 export type { SentryIssueStatus } from '@/types/models/Sentry.type';
