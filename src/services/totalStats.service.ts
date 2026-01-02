@@ -1,8 +1,16 @@
 import logger from '@/configs/logger.config';
-import { TotalStatsPeriod, TotalStatsType, TotalStatsItem } from '@/types';
+import { NotFoundError } from '@/exception';
+import { TotalStatsPeriod, TotalStatsType, TotalStatsItem, BadgeData } from '@/types';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 import { cache } from '@/configs/cache.config';
 import { RedisCache } from '@/modules/cache/redis.cache';
+
+const safeNumber = (value: string | number | null | undefined, defaultValue: number = 0): number => {
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+};
+
+const BADGE_DATE_RANGE = 30;
 
 export class TotalStatsService {
   private readonly STATS_REFRESH_INTERVAL = 15 * 60 * 1000; // 15분 (밀리초)
@@ -25,6 +33,50 @@ export class TotalStatsService {
       }));
     } catch (error) {
       logger.error('TotalStatsService getTotalStats error:', error);
+      throw error;
+    }
+  }
+
+  getSuccessMessage(type: TotalStatsType = 'view'): string {
+    const messages = {
+      view: '전체 조회수 변동 조회에 성공하였습니다.',
+      like: '전체 좋아요 변동 조회에 성공하였습니다.',
+      post: '전체 게시글 변동 조회에 성공하였습니다.',
+    };
+    return messages[type];
+  }
+
+  async getBadgeData(username: string, type: 'default' | 'simple' = 'default'): Promise<BadgeData> {
+    try {
+      const userStats = await this.totalStatsRepo.getUserBadgeStats(username, BADGE_DATE_RANGE);
+
+      if (!userStats) {
+        throw new NotFoundError(`사용자를 찾을 수 없습니다: ${username}`);
+      }
+
+      const recentPosts =
+        type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, BADGE_DATE_RANGE, 4) : [];
+
+      return {
+        user: {
+          username: userStats.username,
+          totalViews: safeNumber(userStats.total_views),
+          totalLikes: safeNumber(userStats.total_likes),
+          totalPosts: safeNumber(userStats.total_posts),
+          viewDiff: safeNumber(userStats.view_diff),
+          likeDiff: safeNumber(userStats.like_diff),
+          postDiff: safeNumber(userStats.post_diff),
+        },
+        recentPosts: recentPosts.map((post) => ({
+          title: post.title,
+          releasedAt: post.released_at,
+          viewCount: safeNumber(post.today_view),
+          likeCount: safeNumber(post.today_like),
+          viewDiff: safeNumber(post.view_diff),
+        })),
+      };
+    } catch (error) {
+      logger.error('TotalStatsService getBadgeData error: ', error);
       throw error;
     }
   }
@@ -71,14 +123,5 @@ export class TotalStatsService {
       logger.error('TotalStatsService refreshStats error:', error);
       throw error;
     }
-  }
-
-  getSuccessMessage(type: TotalStatsType = 'view'): string {
-    const messages = {
-      view: '전체 조회수 변동 조회에 성공하였습니다.',
-      like: '전체 좋아요 변동 조회에 성공하였습니다.',
-      post: '전체 게시글 변동 조회에 성공하였습니다.',
-    };
-    return messages[type];
   }
 }

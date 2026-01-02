@@ -1,7 +1,15 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import logger from '@/configs/logger.config';
-import { GetTotalStatsQuery, TotalStatsResponseDto, StatsRefreshResponseDto } from '@/types';
+import { GetTotalStatsQuery, TotalStatsResponseDto, BadgeDataResponseDto, StatsRefreshResponseDto } from '@/types';
 import { TotalStatsService } from '@/services/totalStats.service';
+
+interface BadgeParams {
+  username: string;
+}
+
+interface BadgeQuery {
+  type?: 'default' | 'simple';
+}
 
 export class TotalStatsController {
   constructor(private totalStatsService: TotalStatsService) {}
@@ -23,6 +31,25 @@ export class TotalStatsController {
       res.status(200).json(response);
     } catch (error) {
       logger.error('전체 통계 조회 실패:', error);
+      next(error);
+    }
+  };
+
+  getBadge: RequestHandler<BadgeParams, BadgeDataResponseDto, object, BadgeQuery> = async (
+    req: Request<BadgeParams, BadgeDataResponseDto, object, BadgeQuery>,
+    res: Response<BadgeDataResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      const { username } = req.params;
+      const { type = 'default' } = req.query;
+
+      const data = await this.totalStatsService.getBadgeData(username, type);
+      const response = new BadgeDataResponseDto(true, '배지 데이터 조회에 성공하였습니다.', data, null);
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('배지 데이터 조회 실패:', error);
       next(error);
     }
   };
