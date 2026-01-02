@@ -14,6 +14,8 @@ interface MockRedisClient {
   exists: jest.Mock;
   keys: jest.Mock;
   scan: jest.Mock;
+  lPush: jest.Mock;
+  lRange: jest.Mock;
 }
 
 // Redis 모킹
@@ -47,6 +49,8 @@ describe('RedisCache', () => {
       exists: jest.fn(),
       keys: jest.fn(),
       scan: jest.fn(),
+      lPush: jest.fn(),
+      lRange: jest.fn(),
     };
 
     mockCreateClient = createClient as jest.MockedFunction<typeof createClient>;
@@ -58,7 +62,7 @@ describe('RedisCache', () => {
       port: 6379,
       password: 'test-password',
       db: 0,
-      keyPrefix: 'test:cache:',
+      keyPrefix: 'test:',
       defaultTTL: 300,
     };
 
@@ -535,6 +539,154 @@ describe('RedisCache', () => {
       await redisCache.get('');
 
       expect(mockClient.get).toHaveBeenCalledWith('test:cache:');
+    });
+  });
+
+  describe('pushToQueue', () => {
+    beforeEach(async () => {
+      mockClient.connect.mockResolvedValue(undefined);
+      await redisCache.connect();
+    });
+
+    it('큐에 데이터를 성공적으로 추가해야 한다', async () => {
+      const testData = { userId: 123, requestedAt: '2025-05-30T12:00:00.000Z', retryCount: 0 };
+      mockClient.lPush.mockResolvedValue(1);
+
+      const result = await redisCache.pushToQueue('stats-refresh', testData);
+
+      expect(mockClient.lPush).toHaveBeenCalledWith('test:queue:stats-refresh', JSON.stringify(testData));
+      expect(result).toBe(1);
+    });
+
+    it('큐에 여러 항목이 있을 때 올바른 길이를 반환해야 한다', async () => {
+      const testData = { userId: 456, requestedAt: '2025-05-30T13:00:00.000Z', retryCount: 0 };
+      mockClient.lPush.mockResolvedValue(5);
+
+      const result = await redisCache.pushToQueue('stats-refresh', testData);
+
+      expect(result).toBe(5);
+    });
+
+    it('연결되지 않은 상태에서 null을 반환해야 한다', async () => {
+      // 연결 해제
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
+
+      const result = await redisCache.pushToQueue('stats-refresh', { userId: 123 });
+
+      expect(result).toBeNull();
+      expect(mockClient.lPush).not.toHaveBeenCalled();
+    });
+
+    it('Redis 에러 발생 시 null을 반환해야 한다', async () => {
+      mockClient.lPush.mockRejectedValue(new Error('Redis error'));
+
+      const result = await redisCache.pushToQueue('stats-refresh', { userId: 123 });
+
+      expect(result).toBeNull();
+    });
+
+    it('복잡한 객체도 올바르게 직렬화해야 한다', async () => {
+      const complexData = {
+        userId: 789,
+        metadata: { ip: '127.0.0.1', userAgent: 'test' },
+        timestamp: new Date().toISOString(),
+      };
+      mockClient.lPush.mockResolvedValue(1);
+
+      await redisCache.pushToQueue('complex-queue', complexData);
+
+      expect(mockClient.lPush).toHaveBeenCalledWith('test:queue:complex-queue', JSON.stringify(complexData));
+    });
+  });
+
+  describe('isUserInQueue', () => {
+    beforeEach(async () => {
+      mockClient.connect.mockResolvedValue(undefined);
+      await redisCache.connect();
+    });
+
+    it('큐에 userId가 존재하면 true를 반환해야 한다', async () => {
+      const queueItems = [
+        JSON.stringify({ userId: 123, requestedAt: '2025-05-30T12:00:00.000Z' }),
+        JSON.stringify({ userId: 456, requestedAt: '2025-05-30T13:00:00.000Z' }),
+      ];
+      mockClient.lRange.mockResolvedValue(queueItems);
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(mockClient.lRange).toHaveBeenCalledWith('test:queue:stats-refresh', 0, -1);
+      expect(result).toBe(true);
+    });
+
+    it('큐에 userId가 존재하지 않으면 false를 반환해야 한다', async () => {
+      const queueItems = [
+        JSON.stringify({ userId: 456, requestedAt: '2025-05-30T13:00:00.000Z' }),
+        JSON.stringify({ userId: 789, requestedAt: '2025-05-30T14:00:00.000Z' }),
+      ];
+      mockClient.lRange.mockResolvedValue(queueItems);
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(false);
+    });
+
+    it('빈 큐에서는 false를 반환해야 한다', async () => {
+      mockClient.lRange.mockResolvedValue([]);
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(false);
+    });
+
+    it('연결되지 않은 상태에서 false를 반환해야 한다', async () => {
+      // 연결 해제
+      mockClient.destroy.mockResolvedValue(undefined);
+      await redisCache.destroy();
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(false);
+      expect(mockClient.lRange).not.toHaveBeenCalled();
+    });
+
+    it('Redis 에러 발생 시 false를 반환해야 한다', async () => {
+      mockClient.lRange.mockRejectedValue(new Error('Redis error'));
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(false);
+    });
+
+    it('잘못된 JSON 항목이 있어도 계속 검색해야 한다', async () => {
+      const queueItems = ['invalid json', JSON.stringify({ userId: 123, requestedAt: '2025-05-30T12:00:00.000Z' })];
+      mockClient.lRange.mockResolvedValue(queueItems);
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(true);
+    });
+
+    it('모든 항목이 잘못된 JSON이면 false를 반환해야 한다', async () => {
+      const queueItems = ['invalid json 1', 'invalid json 2'];
+      mockClient.lRange.mockResolvedValue(queueItems);
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(false);
+    });
+
+    it('여러 항목 중 마지막에 userId가 있어도 찾아야 한다', async () => {
+      const queueItems = [
+        JSON.stringify({ userId: 456, requestedAt: '2025-05-30T12:00:00.000Z' }),
+        JSON.stringify({ userId: 789, requestedAt: '2025-05-30T13:00:00.000Z' }),
+        JSON.stringify({ userId: 123, requestedAt: '2025-05-30T14:00:00.000Z' }),
+      ];
+      mockClient.lRange.mockResolvedValue(queueItems);
+
+      const result = await redisCache.isUserInQueue('stats-refresh', 123);
+
+      expect(result).toBe(true);
     });
   });
 });

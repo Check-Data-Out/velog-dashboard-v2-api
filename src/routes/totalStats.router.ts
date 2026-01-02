@@ -128,4 +128,53 @@ router.get(
  */
 router.get('/total-stats/:username/badge', totalStatsController.getBadge);
 
+/**
+ * @swagger
+ * /stats-refresh:
+ *   post:
+ *     summary: 통계 직접 새로고침
+ *     description: 통계를 직접 새로고침합니다. 최근 업데이트로부터 15분 이상 경과하지 않았거나 이미 처리 중인 경우 409 Conflict를 반환합니다.
+ *     tags:
+ *       - TotalStats
+ *     responses:
+ *       '202':
+ *         description: 통계 새로고침 요청이 큐에 성공적으로 등록됨
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/StatsRefreshResponseDto'
+ *             example:
+ *               success: true
+ *               message: "통계 새로고침 요청이 성공적으로 등록되었습니다."
+ *               data: {}
+ *               error: null
+ *       '401':
+ *         description: 인증되지 않은 사용자
+ *       '409':
+ *         description: 통계가 최신 상태이거나 이미 새로고침이 진행 중
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/StatsRefreshResponseDto'
+ *             examples:
+ *               StatsUpToDate:
+ *                 summary: 통계가 최신 상태 (15분 이내)
+ *                 value:
+ *                   success: false
+ *                   message: "통계가 최신 상태입니다."
+ *                   data:
+ *                     lastUpdatedAt: "2025-05-30T12:00:00.000Z"
+ *                   error: null
+ *               RefreshInProgress:
+ *                 summary: 이미 새로고침이 진행 중
+ *                 value:
+ *                   success: false
+ *                   message: "이미 통계 새로고침이 진행 중입니다."
+ *                   data: {}
+ *                   error: null
+ *       '500':
+ *         description: 서버 오류 / 데이터베이스 조회 오류
+ */
+router.post('/stats-refresh', authMiddleware.verify, totalStatsController.refreshStats);
+
 export default router;

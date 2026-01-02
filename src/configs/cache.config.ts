@@ -8,7 +8,7 @@ const cacheConfig: CacheConfig = {
   port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD || 'notion-check-plz',
   db: parseInt(process.env.REDIS_DB || '0'),
-  keyPrefix: process.env.REDIS_KEY_PREFIX || 'vd2:cache:',
+  keyPrefix: process.env.REDIS_KEY_PREFIX || 'vd2:',
   defaultTTL: parseInt(process.env.CACHE_DEFAULT_TTL || '300'), // 5분
 };
 

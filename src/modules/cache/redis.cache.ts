@@ -10,7 +10,7 @@ export class RedisCache implements ICache {
   private defaultTTL: number;
 
   constructor(config: CacheConfig) {
-    this.keyPrefix = config.keyPrefix || 'vd2:cache:';
+    this.keyPrefix = config.keyPrefix || 'vd2:';
     this.defaultTTL = config.defaultTTL || 300;
 
     this.client = createClient({
@@ -52,10 +52,11 @@ export class RedisCache implements ICache {
    * 주어진 키에 keyPrefix를 접두사로 붙여 전체 Redis 키를 생성합니다.
    *
    * @param key - 접두사가 붙을 원본 키 문자열
+   * @param type - 접두사 세부 타입 (cache | queue)
    * @returns keyPrefix가 포함된 전체 Redis 키 문자열
    */
-  private getFullKey(key: string): string {
-    return `${this.keyPrefix}${key}`;
+  private getFullKey(key: string, type: 'cache' | 'queue'): string {
+    return `${this.keyPrefix}${type}:${key}`;
   }
 
   async connect(): Promise<void> {
@@ -95,7 +96,7 @@ export class RedisCache implements ICache {
         return null;
       }
 
-      const value = await this.client.get(this.getFullKey(key));
+      const value = await this.client.get(this.getFullKey(key, 'cache'));
       if (!value) return null;
 
       // JSON.parse가 실패할 경우를 명시적으로 처리
@@ -120,7 +121,7 @@ export class RedisCache implements ICache {
         return;
       }
 
-      const fullKey = this.getFullKey(key);
+      const fullKey = this.getFullKey(key, 'cache');
       const serializedValue = JSON.stringify(value);
       const ttl = ttlSeconds ?? this.defaultTTL;
 
@@ -142,7 +143,7 @@ export class RedisCache implements ICache {
         return false;
       }
 
-      const result = await this.client.del(this.getFullKey(key));
+      const result = await this.client.del(this.getFullKey(key, 'cache'));
       return result > 0;
     } catch (error) {
       logger.error(`Cache DELETE error for key ${key}:`, error);
@@ -157,7 +158,7 @@ export class RedisCache implements ICache {
         return false;
       }
 
-      const result = await this.client.exists(this.getFullKey(key));
+      const result = await this.client.exists(this.getFullKey(key, 'cache'));
       return result > 0;
     } catch (error) {
       logger.error(`Cache EXISTS error for key ${key}:`, error);
@@ -172,7 +173,7 @@ export class RedisCache implements ICache {
         return;
       }
 
-      const searchPattern = pattern ? `${this.keyPrefix}${pattern}` : `${this.keyPrefix}*`;
+      const searchPattern = this.getFullKey(pattern || '*', 'cache');
 
       let cursor = '0';
       let totalDeleted = 0;
@@ -217,7 +218,7 @@ export class RedisCache implements ICache {
 
       do {
         const result = await this.client.scan(cursor, {
-          MATCH: `${this.keyPrefix}*`,
+          MATCH: this.getFullKey('*', 'cache'),
           COUNT: batchSize,
         });
 
@@ -233,6 +234,67 @@ export class RedisCache implements ICache {
     } catch (error) {
       logger.error('Cache SIZE error:', error);
       return 0;
+    }
+  }
+
+  /**
+   * Redis List에 데이터를 추가합니다 (LPUSH).
+   * @param queueKey 큐 키
+   * @param data 추가할 데이터 (JSON으로 직렬화됨)
+   * @returns 추가 후 리스트의 길이
+   */
+  async pushToQueue<T>(queueKey: string, data: T): Promise<number | null> {
+    try {
+      if (!this.connected) {
+        logger.warn('Redis not connected, skipping queue push');
+        return null;
+      }
+
+      const fullKey = this.getFullKey(queueKey, 'queue');
+      const serializedData = JSON.stringify(data);
+
+      const length = await this.client.lPush(fullKey, serializedData);
+      return length;
+    } catch (error) {
+      logger.error(`Queue PUSH error for key ${queueKey}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Redis List에서 특정 userId가 존재하는지 확인합니다.
+   * @param queueKey 큐 키
+   * @param userId 확인할 사용자 ID
+   * @returns userId가 큐에 존재하면 true, 아니면 false
+   */
+  async isUserInQueue(queueKey: string, userId: number): Promise<boolean> {
+    try {
+      if (!this.connected) {
+        logger.warn('Redis not connected, skipping queue check');
+        return false;
+      }
+
+      const fullKey = this.getFullKey(queueKey, 'queue');
+
+      // LRANGE로 큐의 모든 항목 조회
+      const items = await this.client.lRange(fullKey, 0, -1);
+
+      // 각 항목을 파싱하여 userId 확인
+      for (const item of items) {
+        try {
+          const parsedItem = JSON.parse(item);
+          if (parsedItem.userId == userId) {
+            return true;
+          }
+        } catch (parseError) {
+          logger.warn(`Failed to parse queue item: ${item}`, parseError);
+        }
+      }
+
+      return false;
+    } catch (error) {
+      logger.error(`Queue CHECK error for key ${queueKey}:`, error);
+      return false;
     }
   }
 }

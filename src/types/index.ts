@@ -41,7 +41,11 @@ export type {
   BadgeData,
 } from '@/types/dto/responses/totalStatsResponse.type';
 export { GetTotalStatsQueryDto } from '@/types/dto/requests/getTotalStatsQuery.type';
-export { TotalStatsResponseDto, BadgeDataResponseDto } from '@/types/dto/responses/totalStatsResponse.type';
+export {
+  TotalStatsResponseDto,
+  BadgeDataResponseDto,
+  StatsRefreshResponseDto,
+} from '@/types/dto/responses/totalStatsResponse.type';
 
 // Sentry 관련
 export type { SentryIssueStatus } from '@/types/models/Sentry.type';

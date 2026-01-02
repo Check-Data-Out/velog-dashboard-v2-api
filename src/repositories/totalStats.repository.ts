@@ -206,4 +206,28 @@ export class TotalStatsRepository {
       throw new DBError('최근 게시글 조회 중 문제가 발생했습니다.');
     }
   }
+
+  async getLatestUpdatedAt(userId: number): Promise<string | null> {
+    try {
+      const query = `
+        SELECT pds.updated_at
+        FROM posts_postdailystatistics pds
+        JOIN posts_post p ON p.id = pds.post_id
+        WHERE p.user_id = $1
+        ORDER BY pds.updated_at DESC
+        LIMIT 1;
+      `;
+
+      const result = await this.pool.query(query, [userId]);
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return result.rows[0].updated_at;
+    } catch (error) {
+      logger.error('TotalStats Repo getLatestUpdatedAt error:', error);
+      throw new DBError('최근 통계 업데이트 시간 조회 중 문제가 발생했습니다.');
+    }
+  }
 }
