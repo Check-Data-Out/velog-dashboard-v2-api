@@ -153,7 +153,7 @@ router.get('/qr-login', userController.getToken);
 
 /**
  * @swagger
- * /newsletter-unsubscribe:
+ * /user/newsletter-unsubscribe:
  *   get:
  *     tags:
  *       - User
@@ -169,6 +169,6 @@ router.get('/qr-login', userController.getToken);
  *       302:
  *         description: 뉴스레터 구독 해제 성공 후 메인 페이지로 리디렉션
  */
-router.get('/newsletter-unsubscribe', userController.unsubscribeNewsletter);
+router.get('/user/newsletter-unsubscribe', userController.unsubscribeNewsletter);
 
 export default router;
