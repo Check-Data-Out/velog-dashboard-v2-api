@@ -5,6 +5,7 @@ import pool from '@/configs/db.config';
 import { CustomError, DBError, InvalidTokenError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 import crypto from 'crypto';
+import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
 
 /**
  * 요청에서 토큰을 추출하는 함수
@@ -48,7 +49,17 @@ const verifyBearerTokens = () => {
         throw new InvalidTokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
       }
 
-      const payload = extractPayload(accessToken);
+      // Fail-Fast: JWT 형식 검증
+      if (!isValidJwtFormat(accessToken)) {
+        throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
+      }
+
+      // 안전한 페이로드 추출 (JSON 파싱 실패 시 null 반환)
+      const payload = safeExtractPayload<VelogJWTPayload>(accessToken);
+      if (!payload) {
+        throw new InvalidTokenError('토큰 페이로드를 추출할 수 없습니다.');
+      }
+
       if (!payload.user_id || !isUUID(payload.user_id)) {
         throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
       }

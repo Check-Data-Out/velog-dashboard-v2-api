@@ -202,5 +202,106 @@ describe('인증 미들웨어', () => {
       expect(nextFunction).not.toHaveBeenCalledWith(expect.any(Error));
       expect(mockRequest.user).toEqual(mockUser);
     });
+
+    it('JWT 형식이 아닌 토큰은 DB 쿼리 없이 InvalidTokenError를 발생시켜야 한다', async () => {
+      // JWT 형식이 아닌 쓰레기 토큰
+      mockRequest.cookies = {
+        'access_token': 'garbage-token-without-dots',
+        'refresh_token': 'refresh-token'
+      };
+
+      // 미들웨어 실행
+      await authMiddleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      // 검증: InvalidTokenError 발생, DB 쿼리 호출 안됨
+      expect(nextFunction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'InvalidTokenError'
+        })
+      );
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    it('깨진 Base64 페이로드를 가진 토큰은 InvalidTokenError를 발생시켜야 한다', async () => {
+      // JWT 형식은 맞지만 페이로드가 유효하지 않은 JSON인 토큰
+      // 'not-valid-json'을 base64url 인코딩
+      const corruptedPayload = Buffer.from('not-valid-json').toString('base64url');
+      const corruptedToken = `eyJhbGciOiJIUzI1NiJ9.${corruptedPayload}.signature`;
+
+      mockRequest.cookies = {
+        'access_token': corruptedToken,
+        'refresh_token': 'refresh-token'
+      };
+
+      // 미들웨어 실행
+      await authMiddleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      // 검증: InvalidTokenError 발생, DB 쿼리 호출 안됨
+      expect(nextFunction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'InvalidTokenError'
+        })
+      );
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    it('Base64URL이 아닌 문자가 포함된 토큰은 InvalidTokenError를 발생시켜야 한다', async () => {
+      // Base64URL에 허용되지 않는 문자(+, /, =, 한글 등) 포함
+      mockRequest.cookies = {
+        'access_token': 'invalid+token/with=special.chars!@#.signature',
+        'refresh_token': 'refresh-token'
+      };
+
+      // 미들웨어 실행
+      await authMiddleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      // 검증: InvalidTokenError 발생, DB 쿼리 호출 안됨
+      expect(nextFunction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'InvalidTokenError'
+        })
+      );
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    it('user_id가 UUID 형식이 아니면 InvalidTokenError를 발생시켜야 한다', async () => {
+      // user_id가 있지만 UUID 형식이 아닌 토큰
+      // payload: {"user_id":"not-a-uuid"}
+      const invalidPayload = Buffer.from(JSON.stringify({ user_id: 'not-a-uuid' })).toString('base64url');
+      const tokenWithInvalidUUID = `eyJhbGciOiJIUzI1NiJ9.${invalidPayload}.signature`;
+
+      mockRequest.cookies = {
+        'access_token': tokenWithInvalidUUID,
+        'refresh_token': 'refresh-token'
+      };
+
+      // 미들웨어 실행
+      await authMiddleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      // 검증: InvalidTokenError 발생, DB 쿼리 호출 안됨
+      expect(nextFunction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'InvalidTokenError',
+          message: '유효하지 않은 토큰 페이로드 입니다.'
+        })
+      );
+      expect(pool.query).not.toHaveBeenCalled();
+    });
   });
 });
