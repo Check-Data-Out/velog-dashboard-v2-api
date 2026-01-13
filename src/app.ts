@@ -12,13 +12,19 @@ import { NotFoundError } from '@/exception';
 
 import { options } from '@/configs/swagger.config';
 import { getSentryStatus } from '@/configs/sentry.config';
-import { getCacheStatus } from '@/configs/cache.config';
-import { errorHandlingMiddleware } from '@/middlewares/errorHandling.middleware';
+import { cache, getCacheStatus } from '@/configs/cache.config';
+import { createErrorHandlingMiddleware } from '@/middlewares/errorHandling.middleware';
 import { accessLogMiddleware } from '@/middlewares/accessLog.middleware';
+import { setRateLimitService } from '@/middlewares/auth.middleware';
+import { AuthRateLimitService } from '@/services/authRateLimit.service';
 
 dotenv.config();
 
 const app: Application = express();
+
+// 인증 실패 Rate Limit 서비스 생성 및 전역 설정
+const authRateLimitService = new AuthRateLimitService(cache);
+setRateLimitService(authRateLimitService);
 
 // 실제 클라이언트 IP를 알기 위한 trust proxy 설정
 app.set('trust proxy', process.env.NODE_ENV === 'production');
@@ -87,6 +93,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next(new NotFoundError(`${req.url} not found`));
 });
 
-app.use(errorHandlingMiddleware);
+app.use(createErrorHandlingMiddleware(authRateLimitService));
 
 export default app;

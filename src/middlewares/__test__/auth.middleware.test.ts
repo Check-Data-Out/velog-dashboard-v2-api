@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { authMiddleware } from '@/middlewares/auth.middleware';
+import { authMiddleware, createAuthMiddleware } from '@/middlewares/auth.middleware';
 import pool from '@/configs/db.config';
 import { mockUser } from '@/utils/fixtures';
+import { AuthRateLimitService } from '@/services/authRateLimit.service';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -302,6 +303,161 @@ describe('인증 미들웨어', () => {
         })
       );
       expect(pool.query).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('createAuthMiddleware', () => {
+  let mockRequest: Partial<Request>;
+  let mockResponse: Partial<Response>;
+  let nextFunction: jest.Mock;
+  let mockRateLimitService: jest.Mocked<AuthRateLimitService>;
+
+  const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYzc1MDcyNDAtMDkzYi0xMWVhLTlhYWUtYTU4YTg2YmIwNTIwIiwiaWF0IjoxNjAzOTM0NTI5LCJleHAiOjE2MDM5MzgxMjksImlzcyI6InZlbG9nLmlvIiwic3ViIjoiYWNjZXNzX3Rva2VuIn0.Q_I4PMBeeZSU-HbPZt7z9OW-tQjE0NI0I0DLF2qpZjY';
+
+  beforeEach(() => {
+    mockRequest = {
+      body: {},
+      headers: {},
+      cookies: {},
+      ip: '192.168.1.1',
+    };
+    mockResponse = {
+      json: jest.fn().mockReturnThis(),
+      status: jest.fn().mockReturnThis(),
+    };
+    nextFunction = jest.fn();
+
+    mockRateLimitService = {
+      trackAuthFailure: jest.fn(),
+      isIpBlocked: jest.fn(),
+      clearFailures: jest.fn(),
+    } as unknown as jest.Mocked<AuthRateLimitService>;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('팩토리 함수', () => {
+    it('AuthRateLimitService를 인자로 받아 verify 미들웨어를 포함한 객체를 반환해야 한다', () => {
+      const middleware = createAuthMiddleware(mockRateLimitService);
+
+      expect(middleware).toHaveProperty('verify');
+      expect(typeof middleware.verify).toBe('function');
+    });
+
+    it('AuthRateLimitService 없이도 동작해야 한다 (하위 호환성)', () => {
+      const middleware = createAuthMiddleware();
+
+      expect(middleware).toHaveProperty('verify');
+      expect(typeof middleware.verify).toBe('function');
+    });
+  });
+
+  describe('Rate Limit 통합', () => {
+    it('rate limit 서비스가 주입되면 isIpBlocked를 먼저 호출해야 한다', async () => {
+      mockRateLimitService.isIpBlocked.mockResolvedValue(false);
+      mockRequest.cookies = {
+        'access_token': validToken,
+        'refresh_token': 'refresh-token'
+      };
+      (pool.query as jest.Mock).mockResolvedValueOnce({
+        rows: [mockUser]
+      });
+
+      const middleware = createAuthMiddleware(mockRateLimitService);
+      await middleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockRateLimitService.isIpBlocked).toHaveBeenCalledWith('192.168.1.1');
+    });
+
+    it('IP가 차단되면 429 응답을 반환해야 한다', async () => {
+      mockRateLimitService.isIpBlocked.mockResolvedValue(true);
+
+      const middleware = createAuthMiddleware(mockRateLimitService);
+      await middleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(429);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          retryAfter: expect.any(Number)
+        })
+      );
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('IP가 차단되지 않으면 기존 토큰 검증 로직을 실행해야 한다', async () => {
+      mockRateLimitService.isIpBlocked.mockResolvedValue(false);
+      mockRequest.cookies = {
+        'access_token': validToken,
+        'refresh_token': 'refresh-token'
+      };
+      (pool.query as jest.Mock).mockResolvedValueOnce({
+        rows: [mockUser]
+      });
+
+      const middleware = createAuthMiddleware(mockRateLimitService);
+      await middleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(nextFunction).toHaveBeenCalledTimes(1);
+      expect(nextFunction).not.toHaveBeenCalledWith(expect.any(Error));
+      expect(mockRequest.user).toEqual(mockUser);
+    });
+
+    it('rate limit 서비스 에러 발생 시 fail-open으로 토큰 검증을 계속해야 한다', async () => {
+      mockRateLimitService.isIpBlocked.mockRejectedValue(new Error('Redis error'));
+      mockRequest.cookies = {
+        'access_token': validToken,
+        'refresh_token': 'refresh-token'
+      };
+      (pool.query as jest.Mock).mockResolvedValueOnce({
+        rows: [mockUser]
+      });
+
+      const middleware = createAuthMiddleware(mockRateLimitService);
+      await middleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      // fail-open: 에러가 나도 토큰 검증 계속 진행
+      expect(nextFunction).toHaveBeenCalledTimes(1);
+      expect(mockRequest.user).toEqual(mockUser);
+    });
+
+    it('rate limit 서비스가 없으면 rate limit 체크 없이 토큰 검증만 해야 한다', async () => {
+      mockRequest.cookies = {
+        'access_token': validToken,
+        'refresh_token': 'refresh-token'
+      };
+      (pool.query as jest.Mock).mockResolvedValueOnce({
+        rows: [mockUser]
+      });
+
+      const middleware = createAuthMiddleware(); // no service
+      await middleware.verify(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+      );
+
+      expect(nextFunction).toHaveBeenCalledTimes(1);
+      expect(mockRequest.user).toEqual(mockUser);
     });
   });
 });

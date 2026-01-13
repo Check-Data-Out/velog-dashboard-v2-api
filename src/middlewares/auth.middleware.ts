@@ -6,6 +6,12 @@ import { CustomError, DBError, InvalidTokenError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 import crypto from 'crypto';
 import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
+import { AuthRateLimitService } from '@/services/authRateLimit.service';
+
+const LOCKOUT_SECONDS = 15 * 60; // 15분
+
+// 전역 rate limit 서비스 (나중에 주입)
+let globalRateLimitService: AuthRateLimitService | undefined;
 
 /**
  * 요청에서 토큰을 추출하는 함수
@@ -24,25 +30,31 @@ const extractTokens = (req: Request): { accessToken: string; refreshToken: strin
 };
 
 /**
- * JWT 토큰에서 페이로드를 추출하고 디코딩하는 함수
- * 이건 진짜 velog 에서 사용하는 걸 그대로 가져온 함수임!
- * @param token - 디코딩할 JWT 토큰 문자열
- * @returns {VelogJWTPayload}
- * @throws {Error} 토큰이 잘못되었거나 디코딩할 수 없는 경우
- * @example
- * const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
- * const payload = extractPayload(token);
- * // 반환값: { sub: "1234567890" }
- */
-const extractPayload = (token: string): VelogJWTPayload =>
-  JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-
-/**
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
+ *  @param rateLimitService - Rate limit 서비스 (선택적)
  */
-const verifyBearerTokens = () => {
+const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Rate Limit 체크 (서비스가 주입된 경우에만)
+      if (rateLimitService) {
+        try {
+          const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+          const isBlocked = await rateLimitService.isIpBlocked(ip);
+          if (isBlocked) {
+            res.status(429).json({
+              success: false,
+              message: '너무 많은 인증 실패로 일시적으로 차단되었습니다.',
+              retryAfter: LOCKOUT_SECONDS,
+            });
+            return;
+          }
+        } catch (error) {
+          // fail-open: rate limit 에러 시에도 토큰 검증 계속 진행
+          logger.error('Rate limit check failed', { error });
+        }
+      }
+
       const { accessToken, refreshToken } = extractTokens(req);
 
       if (!accessToken || !refreshToken) {
@@ -114,11 +126,34 @@ function verifySentrySignature() {
 }
 
 /**
+ * 인증 미들웨어 팩토리 함수
+ * @param rateLimitService - Rate limit 서비스 (선택적)
+ * @returns verify, verifySignature 미들웨어를 포함한 객체
+ */
+export const createAuthMiddleware = (rateLimitService?: AuthRateLimitService) => {
+  return {
+    verify: verifyBearerTokens(rateLimitService),
+    verifySignature: verifySentrySignature(),
+  };
+};
+
+/**
+ * Rate limit 서비스를 전역으로 설정
+ * app.ts에서 초기화 시 호출
+ */
+export const setRateLimitService = (service: AuthRateLimitService) => {
+  globalRateLimitService = service;
+};
+
+/**
  * 사용자 인증을 위한 미들웨어 모음
+ * 전역 rate limit 서비스가 설정되면 자동으로 rate limit 체크 수행
  * @property {Function} verify
- * * @property {Function} verifySignature
+ * @property {Function} verifySignature
  */
 export const authMiddleware = {
-  verify: verifyBearerTokens(),
+  get verify() {
+    return verifyBearerTokens(globalRateLimitService);
+  },
   verifySignature: verifySentrySignature(),
 };
