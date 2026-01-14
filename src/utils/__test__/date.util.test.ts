@@ -37,7 +37,6 @@ describe('Date Utilities', () => {
     return `${year}-${month}-${day} 00:00:00+09`;
   };
 
-
   it('getCurrentKSTDateString이 KST 포맷의 문자열을 반환해야 한다', () => {
     // 형식 검증 - HH:MM:SS가 항상 00:00:00
     const result = getCurrentKSTDateString();
@@ -104,7 +103,7 @@ describe('Date Utilities', () => {
 
     const first = getCurrentKSTDateString();
     const second = getCurrentKSTDateString(); // 같은 날
-    const third = getCurrentKSTDateString();  // 다음 날
+    const third = getCurrentKSTDateString(); // 다음 날
 
     expect(first).toBe(second); // 같은 날이므로 동일해야 함
     expect(first).not.toBe(third); // 다른 날이므로 달라야 함

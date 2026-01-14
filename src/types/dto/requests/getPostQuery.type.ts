@@ -30,22 +30,28 @@ export interface GetPostQuery {
 export class GetPostQueryDto {
   @IsString()
   @IsNotEmpty()
-  @Validate((value: string) => {
-    const date = new Date(value);
-    return !isNaN(date.getTime());
-  }, {
-    message: '유효한 날짜 형식이 아닙니다. (예: YYYY-MM-DD)'
-  })
+  @Validate(
+    (value: string) => {
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    },
+    {
+      message: '유효한 날짜 형식이 아닙니다. (예: YYYY-MM-DD)',
+    },
+  )
   start: string;
 
   @IsString()
   @IsNotEmpty()
-  @Validate((value: string) => {
-    const date = new Date(value);
-    return !isNaN(date.getTime());
-  }, {
-    message: '유효한 날짜 형식이 아닙니다. (예: YYYY-MM-DD)'
-  })
+  @Validate(
+    (value: string) => {
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    },
+    {
+      message: '유효한 날짜 형식이 아닙니다. (예: YYYY-MM-DD)',
+    },
+  )
   end: string;
 
   constructor(start: string, end: string) {

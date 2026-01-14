@@ -38,6 +38,3 @@ export const createErrorHandlingMiddleware = (authRateLimitService?: AuthRateLim
     return;
   };
 };
-
-// 하위 호환성을 위한 기존 export
-export const errorHandlingMiddleware: ErrorRequestHandler = createErrorHandlingMiddleware();

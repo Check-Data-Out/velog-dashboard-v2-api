@@ -347,9 +347,8 @@ describe('PostService', () => {
       const result = await postService.getPostByPostId('abc' as unknown as number);
       expect(result).toEqual(expectedTransformedStats);
       // Repository에 ID가 'abc'로 전달됨 (내부적으로 변환하지 않음)
-      expect(postRepo.findPostByPostId).toHaveBeenCalledWith('abc', "undefined 00:00:00+09", "undefined 00:00:00+09");
+      expect(postRepo.findPostByPostId).toHaveBeenCalledWith('abc', 'undefined 00:00:00+09', 'undefined 00:00:00+09');
     });
-    
   });
 
   describe('getPostByPostUUID', () => {
@@ -399,8 +398,8 @@ describe('PostService', () => {
       expect(postRepo.findPostByPostUUID).toHaveBeenCalledWith(
         'uuid-1234',
         '2025-03-08 00:00:00+09', // 현재 날짜 (테스트에서 고정된 날짜)
-        '2025-03-15 00:00:00+09'  // 현재 날짜 (테스트에서 고정된 날짜)
-      );    
+        '2025-03-15 00:00:00+09', // 현재 날짜 (테스트에서 고정된 날짜)
+      );
     });
 
     it('빈 통계 목록 처리', async () => {
@@ -429,7 +428,7 @@ describe('PostService', () => {
       expect(postRepo.findPostByPostUUID).toHaveBeenCalledWith(
         '', // 빈 문자열 그대로 전달됨
         expect.any(String),
-        expect.any(String)
+        expect.any(String),
       );
     });
   });
@@ -443,8 +442,8 @@ describe('PostService', () => {
           date: '2025-03-08T00:00:00.000Z',
           daily_view_count: 100,
           daily_like_count: 10,
-          extra_field: 'should be ignored' // 추가 필드는 무시되어야 함
-        }
+          extra_field: 'should be ignored', // 추가 필드는 무시되어야 함
+        },
       ];
 
       postRepo.findPostByPostId.mockResolvedValue(mockPosts);
@@ -457,9 +456,9 @@ describe('PostService', () => {
         {
           date: '2025-03-08T00:00:00.000Z',
           dailyViewCount: 100,
-          dailyLikeCount: 10
+          dailyLikeCount: 10,
           // extra_field는 변환 후 존재하지 않아야 함
-        }
+        },
       ]);
       // result에 extra_field 속성이 없는지 확인
       expect(result[0]).not.toHaveProperty('extra_field');
@@ -471,8 +470,8 @@ describe('PostService', () => {
         {
           date: '2025-03-08T00:00:00.000Z',
           daily_view_count: null,
-          daily_like_count: undefined
-        }
+          daily_like_count: undefined,
+        },
       ];
 
       postRepo.findPostByPostId.mockResolvedValue(mockPosts);
@@ -485,8 +484,8 @@ describe('PostService', () => {
         {
           date: '2025-03-08T00:00:00.000Z',
           dailyViewCount: null,
-          dailyLikeCount: undefined
-        }
+          dailyLikeCount: undefined,
+        },
       ]);
     });
   });

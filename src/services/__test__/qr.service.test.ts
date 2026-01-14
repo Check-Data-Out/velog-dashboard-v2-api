@@ -10,18 +10,18 @@ jest.mock('@/modules/token_encryption/aes_encryption', () => {
   // TokenEncryptionService 인터페이스를 구현한 모의 객체 반환
   return jest.fn().mockImplementation(() => ({
     encrypt: jest.fn().mockReturnValue('encrypted-token'),
-    decrypt: jest.fn().mockImplementation(token => {
+    decrypt: jest.fn().mockImplementation((token) => {
       // useToken 메서드에서 필요한 반환값 제공
       if (token === 'encrypted-access-token') return 'decrypted-access-token';
       if (token === 'encrypted-refresh-token') return 'decrypted-refresh-token';
       return 'unknown-token';
-    })
+    }),
   }));
 });
 
 // getKeyByGroup 모킹 - 키를 항상 리턴하도록
 jest.mock('@/utils/key.util', () => ({
-  getKeyByGroup: jest.fn().mockReturnValue('01234567890123456789012345678901') // 32바이트 키
+  getKeyByGroup: jest.fn().mockReturnValue('01234567890123456789012345678901'), // 32바이트 키
 }));
 
 // UserRepository 모킹
@@ -76,7 +76,7 @@ describe('UserService의 QR 로그인 기능', () => {
       expires_at: new Date(),
       is_used: false,
       ip_address: '127.0.0.1',
-      user_agent: 'Chrome'
+      user_agent: 'Chrome',
     };
 
     it('유효한 토큰 사용 시 복호화된 토큰 정보 반환', async () => {
@@ -87,7 +87,7 @@ describe('UserService의 QR 로그인 기능', () => {
 
       expect(result).toEqual({
         decryptedAccessToken: 'decrypted-access-token',
-        decryptedRefreshToken: 'decrypted-refresh-token'
+        decryptedRefreshToken: 'decrypted-refresh-token',
       });
       expect(userRepo.findQRLoginToken).toHaveBeenCalledWith('token');
       expect(userRepo.findByUserId).toHaveBeenCalledWith(mockQRToken.user_id);

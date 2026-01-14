@@ -44,7 +44,7 @@ export const fetchVelogApi = async (accessToken: string, refreshToken: string): 
     const currentUser = result.data.currentUser;
     return {
       ...currentUser,
-      email: currentUser.email ?? null
+      email: currentUser.email ?? null,
     };
   } catch (error) {
     // 이미 InvalidTokenError인 경우 그대로 다시 던지기

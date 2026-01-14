@@ -50,16 +50,16 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
             AND user_agent = 'test-agent'
             AND user_id = $1
         `,
-        [TEST_DATA.USER_ID]
+        [TEST_DATA.USER_ID],
       );
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       if (testPool) {
         await testPool.end();
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       logger.info('테스트 DB 연결 종료 및 테스트 데이터 정리 완료');
     } catch (error) {
       logger.error('테스트 종료 중 오류:', error);
@@ -126,7 +126,7 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
           INSERT INTO users_qrlogintoken (token, user_id, created_at, expires_at, is_used, ip_address, user_agent)
           VALUES ($1, $2, NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '5 minutes', false, $3, $4)
         `,
-        [token, TEST_DATA.USER_ID, ip, userAgent]
+        [token, TEST_DATA.USER_ID, ip, userAgent],
       );
 
       const found = await repo.findQRLoginToken(token);
@@ -144,7 +144,7 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
           INSERT INTO users_qrlogintoken (token, user_id, created_at, expires_at, is_used, ip_address, user_agent)
           VALUES ($1, $2, NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '5 minutes', true, $3, $4)
         `,
-        [token, TEST_DATA.USER_ID, ip, userAgent]
+        [token, TEST_DATA.USER_ID, ip, userAgent],
       );
 
       const found = await repo.findQRLoginToken(token);

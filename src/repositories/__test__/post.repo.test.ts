@@ -5,7 +5,6 @@ import { mockPool, createMockQueryResult } from '@/utils/fixtures';
 
 jest.mock('pg');
 
-
 describe('PostRepository', () => {
   let repo: PostRepository;
 
@@ -52,10 +51,7 @@ describe('PostRepository', () => {
       await repo.findPostsByUserId(1);
 
       // 쿼리 호출 확인
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("p.is_active = TRUE"),
-        expect.anything()
-      );
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('p.is_active = TRUE'), expect.anything());
     });
   });
 
@@ -68,7 +64,7 @@ describe('PostRepository', () => {
           daily_view_count: 30,
           yesterday_daily_view_count: 10,
           view_growth: 20,
-          like_growth: 5
+          like_growth: 5,
         },
         {
           id: 2,
@@ -76,7 +72,7 @@ describe('PostRepository', () => {
           daily_view_count: 25,
           yesterday_daily_view_count: 15,
           view_growth: 10,
-          like_growth: 3
+          like_growth: 3,
         },
       ];
 
@@ -97,14 +93,14 @@ describe('PostRepository', () => {
           post_released_at: '2025-03-01T00:00:00Z',
           daily_view_count: 30,
           yesterday_daily_view_count: 10,
-          view_growth: 20
+          view_growth: 20,
         },
         {
           id: 2,
           post_released_at: '2025-03-02T00:00:00Z',
           daily_view_count: 25,
           yesterday_daily_view_count: 15,
-          view_growth: 10
+          view_growth: 10,
         },
       ];
 
@@ -122,17 +118,19 @@ describe('PostRepository', () => {
           post_released_at: '2025-03-03T00:00:00Z',
           daily_view_count: 20,
           yesterday_daily_view_count: 15,
-          view_growth: 5
+          view_growth: 5,
         },
       ];
 
       mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
-      const result = await repo.findPostsByUserIdWithGrowthMetrics(1, "10,2", false);
+      const result = await repo.findPostsByUserIdWithGrowthMetrics(1, '10,2', false);
       expect(result.posts).toEqual(mockPosts);
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("(COALESCE(pds.daily_view_count, 0) - COALESCE(yesterday_stats.daily_view_count, 0)) < $2"),
-        expect.arrayContaining([1, "10", "2", expect.anything()])
+        expect.stringContaining(
+          '(COALESCE(pds.daily_view_count, 0) - COALESCE(yesterday_stats.daily_view_count, 0)) < $2',
+        ),
+        expect.arrayContaining([1, '10', '2', expect.anything()]),
       );
     });
 
@@ -142,19 +140,14 @@ describe('PostRepository', () => {
     });
 
     it('쿼리에 is_active = TRUE 조건이 포함되어야 한다', async () => {
-      const mockPosts = [
-        { id: 1, view_growth: 20, like_growth: 5 },
-      ];
+      const mockPosts = [{ id: 1, view_growth: 20, like_growth: 5 }];
 
       mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
 
       await repo.findPostsByUserIdWithGrowthMetrics(1);
 
       // 쿼리 호출 확인
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("p.is_active = TRUE"),
-        expect.anything()
-      );
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('p.is_active = TRUE'), expect.anything());
     });
   });
 
@@ -172,10 +165,7 @@ describe('PostRepository', () => {
       await repo.getTotalPostCounts(1);
 
       // 쿼리 호출 확인
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("is_active = TRUE"),
-        expect.anything()
-      );
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('is_active = TRUE'), expect.anything());
     });
   });
 
@@ -210,18 +200,13 @@ describe('PostRepository', () => {
       await repo.getYesterdayAndTodayViewLikeStats(1);
 
       // 쿼리 호출 확인
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining("p.is_active = TRUE"),
-        expect.anything()
-      );
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('p.is_active = TRUE'), expect.anything());
     });
   });
 
   describe('findPostByPostId', () => {
     it('특정 post ID에 대한 통계를 반환해야 한다', async () => {
-      const mockStats = [
-        { date: '2025-03-08T00:00:00Z', daily_view_count: 50, daily_like_count: 30 },
-      ];
+      const mockStats = [{ date: '2025-03-08T00:00:00Z', daily_view_count: 50, daily_like_count: 30 }];
 
       mockPool.query.mockResolvedValue(createMockQueryResult(mockStats));
 
@@ -232,9 +217,7 @@ describe('PostRepository', () => {
 
   describe('findPostByPostUUID', () => {
     it('특정 post UUID에 대한 통계를 반환해야 한다', async () => {
-      const mockStats = [
-        { date: '2025-03-08T00:00:00Z', daily_view_count: 50, daily_like_count: 30 },
-      ];
+      const mockStats = [{ date: '2025-03-08T00:00:00Z', daily_view_count: 50, daily_like_count: 30 }];
 
       mockPool.query.mockResolvedValue(createMockQueryResult(mockStats));
 

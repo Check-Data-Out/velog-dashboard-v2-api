@@ -54,7 +54,7 @@ describe('AuthRateLimitService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         expect.stringContaining('192.168.1.1'),
         expect.objectContaining({ count: 1 }),
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -68,7 +68,7 @@ describe('AuthRateLimitService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         expect.stringContaining('192.168.1.1'),
         expect.objectContaining({ count: 4 }),
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -83,7 +83,7 @@ describe('AuthRateLimitService', () => {
       expect(mockCache.set).toHaveBeenCalledWith(
         expect.stringContaining('192.168.1.1'),
         expect.objectContaining({ count: 1 }),
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -94,11 +94,7 @@ describe('AuthRateLimitService', () => {
       await authRateLimitService.trackAuthFailure('192.168.1.1');
 
       // TTL이 15분(900초)으로 설정되어야 함
-      expect(mockCache.set).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Object),
-        900
-      );
+      expect(mockCache.set).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 900);
     });
 
     it('임계값 도달 시 logger.warn을 호출해야 한다', async () => {
@@ -112,16 +108,14 @@ describe('AuthRateLimitService', () => {
       // 5회째 실패 시 경고 로그
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('brute force'),
-        expect.objectContaining({ ip: '192.168.1.1' })
+        expect.objectContaining({ ip: '192.168.1.1' }),
       );
     });
 
     it('캐시 에러 발생 시 예외를 던지지 않아야 한다 (fail-open)', async () => {
       mockCache.get.mockRejectedValue(new Error('Redis connection failed'));
 
-      await expect(
-        authRateLimitService.trackAuthFailure('192.168.1.1')
-      ).resolves.not.toThrow();
+      await expect(authRateLimitService.trackAuthFailure('192.168.1.1')).resolves.not.toThrow();
     });
   });
 
@@ -177,17 +171,13 @@ describe('AuthRateLimitService', () => {
 
       await authRateLimitService.clearFailures('192.168.1.1');
 
-      expect(mockCache.delete).toHaveBeenCalledWith(
-        expect.stringContaining('192.168.1.1')
-      );
+      expect(mockCache.delete).toHaveBeenCalledWith(expect.stringContaining('192.168.1.1'));
     });
 
     it('캐시 에러 발생 시 예외를 던지지 않아야 한다', async () => {
       mockCache.delete.mockRejectedValue(new Error('Redis connection failed'));
 
-      await expect(
-        authRateLimitService.clearFailures('192.168.1.1')
-      ).resolves.not.toThrow();
+      await expect(authRateLimitService.clearFailures('192.168.1.1')).resolves.not.toThrow();
     });
   });
 });

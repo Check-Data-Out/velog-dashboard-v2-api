@@ -67,19 +67,14 @@ describe('ErrorHandlingMiddleware', () => {
       const customError = new CustomError('테스트 에러', 'TEST_ERROR', 400);
 
       const middleware = createErrorHandlingMiddleware();
-      middleware(
-        customError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      middleware(customError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: '테스트 에러'
-        })
+          message: '테스트 에러',
+        }),
       );
     });
   });
@@ -90,12 +85,7 @@ describe('ErrorHandlingMiddleware', () => {
       mockService.trackAuthFailure.mockResolvedValue(undefined);
 
       const middleware = createErrorHandlingMiddleware(mockService);
-      await middleware(
-        invalidTokenError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(invalidTokenError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockService.trackAuthFailure).toHaveBeenCalledWith('192.168.1.1');
     });
@@ -104,12 +94,7 @@ describe('ErrorHandlingMiddleware', () => {
       const customError = new CustomError('일반 에러', 'GENERAL_ERROR', 400);
 
       const middleware = createErrorHandlingMiddleware(mockService);
-      await middleware(
-        customError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(customError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockService.trackAuthFailure).not.toHaveBeenCalled();
     });
@@ -118,12 +103,7 @@ describe('ErrorHandlingMiddleware', () => {
       const invalidTokenError = new InvalidTokenError('유효하지 않은 토큰입니다.');
 
       const middleware = createErrorHandlingMiddleware(); // no service
-      await middleware(
-        invalidTokenError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(invalidTokenError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       // trackAuthFailure가 호출되지 않아야 함 (에러 없이 완료)
       expect(mockResponse.status).toHaveBeenCalledWith(401);
@@ -135,12 +115,7 @@ describe('ErrorHandlingMiddleware', () => {
       const generalError = new Error('Internal error');
 
       const middleware = createErrorHandlingMiddleware();
-      await middleware(
-        generalError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(generalError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(Sentry.captureException).toHaveBeenCalledWith(generalError);
     });
@@ -149,12 +124,7 @@ describe('ErrorHandlingMiddleware', () => {
       const customError = new CustomError('클라이언트 에러', 'CLIENT_ERROR', 400);
 
       const middleware = createErrorHandlingMiddleware();
-      await middleware(
-        customError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(customError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
@@ -165,12 +135,7 @@ describe('ErrorHandlingMiddleware', () => {
       const customError = new CustomError('Not Found', 'NOT_FOUND', 404);
 
       const middleware = createErrorHandlingMiddleware();
-      await middleware(
-        customError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(customError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
     });
@@ -179,12 +144,7 @@ describe('ErrorHandlingMiddleware', () => {
       const generalError = new Error('Something went wrong');
 
       const middleware = createErrorHandlingMiddleware();
-      await middleware(
-        generalError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(generalError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
     });
@@ -193,19 +153,14 @@ describe('ErrorHandlingMiddleware', () => {
       const customError = new CustomError('Test Error', 'TEST', 400);
 
       const middleware = createErrorHandlingMiddleware();
-      await middleware(
-        customError,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await middleware(customError, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
           message: 'Test Error',
-          error: expect.any(Object)
-        })
+          error: expect.any(Object),
+        }),
       );
     });
   });

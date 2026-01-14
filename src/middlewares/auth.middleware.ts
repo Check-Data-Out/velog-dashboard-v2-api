@@ -6,9 +6,7 @@ import { CustomError, DBError, InvalidTokenError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 import crypto from 'crypto';
 import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
-import { AuthRateLimitService } from '@/services/authRateLimit.service';
-
-const LOCKOUT_SECONDS = 15 * 60; // 15분
+import { AuthRateLimitService, AUTH_RATE_LIMIT_CONFIG } from '@/services/authRateLimit.service';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
@@ -33,7 +31,7 @@ const extractTokens = (req: Request): { accessToken: string; refreshToken: strin
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
  *  @param rateLimitService - Rate limit 서비스 (선택적)
  */
-const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
+export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Rate Limit 체크 (서비스가 주입된 경우에만)
@@ -45,7 +43,7 @@ const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
             res.status(429).json({
               success: false,
               message: '너무 많은 인증 실패로 일시적으로 차단되었습니다.',
-              retryAfter: LOCKOUT_SECONDS,
+              retryAfter: AUTH_RATE_LIMIT_CONFIG.LOCKOUT_SECONDS,
             });
             return;
           }
@@ -124,18 +122,6 @@ function verifySentrySignature() {
     }
   };
 }
-
-/**
- * 인증 미들웨어 팩토리 함수
- * @param rateLimitService - Rate limit 서비스 (선택적)
- * @returns verify, verifySignature 미들웨어를 포함한 객체
- */
-export const createAuthMiddleware = (rateLimitService?: AuthRateLimitService) => {
-  return {
-    verify: verifyBearerTokens(rateLimitService),
-    verifySignature: verifySentrySignature(),
-  };
-};
 
 /**
  * Rate limit 서비스를 전역으로 설정

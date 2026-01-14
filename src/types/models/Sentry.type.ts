@@ -3,7 +3,14 @@
 // 참고: https://docs.sentry.io/organization/integrations/integration-platform/webhooks/issues/#statusdetails
 
 export type SentryIssueStatus = 'resolved' | 'unresolved' | 'ignored';
-export type SentryIssueSubStatus = "archived_until_escalating" | "archived_until_condition_met" | "archived_forever" | "escalating" | "ongoing" | "regressed" | "new"
+export type SentryIssueSubStatus =
+  | 'archived_until_escalating'
+  | 'archived_until_condition_met'
+  | 'archived_forever'
+  | 'escalating'
+  | 'ongoing'
+  | 'regressed'
+  | 'new';
 
 export interface SentryProject {
   id: string;
@@ -77,4 +84,4 @@ export interface SentryWebhookData {
     id: string;
     name: string;
   };
-} 
+}

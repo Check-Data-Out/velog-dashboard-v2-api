@@ -15,7 +15,6 @@ export interface User {
   newsletter_subscribed: boolean;
 }
 
-
 export interface SampleUser {
   user: User;
   decryptedAccessToken: string;

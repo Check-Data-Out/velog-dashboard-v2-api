@@ -19,15 +19,19 @@ export const isValidJwtFormat = (token: string): boolean => {
 
 /**
  * JWT 토큰에서 페이로드를 안전하게 추출합니다.
- * 형식 검증 실패, Base64 디코딩 실패, JSON 파싱 실패 시 예외 대신 null을 반환합니다.
+ * Base64 디코딩 실패, JSON 파싱 실패 시 예외 대신 null을 반환합니다.
+ * 주의: 이 함수는 형식 검증을 수행하지 않습니다. 형식 검증이 필요하면 isValidJwtFormat을 먼저 호출하세요.
  * @param token - 페이로드를 추출할 JWT 토큰 문자열
  * @returns 추출된 페이로드 객체 또는 null
  */
 export const safeExtractPayload = <T>(token: string): T | null => {
-  if (!isValidJwtFormat(token)) return null;
-
   try {
-    const payload = Buffer.from(token.split('.')[1], 'base64url').toString('utf8');
+    if (!token || typeof token !== 'string') return null;
+
+    const parts = token.split('.');
+    if (parts.length < 2 || !parts[1]) return null;
+
+    const payload = Buffer.from(parts[1], 'base64url').toString('utf8');
     return JSON.parse(payload);
   } catch {
     return null;
