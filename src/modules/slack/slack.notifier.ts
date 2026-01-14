@@ -9,7 +9,6 @@ if (!process.env.SLACK_WEBHOOK_URL) {
   throw new Error('SLACK_WEBHOOK_URL is not defined in environment variables.');
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const SLACK_WEBHOOK_URL: string = process.env.SLACK_WEBHOOK_URL;
 
 interface SlackPayload {

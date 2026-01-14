@@ -1,3 +1,10 @@
+# LLM 관련 파일들
+.serena
+.claude
+CLAUDE.md
+SYSTEM_DESIGN.md
+*plan.md
+
 # 환경 변수 및 인증 정보
 .env
 .env.local

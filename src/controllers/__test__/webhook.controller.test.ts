@@ -52,47 +52,37 @@ describe('WebhookController', () => {
           title: '테스트 오류입니다',
           culprit: 'TestFile.js:10',
           status: 'unresolved',
-          count: "5",
+          count: '5',
           userCount: 3,
           firstSeen: '2024-01-01T12:00:00.000Z',
           permalink: 'https://velog-dashboardv2.sentry.io/issues/test-issue-123/',
           project: {
             id: 'project-123',
             name: 'Velog Dashboard',
-            slug: 'velog-dashboard'
-          }
-        }
-      }
+            slug: 'velog-dashboard',
+          },
+        },
+      },
     };
 
     it('유효한 Sentry 웹훅 데이터로 처리에 성공해야 한다', async () => {
       mockRequest.body = mockSentryData;
       mockSendSlackMessage.mockResolvedValue();
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
+      expect(mockSendSlackMessage).toHaveBeenCalledWith(expect.stringContaining('🚨 *새로운 오류가 발생하였습니다*'));
+      expect(mockSendSlackMessage).toHaveBeenCalledWith(expect.stringContaining('🔴 *제목:* 테스트 오류입니다'));
+      expect(mockSendSlackMessage).toHaveBeenCalledWith(expect.stringContaining('📍 *위치:* TestFile.js:10'));
       expect(mockSendSlackMessage).toHaveBeenCalledWith(
-        expect.stringContaining('🚨 *새로운 오류가 발생하였습니다*')
-      );
-      expect(mockSendSlackMessage).toHaveBeenCalledWith(
-        expect.stringContaining('🔴 *제목:* 테스트 오류입니다')
-      );
-      expect(mockSendSlackMessage).toHaveBeenCalledWith(
-        expect.stringContaining('📍 *위치:* TestFile.js:10')
-      );
-      expect(mockSendSlackMessage).toHaveBeenCalledWith(
-        expect.stringContaining('🔗 *상세 보기:* https://velog-dashboardv2.sentry.io/issues/test-issue-123/')
+        expect.stringContaining('🔗 *상세 보기:* https://velog-dashboardv2.sentry.io/issues/test-issue-123/'),
       );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
         message: 'Sentry 웹훅 처리에 성공하였습니다.',
         data: {},
-        error: null
+        error: null,
       });
     });
 
@@ -103,21 +93,17 @@ describe('WebhookController', () => {
           ...mockSentryData.data,
           issue: {
             ...mockSentryData.data.issue,
-            permalink: undefined
-          }
-        }
+            permalink: undefined,
+          },
+        },
       };
       mockRequest.body = dataWithoutPermalink;
       mockSendSlackMessage.mockResolvedValue();
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockSendSlackMessage).toHaveBeenCalledWith(
-        expect.stringContaining('🔗 *상세 보기:* https://velog-dashboardv2.sentry.io/issues/test-issue-123/')
+        expect.stringContaining('🔗 *상세 보기:* https://velog-dashboardv2.sentry.io/issues/test-issue-123/'),
       );
     });
 
@@ -126,11 +112,7 @@ describe('WebhookController', () => {
       const slackError = new Error('Slack 전송 실패');
       mockSendSlackMessage.mockRejectedValue(slackError);
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalledWith(slackError);
       expect(mockResponse.json).not.toHaveBeenCalled();
@@ -140,19 +122,15 @@ describe('WebhookController', () => {
     it('action이 created가 아닌 경우 400 에러를 반환해야 한다', async () => {
       mockRequest.body = { action: 'resolved' };
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Sentry 웹훅 처리에 실패했습니다',
           statusCode: 400,
-          code: 'INVALID_SYNTAX'
-        })
+          code: 'INVALID_SYNTAX',
+        }),
       );
       expect(nextFunction).not.toHaveBeenCalled();
     });
@@ -160,38 +138,30 @@ describe('WebhookController', () => {
     it('빈 body인 경우 400 에러를 반환해야 한다', async () => {
       mockRequest.body = {};
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Sentry 웹훅 처리에 실패했습니다',
           statusCode: 400,
-          code: 'INVALID_SYNTAX'
-        })
+          code: 'INVALID_SYNTAX',
+        }),
       );
     });
 
     it('action이 없는 경우 400 에러를 반환해야 한다', async () => {
       mockRequest.body = { data: { issue: {} } };
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Sentry 웹훅 처리에 실패했습니다',
           statusCode: 400,
-          code: 'INVALID_SYNTAX'
-        })
+          code: 'INVALID_SYNTAX',
+        }),
       );
     });
 
@@ -199,22 +169,18 @@ describe('WebhookController', () => {
       mockRequest.body = {
         username: 'test',
         password: '123456',
-        email: 'test@example.com'
+        email: 'test@example.com',
       };
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Sentry 웹훅 처리에 실패했습니다',
           statusCode: 400,
-          code: 'INVALID_SYNTAX'
-        })
+          code: 'INVALID_SYNTAX',
+        }),
       );
     });
 
@@ -224,22 +190,18 @@ describe('WebhookController', () => {
         data: {
           issue: {
             // 필수 필드들이 누락됨
-          }
-        }
+          },
+        },
       };
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Sentry 웹훅 처리에 실패했습니다',
           statusCode: 400,
-          code: 'INVALID_SYNTAX'
-        })
+          code: 'INVALID_SYNTAX',
+        }),
       );
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
@@ -247,11 +209,7 @@ describe('WebhookController', () => {
     it('action은 created이지만 data가 없는 경우 에러를 전달해야 한다', async () => {
       mockRequest.body = { action: 'created' };
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalled();
       expect(mockResponse.json).not.toHaveBeenCalled();
@@ -260,11 +218,7 @@ describe('WebhookController', () => {
     it('잘못된 타입의 body인 경우 400 에러를 반환해야 한다', async () => {
       mockRequest.body = 'invalid string body';
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
     });
@@ -281,27 +235,23 @@ describe('WebhookController', () => {
             title: 'TypeError: Cannot read property of undefined',
             culprit: 'components/UserProfile.tsx:25',
             status: 'unresolved',
-            count: "12",
+            count: '12',
             userCount: 8,
             firstSeen: '2024-01-15T14:30:00.000Z',
             permalink: 'https://velog-dashboardv2.sentry.io/issues/issue-456/',
             project: {
               id: 'proj-789',
               name: 'Velog Dashboard V2',
-              slug: 'velog-dashboard-v2'
-            }
-          }
-        }
+              slug: 'velog-dashboard-v2',
+            },
+          },
+        },
       };
 
       mockRequest.body = completeData;
       mockSendSlackMessage.mockResolvedValue();
 
-      await webhookController.handleSentryWebhook(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      await webhookController.handleSentryWebhook(mockRequest as Request, mockResponse as Response, nextFunction);
 
       const expectedMessage = `🚨 *새로운 오류가 발생하였습니다*
 
@@ -314,4 +264,4 @@ describe('WebhookController', () => {
       expect(mockSendSlackMessage).toHaveBeenCalledWith(expectedMessage);
     });
   });
-}); 
+});

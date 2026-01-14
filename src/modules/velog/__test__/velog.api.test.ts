@@ -31,11 +31,11 @@ describe('Velog API', () => {
               username: 'testuser',
               email: 'test@example.com',
               profile: {
-                thumbnail: 'https://example.com/avatar.png'
-              }
-            }
-          }
-        }
+                thumbnail: 'https://example.com/avatar.png',
+              },
+            },
+          },
+        },
       };
 
       mockedAxios.post.mockResolvedValueOnce(mockResponse);
@@ -49,8 +49,8 @@ describe('Velog API', () => {
         username: 'testuser',
         email: 'test@example.com',
         profile: {
-          thumbnail: 'https://example.com/avatar.png'
-        }
+          thumbnail: 'https://example.com/avatar.png',
+        },
       });
 
       // axios 호출 검증
@@ -65,7 +65,7 @@ describe('Velog API', () => {
             'content-type': 'application/json',
             cookie: `access_token=${mockAccessToken}; refresh_token=${mockRefreshToken}`,
           },
-        }
+        },
       );
     });
 
@@ -79,11 +79,11 @@ describe('Velog API', () => {
               username: 'testuser',
               // email 필드 없음
               profile: {
-                thumbnail: 'https://example.com/avatar.png'
-              }
-            }
-          }
-        }
+                thumbnail: 'https://example.com/avatar.png',
+              },
+            },
+          },
+        },
       };
 
       mockedAxios.post.mockResolvedValueOnce(mockResponse);
@@ -96,8 +96,8 @@ describe('Velog API', () => {
         username: 'testuser',
         email: null,
         profile: {
-          thumbnail: 'https://example.com/avatar.png'
-        }
+          thumbnail: 'https://example.com/avatar.png',
+        },
       });
     });
 
@@ -106,18 +106,19 @@ describe('Velog API', () => {
       const mockResponse = {
         data: {
           errors: [{ message: '인증 실패' }],
-          data: { currentUser: null }
-        }
+          data: { currentUser: null },
+        },
       };
 
       mockedAxios.post.mockResolvedValueOnce(mockResponse);
 
       // 함수 호출 시 예외 발생 검증
-      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken))
-        .rejects.toThrow(expect.objectContaining({
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(
+        expect.objectContaining({
           name: 'InvalidTokenError',
-          message: 'Velog API 인증에 실패했습니다.'
-        }));
+          message: 'Velog API 인증에 실패했습니다.',
+        }),
+      );
     });
 
     it('currentUser가 null이면 InvalidTokenError를 던져야 한다', async () => {
@@ -125,20 +126,20 @@ describe('Velog API', () => {
       const mockResponse = {
         data: {
           data: {
-            currentUser: null
-          }
-        }
+            currentUser: null,
+          },
+        },
       };
 
       mockedAxios.post.mockResolvedValueOnce(mockResponse);
 
       // 함수 호출 시 예외 발생 검증
-      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken))
-        .rejects.toThrow(expect.objectContaining({
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(
+        expect.objectContaining({
           name: 'InvalidTokenError',
-          message: 'Velog 사용자 정보를 가져오지 못했습니다.'
-        }));
-
+          message: 'Velog 사용자 정보를 가져오지 못했습니다.',
+        }),
+      );
     });
 
     it('API 호출 자체가 실패하면 InvalidTokenError를 던져야 한다', async () => {
@@ -146,11 +147,12 @@ describe('Velog API', () => {
       mockedAxios.post.mockRejectedValueOnce(new Error('네트워크 오류'));
 
       // 함수 호출 시 예외 발생 검증
-      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken))
-        .rejects.toThrow(expect.objectContaining({
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(
+        expect.objectContaining({
           name: 'InvalidTokenError',
-          message: 'Velog API 인증에 실패했습니다.'
-        }));
+          message: 'Velog API 인증에 실패했습니다.',
+        }),
+      );
     });
   });
 });

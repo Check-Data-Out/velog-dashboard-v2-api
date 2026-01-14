@@ -15,7 +15,7 @@ import { NotiPost } from '@/types/models/NotiPost.type';
  *             $ref: '#/components/schemas/NotiPost'
  */
 interface NotiPostsResponseData {
-    posts: NotiPost[];
+  posts: NotiPost[];
 }
 
 /**
@@ -30,4 +30,4 @@ interface NotiPostsResponseData {
  *             data:
  *               $ref: '#/components/schemas/NotiPostsResponseData'
  */
-export class NotiPostsResponseDto extends BaseResponseDto<NotiPostsResponseData> { }
+export class NotiPostsResponseDto extends BaseResponseDto<NotiPostsResponseData> {}

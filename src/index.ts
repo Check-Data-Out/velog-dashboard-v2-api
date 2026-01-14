@@ -1,9 +1,10 @@
-import app from '@/app';
+import { createApp } from '@/app';
 import logger from '@/configs/logger.config';
-import { closeCache, initCache } from './configs/cache.config';
+import { cache, closeCache, initCache } from './configs/cache.config';
 import { closeDatabase, initializeDatabase } from './configs/db.config';
 import { Server } from 'http';
 import { initSentry } from './configs/sentry.config';
+import { Application } from 'express';
 
 interface ShutdownHandler {
   cleanup(): Promise<void>;
@@ -86,6 +87,7 @@ class GracefulShutdownManager implements ShutdownHandler {
 class ServerManager {
   private server?: Server;
   private shutdownManager?: GracefulShutdownManager;
+  private app?: Application;
   private readonly port = parseInt(process.env.PORT || '8080', 10);
 
   /**
@@ -112,20 +114,28 @@ class ServerManager {
     initSentry();
     logger.info('Sentry initialized successfully');
 
-    // Cache 초기화
-    initCache();
+    // Cache 초기화 (await 추가 - Redis 연결 완료까지 대기)
+    await initCache();
     logger.info('Cache initialized successfully');
 
     // 데이터베이스 초기화
     await initializeDatabase();
     logger.info('Database initialized successfully');
+
+    // 모든 인프라 초기화 완료 후 Express 앱 생성
+    this.app = createApp(cache);
+    logger.info('Express app created successfully');
   }
 
   /**
    * Express 서버 인스턴스를 생성하고 시작
    */
   private createServer(): Server {
-    const server = app.listen(this.port, () => {
+    if (!this.app) {
+      throw new Error('Express app not initialized');
+    }
+
+    const server = this.app.listen(this.port, () => {
       logger.info(`Server running on port ${this.port}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
 

@@ -5,8 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // 테스트 환경에서 SLACK_WEBHOOK_URL이 설정되어 있지 않으면 기본값 설정
-process.env.SLACK_WEBHOOK_URL =
-  process.env.SLACK_WEBHOOK_URL || 'https://dummy-slack-webhook-url.com';
+process.env.SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || 'https://dummy-slack-webhook-url.com';
 
 // axios 모듈을 mock 처리
 jest.mock('axios');
@@ -36,7 +35,7 @@ describe('sendSlackMessage', () => {
     expect(mockedAxios.post).toHaveBeenCalledWith(
       process.env.SLACK_WEBHOOK_URL,
       { text: testMessage },
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { 'Content-Type': 'application/json' } },
     );
   });
 

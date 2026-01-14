@@ -7,7 +7,7 @@ export class UserWithTokenDto {
 
   @IsOptional()
   @IsEmail()
-  email: string | null = null;  // undefined 가능성 없애고 null 로 고정
+  email: string | null = null; // undefined 가능성 없애고 null 로 고정
 
   @IsNotEmpty()
   @IsString()
@@ -24,7 +24,14 @@ export class UserWithTokenDto {
   @IsString()
   refreshToken: string;
 
-  constructor(uuid: string, email: string | null, username: string, thumbnail: string | null,  accessToken: string, refreshToken: string) {
+  constructor(
+    uuid: string,
+    email: string | null,
+    username: string,
+    thumbnail: string | null,
+    accessToken: string,
+    refreshToken: string,
+  ) {
     this.uuid = uuid;
     this.email = email;
     this.username = username;

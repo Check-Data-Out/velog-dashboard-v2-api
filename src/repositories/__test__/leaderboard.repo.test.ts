@@ -173,10 +173,7 @@ describe('LeaderboardRepository', () => {
     it('데이터 수집이 비정상적인 게시물은 리더보드에 포함되지 않아야 한다', async () => {
       await repo.getPostLeaderboard('viewCount', 30, 10);
 
-      expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('ss.post_id IS NOT NULL'),
-        expect.anything()
-      );
+      expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('ss.post_id IS NOT NULL'), expect.anything());
     });
 
     it('에러 발생 시 DBError를 던져야 한다', async () => {

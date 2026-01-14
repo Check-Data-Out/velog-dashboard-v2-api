@@ -4,13 +4,12 @@ import logger from '@/configs/logger.config';
 import { PostRepository } from '@/repositories/post.repository';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
-
 dotenv.config();
 jest.setTimeout(30000);
 
 /**
  * PostRepository 통합 테스트
- * 
+ *
  * 이 테스트 파일은 실제 데이터베이스와 연결하여 PostRepository의 모든 메서드를
  * 실제 환경과 동일한 조건에서 테스트합니다.
  */
@@ -27,7 +26,6 @@ describe('PostRepository 통합 테스트', () => {
 
   beforeAll(async () => {
     try {
-
       const testPoolConfig: pg.PoolConfig = {
         database: process.env.DATABASE_NAME,
         user: process.env.POSTGRES_USER,
@@ -58,15 +56,11 @@ describe('PostRepository 통합 테스트', () => {
       repo = new PostRepository(testPool);
 
       // 테스트 데이터 존재 여부 확인
-      const postCheck = await testPool.query(
-        'SELECT COUNT(*) FROM posts_post WHERE id = $1',
-        [TEST_DATA.POST_ID]
-      );
+      const postCheck = await testPool.query('SELECT COUNT(*) FROM posts_post WHERE id = $1', [TEST_DATA.POST_ID]);
 
-      const statsCheck = await testPool.query(
-        'SELECT COUNT(*) FROM posts_postdailystatistics WHERE post_id = $1',
-        [TEST_DATA.POST_ID]
-      );
+      const statsCheck = await testPool.query('SELECT COUNT(*) FROM posts_postdailystatistics WHERE post_id = $1', [
+        TEST_DATA.POST_ID,
+      ]);
 
       const hasPostData = parseInt(postCheck.rows[0].count) > 0;
       const hasPostDailyStats = parseInt(statsCheck.rows[0].count) > 0;
@@ -87,7 +81,7 @@ describe('PostRepository 통합 테스트', () => {
   afterAll(async () => {
     try {
       // 모든 쿼리 완료 대기
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 풀 완전 종료
       if (testPool) {
@@ -96,7 +90,7 @@ describe('PostRepository 통합 테스트', () => {
       }
 
       // 추가 정리 시간
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       logger.info('테스트 DB 연결 종료');
     } catch (error) {
@@ -134,14 +128,10 @@ describe('PostRepository 통합 테스트', () => {
       expect(limitedResult.nextCursor).toBeTruthy();
 
       // nextCursor를 사용한 두 번째 쿼리
-      const secondPage = await repo.findPostsByUserId(
-        TEST_DATA.USER_ID,
-        limitedResult.nextCursor || undefined
-      );
+      const secondPage = await repo.findPostsByUserId(TEST_DATA.USER_ID, limitedResult.nextCursor || undefined);
 
       expect(secondPage.posts).toBeDefined();
       expect(Array.isArray(secondPage.posts)).toBe(true);
-
     });
 
     it('정렬 옵션을 적용할 수 있어야 한다', async () => {
@@ -160,7 +150,6 @@ describe('PostRepository 통합 테스트', () => {
         return post.daily_view_count <= result.posts[index - 1].daily_view_count;
       });
       expect(isSortedByViews).toBe(true);
-
     });
 
     it('오름차순 정렬이 제대로 동작해야 한다', async () => {
@@ -243,20 +232,14 @@ describe('PostRepository 통합 테스트', () => {
       expect(page1.nextCursor).toBeTruthy();
 
       // 2페이지: 다음 2개 항목
-      const page2 = await repo.findPostsByUserId(
-        TEST_DATA.USER_ID,
-        page1.nextCursor || undefined,
-        undefined,
-        false,
-        2
-      );
+      const page2 = await repo.findPostsByUserId(TEST_DATA.USER_ID, page1.nextCursor || undefined, undefined, false, 2);
       expect(page2.posts.length).toBeGreaterThan(0);
 
       // 첫 페이지와 두 번째 페이지의 항목은 중복되지 않아야 함
-      const page1Ids = page1.posts.map(post => post.id);
-      const page2Ids = page2.posts.map(post => post.id);
+      const page1Ids = page1.posts.map((post) => post.id);
+      const page2Ids = page2.posts.map((post) => post.id);
 
-      const hasDuplicates = page1Ids.some(id => page2Ids.includes(id));
+      const hasDuplicates = page1Ids.some((id) => page2Ids.includes(id));
       expect(hasDuplicates).toBe(false);
     });
   });
@@ -328,17 +311,17 @@ describe('PostRepository 통합 테스트', () => {
       // nextCursor를 사용한 두 번째 쿼리
       const secondPage = await repo.findPostsByUserIdWithGrowthMetrics(
         TEST_DATA.USER_ID,
-        limitedResult.nextCursor || undefined
+        limitedResult.nextCursor || undefined,
       );
 
       expect(secondPage.posts).toBeDefined();
       expect(Array.isArray(secondPage.posts)).toBe(true);
 
       // 첫 페이지와 두 번째 페이지의 항목은 중복되지 않아야 함
-      const page1Ids = limitedResult.posts.map(post => post.id);
-      const page2Ids = secondPage.posts.map(post => post.id);
+      const page1Ids = limitedResult.posts.map((post) => post.id);
+      const page2Ids = secondPage.posts.map((post) => post.id);
 
-      const hasDuplicates = page1Ids.some(id => page2Ids.includes(id));
+      const hasDuplicates = page1Ids.some((id) => page2Ids.includes(id));
       expect(hasDuplicates).toBe(false);
     });
   });
@@ -400,7 +383,6 @@ describe('PostRepository 통합 테스트', () => {
     });
   });
 
-
   /**
    * findPostByPostId 테스트
    */
@@ -413,7 +395,7 @@ describe('PostRepository 통합 테스트', () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
 
-      result.forEach(item => {
+      result.forEach((item) => {
         expect(item).toHaveProperty('date');
         expect(item).toHaveProperty('daily_view_count');
         expect(item).toHaveProperty('daily_like_count');
@@ -431,7 +413,7 @@ describe('PostRepository 통합 테스트', () => {
       expect(Array.isArray(result)).toBe(true);
 
       // 모든 결과가 지정된 날짜 범위 내에 있어야 함
-      result.forEach(entry => {
+      result.forEach((entry) => {
         const entryDate = new Date(entry.date).toISOString().split('T')[0];
         expect(entryDate >= startDate && entryDate <= endDate).toBe(true);
       });
@@ -479,7 +461,7 @@ describe('PostRepository 통합 테스트', () => {
 
       if (result.length <= 0) {
         logger.info('존재하지 않는 게시물 ID에 대해 빈 배열을 테스트를 위한 충분한 데이터가 없습니다.');
-        return
+        return;
       }
 
       const dateItem = result[0];
@@ -493,7 +475,6 @@ describe('PostRepository 통합 테스트', () => {
       const year = dateObj.getFullYear();
       expect(year).toBeGreaterThanOrEqual(2020);
       expect(year).toBeLessThanOrEqual(2026); // 현재 + 미래 대비
-
     });
 
     it('일일 조회수와 좋아요 수가 숫자 타입이어야 한다', async () => {
@@ -503,17 +484,15 @@ describe('PostRepository 통합 테스트', () => {
 
       if (result.length <= 0) {
         logger.info('일일 조회수와 좋아요 수가 숫자 타입인지 테스트를 위한 충분한 데이터가 없습니다.');
-        return
+        return;
       }
 
-      result.forEach(item => {
+      result.forEach((item) => {
         expect(typeof item.daily_view_count).toBe('number');
         expect(typeof item.daily_like_count).toBe('number');
       });
-
     });
   });
-
 
   /**
    * findPostByPostUUID 테스트
@@ -529,7 +508,7 @@ describe('PostRepository 통합 테스트', () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
 
-      result.forEach(item => {
+      result.forEach((item) => {
         expect(item).toHaveProperty('date');
         expect(item).toHaveProperty('daily_view_count');
         expect(item).toHaveProperty('daily_like_count');

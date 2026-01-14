@@ -176,11 +176,7 @@ export interface BadgeData {
  *             data:
  *               $ref: '#/components/schemas/BadgeData'
  */
-export class BadgeDataResponseDto extends BaseResponseDto<BadgeData | null> {
-  constructor(success: boolean, message: string, data: BadgeData | null, error: string | null) {
-    super(success, message, data, error);
-  }
-}
+export class BadgeDataResponseDto extends BaseResponseDto<BadgeData | null> {}
 
 /**
  * @swagger
