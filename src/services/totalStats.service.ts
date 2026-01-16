@@ -49,17 +49,20 @@ export class TotalStatsService {
   }
 
   async getBadgeData(username: string, type: 'default' | 'simple' = 'default'): Promise<BadgeData> {
-    try {
-      const cacheKey = `badge:${username}:${type}`;
+    const cacheKey = `badge:${username}:${type}`;
 
+    try {
       const cached = await cache.get<BadgeData>(cacheKey);
       if (cached) {
         logger.info(`[Cache HIT] ${cacheKey}`);
         return cached;
       }
-
       logger.info(`[Cache MISS] ${cacheKey}`);
+    } catch (cacheError) {
+      logger.warn(`[Cache Error] Failed to get cache for ${cacheKey}:`, cacheError);
+    }
 
+    try {
       const userStats = await this.totalStatsRepo.getUserBadgeStats(username, BADGE_DATE_RANGE);
 
       if (!userStats) {
@@ -88,7 +91,11 @@ export class TotalStatsService {
         })),
       };
 
-      await cache.set(cacheKey, result, BADGE_CACHE_TTL);
+      try {
+        await cache.set(cacheKey, result, BADGE_CACHE_TTL);
+      } catch (cacheSetError) {
+        logger.warn(`[Cache Error] Failed to set cache for ${cacheKey}:`, cacheSetError);
+      }
 
       return result;
     } catch (error) {
