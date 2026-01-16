@@ -54,11 +54,11 @@ export class TotalStatsService {
 
       const cached = await cache.get<BadgeData>(cacheKey);
       if (cached) {
-        logger.info(`[Cache HIT] ${cacheKey}`)
+        logger.info(`[Cache HIT] ${cacheKey}`);
         return cached;
       }
 
-      logger.info(`[Cache MISS] ${cacheKey}`)
+      logger.info(`[Cache MISS] ${cacheKey}`);
 
       const userStats = await this.totalStatsRepo.getUserBadgeStats(username, BADGE_DATE_RANGE);
 
@@ -89,7 +89,7 @@ export class TotalStatsService {
       };
 
       await cache.set(cacheKey, result, BADGE_CACHE_TTL);
-      
+
       return result;
     } catch (error) {
       logger.error('TotalStatsService getBadgeData error: ', error);
