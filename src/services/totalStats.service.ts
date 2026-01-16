@@ -12,7 +12,7 @@ const safeNumber = (value: string | number | null | undefined, defaultValue: num
 
 const BADGE_DATE_RANGE = 30;
 
-export const BADGE_CACHE_TTL = 60 * 10;
+export const BADGE_CACHE_TTL = 60 * 10; // 뱃지 캐시 TTL 10분
 
 export class TotalStatsService {
   private readonly STATS_REFRESH_INTERVAL = 15 * 60 * 1000; // 15분 (밀리초)
