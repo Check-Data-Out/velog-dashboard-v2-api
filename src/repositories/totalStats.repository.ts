@@ -125,7 +125,7 @@ export class TotalStatsRepository {
           pds.daily_view_count AS total_view,
           pds.daily_like_count AS total_like
         FROM posts_postdailystatistics pds
-        WHERE pds.post_id IN (SELECT id FROM user_posts)
+        INNER JOIN user_posts up ON up.id = pds.post_id
         ORDER BY pds.post_id, pds.date DESC
       ),
       start_stats AS (
@@ -134,8 +134,8 @@ export class TotalStatsRepository {
           pds.daily_view_count AS start_view,
           pds.daily_like_count AS start_like
         FROM posts_postdailystatistics pds
+        INNER JOIN user_posts up ON up.id = pds.post_id
         WHERE pds.date <= $2
-          AND pds.post_id IN (SELECT id FROM user_posts)
         ORDER BY pds.post_id, pds.date DESC
       )
       SELECT
@@ -179,7 +179,7 @@ export class TotalStatsRepository {
           pds.daily_view_count AS total_view,
           pds.daily_like_count AS total_like
         FROM posts_postdailystatistics pds
-        WHERE pds.post_id IN (SELECT id FROM user_posts)
+        INNER JOIN user_posts up ON up.id = pds.post_id
         ORDER BY pds.post_id, pds.date DESC
       ),
       start_stats AS (
@@ -187,8 +187,8 @@ export class TotalStatsRepository {
           pds.post_id,
           pds.daily_view_count AS start_view
         FROM posts_postdailystatistics pds
+        INNER JOIN user_posts up ON up.id = pds.post_id
         WHERE pds.date <= $3
-          AND pds.post_id IN (SELECT id FROM user_posts)
         ORDER BY pds.post_id, pds.date DESC
       )
       SELECT

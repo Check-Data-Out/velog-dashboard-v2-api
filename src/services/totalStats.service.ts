@@ -12,6 +12,8 @@ const safeNumber = (value: string | number | null | undefined, defaultValue: num
 
 const BADGE_DATE_RANGE = 30;
 
+export const BADGE_CACHE_TTL = 60 * 10;
+
 export class TotalStatsService {
   private readonly STATS_REFRESH_INTERVAL = 15 * 60 * 1000; // 15분 (밀리초)
   private readonly MAIN_QUEUE_KEY = 'stats-refresh';
@@ -48,6 +50,16 @@ export class TotalStatsService {
 
   async getBadgeData(username: string, type: 'default' | 'simple' = 'default'): Promise<BadgeData> {
     try {
+      const cacheKey = `badge:${username}:${type}`;
+
+      const cached = await cache.get<BadgeData>(cacheKey);
+      if (cached) {
+        logger.info(`[Cache HIT] ${cacheKey}`)
+        return cached;
+      }
+
+      logger.info(`[Cache MISS] ${cacheKey}`)
+
       const userStats = await this.totalStatsRepo.getUserBadgeStats(username, BADGE_DATE_RANGE);
 
       if (!userStats) {
@@ -57,7 +69,7 @@ export class TotalStatsService {
       const recentPosts =
         type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, BADGE_DATE_RANGE, 4) : [];
 
-      return {
+      const result: BadgeData = {
         user: {
           username: userStats.username,
           totalViews: safeNumber(userStats.total_views),
@@ -75,6 +87,10 @@ export class TotalStatsService {
           viewDiff: safeNumber(post.view_diff),
         })),
       };
+
+      await cache.set(cacheKey, result, BADGE_CACHE_TTL);
+      
+      return result;
     } catch (error) {
       logger.error('TotalStatsService getBadgeData error: ', error);
       throw error;
