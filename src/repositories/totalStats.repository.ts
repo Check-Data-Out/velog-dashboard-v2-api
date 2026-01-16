@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
 import { DBError } from '@/exception';
 import { TotalStatsType } from '@/types';
-import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
+import { getKSTDateStringWithOffset } from '@/utils/date.util';
 
 interface RawStatsResult {
   date: string;
