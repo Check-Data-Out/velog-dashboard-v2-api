@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import logger from '@/configs/logger.config';
 import { DBError } from '@/exception';
 import { TotalStatsType } from '@/types';
-import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
+import { getKSTDateStringWithOffset } from '@/utils/date.util';
 
 interface RawStatsResult {
   date: string;
@@ -110,46 +110,9 @@ export class TotalStatsRepository {
   async getUserBadgeStats(username: string, dateRange: number = 30) {
     try {
       const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
-      const nowDateKST =
-        new Date().getUTCHours() === 15 ? getKSTDateStringWithOffset(-24 * 60) : getCurrentKSTDateString();
+      const query = buildBadgeStatsQuery();
 
-      const query = `
-        WITH 
-        today_stats AS (
-          SELECT DISTINCT ON (post_id)
-            post_id,
-            daily_view_count AS today_view,
-            daily_like_count AS today_like
-          FROM posts_postdailystatistics
-          WHERE date = $2
-          ORDER BY post_id, date DESC
-        ),
-        start_stats AS (
-          SELECT DISTINCT ON (post_id)
-            post_id,
-            daily_view_count AS start_view,
-            daily_like_count AS start_like
-          FROM posts_postdailystatistics
-          WHERE date = $3
-          ORDER BY post_id, date DESC
-        )
-        SELECT
-          u.username,
-          COALESCE(SUM(ts.today_view), 0) AS total_views,
-          COALESCE(SUM(ts.today_like), 0) AS total_likes,
-          COUNT(DISTINCT CASE WHEN p.is_active = true THEN p.id END) AS total_posts,
-          SUM(COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)) AS view_diff,
-          SUM(COALESCE(ts.today_like, 0) - COALESCE(ss.start_like, 0)) AS like_diff,
-          COUNT(DISTINCT CASE WHEN p.released_at >= $3 AND p.is_active = true THEN p.id END) AS post_diff
-        FROM users_user u
-        LEFT JOIN posts_post p ON p.user_id = u.id
-        LEFT JOIN today_stats ts ON ts.post_id = p.id
-        LEFT JOIN start_stats ss ON ss.post_id = p.id
-        WHERE u.username = $1
-        GROUP BY u.username
-      `;
-
-      const result = await this.pool.query(query, [username, nowDateKST, pastDateKST]);
+      const result = await this.pool.query(query, [username, pastDateKST]);
       return result.rows[0] || null;
     } catch (error) {
       logger.error('TotalStatsRepository getUserBadgeStats error:', error);
@@ -160,46 +123,9 @@ export class TotalStatsRepository {
   async getUserRecentPosts(username: string, dateRange: number = 30, limit: number = 4) {
     try {
       const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
-      const nowDateKST =
-        new Date().getUTCHours() === 15 ? getKSTDateStringWithOffset(-24 * 60) : getCurrentKSTDateString();
+      const query = buildRecentPostsQuery();
 
-      const query = `
-        WITH 
-        today_stats AS (
-          SELECT DISTINCT ON (post_id)
-            post_id,
-            daily_view_count AS today_view,
-            daily_like_count AS today_like
-          FROM posts_postdailystatistics
-          WHERE date = $3
-          ORDER BY post_id, date DESC
-        ),
-        start_stats AS (
-          SELECT DISTINCT ON (post_id)
-            post_id,
-            daily_view_count AS start_view,
-            daily_like_count AS start_like
-          FROM posts_postdailystatistics
-          WHERE date = $4
-          ORDER BY post_id, date DESC
-        )
-        SELECT
-          p.title,
-          p.released_at,
-          COALESCE(ts.today_view, 0) AS today_view,
-          COALESCE(ts.today_like, 0) AS today_like,
-          (COALESCE(ts.today_view, 0) - COALESCE(ss.start_view, 0)) AS view_diff
-        FROM posts_post p
-        JOIN users_user u ON u.id = p.user_id
-        LEFT JOIN today_stats ts ON ts.post_id = p.id
-        LEFT JOIN start_stats ss ON ss.post_id = p.id
-        WHERE u.username = $1
-          AND p.is_active = true
-        ORDER BY p.released_at DESC
-        LIMIT $2
-      `;
-
-      const result = await this.pool.query(query, [username, limit, nowDateKST, pastDateKST]);
+      const result = await this.pool.query(query, [username, limit, pastDateKST]);
       return result.rows;
     } catch (error) {
       logger.error('TotalStatsRepository getUserRecentPosts error:', error);
@@ -230,4 +156,85 @@ export class TotalStatsRepository {
       throw new DBError('최근 통계 업데이트 시간 조회 중 문제가 발생했습니다.');
     }
   }
+}
+
+function buildUserPostsCTE(includeTitle: boolean = false, includeLimit: boolean = false): string {
+  const titleColumn = includeTitle ? ', p.title' : '';
+  const limitClause = includeLimit ? 'ORDER BY p.released_at DESC\n        LIMIT $2' : '';
+
+  return `
+      user_posts AS (
+        SELECT p.id${titleColumn}, p.released_at
+        FROM posts_post p
+        INNER JOIN users_user u ON u.id = p.user_id
+        WHERE u.username = $1 AND p.is_active = true
+        ${limitClause}
+      )`;
+}
+
+function buildLatestStatsCTE(): string {
+  return `
+      latest_stats AS (
+        SELECT DISTINCT ON (pds.post_id)
+          pds.post_id,
+          pds.daily_view_count AS total_view,
+          pds.daily_like_count AS total_like
+        FROM posts_postdailystatistics pds
+        INNER JOIN user_posts up ON up.id = pds.post_id
+        ORDER BY pds.post_id, pds.date DESC
+      )`;
+}
+
+function buildStartStatsCTE(includeLike: boolean = true, paramIndex: number = 2): string {
+  const likeColumn = includeLike ? ',\n          pds.daily_like_count AS start_like' : '';
+
+  return `
+      start_stats AS (
+        SELECT DISTINCT ON (pds.post_id)
+          pds.post_id,
+          pds.daily_view_count AS start_view${likeColumn}
+        FROM posts_postdailystatistics pds
+        INNER JOIN user_posts up ON up.id = pds.post_id
+        WHERE pds.date <= $${paramIndex}
+        ORDER BY pds.post_id, pds.date DESC
+      )`;
+}
+
+function buildBadgeStatsQuery(): string {
+  return `
+      WITH 
+      ${buildUserPostsCTE(false, false)},
+      ${buildLatestStatsCTE()},
+      ${buildStartStatsCTE(true, 2)}
+      SELECT
+        $1 AS username,
+        COALESCE(SUM(ls.total_view), 0) AS total_views,
+        COALESCE(SUM(ls.total_like), 0) AS total_likes,
+        COUNT(up.id) AS total_posts,
+        COALESCE(SUM(ls.total_view - COALESCE(ss.start_view, 0)), 0) AS view_diff,
+        COALESCE(SUM(ls.total_like - COALESCE(ss.start_like, 0)), 0) AS like_diff,
+        COUNT(CASE WHEN up.released_at >= $2 THEN 1 END) AS post_diff
+      FROM user_posts up
+      LEFT JOIN latest_stats ls ON ls.post_id = up.id
+      LEFT JOIN start_stats ss ON ss.post_id = up.id
+    `;
+}
+
+function buildRecentPostsQuery(): string {
+  return `
+      WITH 
+      ${buildUserPostsCTE(true, true)},
+      ${buildLatestStatsCTE()},
+      ${buildStartStatsCTE(false, 3)}
+      SELECT
+        up.title,
+        up.released_at,
+        COALESCE(ls.total_view, 0) AS today_view,
+        COALESCE(ls.total_like, 0) AS today_like,
+        ls.total_view - COALESCE(ss.start_view, 0) AS view_diff
+      FROM user_posts up
+      LEFT JOIN latest_stats ls ON ls.post_id = up.id
+      LEFT JOIN start_stats ss ON ss.post_id = up.id
+      ORDER BY up.released_at DESC
+    `;
 }
