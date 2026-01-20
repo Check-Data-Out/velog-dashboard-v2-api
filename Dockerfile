@@ -29,7 +29,7 @@ RUN npm install -g pnpm pm2
 
 # 프로덕션 의존성만 설치
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts
 
 # 빌드 결과물과 PM2 설정 파일 복사
 COPY --from=builder /usr/src/app/dist ./dist
