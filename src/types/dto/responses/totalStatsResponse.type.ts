@@ -108,7 +108,6 @@ export interface BadgeUserData {
  *         - releasedAt
  *         - viewCount
  *         - likeCount
- *         - viewDiff
  *       properties:
  *         title:
  *           type: string
@@ -137,7 +136,6 @@ export interface BadgeRecentPost {
   releasedAt: string;
   viewCount: number;
   likeCount: number;
-  viewDiff: number;
 }
 
 /**
