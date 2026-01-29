@@ -108,7 +108,6 @@ export interface BadgeUserData {
  *         - releasedAt
  *         - viewCount
  *         - likeCount
- *         - viewDiff
  *       properties:
  *         title:
  *           type: string
@@ -127,17 +126,12 @@ export interface BadgeUserData {
  *           type: number
  *           description: 좋아요 수
  *           example: 4
- *         viewDiff:
- *           type: number
- *           description: 조회수 증가량
- *           example: 20
  */
 export interface BadgeRecentPost {
   title: string;
   releasedAt: string;
   viewCount: number;
   likeCount: number;
-  viewDiff: number;
 }
 
 /**
