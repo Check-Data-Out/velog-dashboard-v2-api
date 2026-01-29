@@ -126,10 +126,6 @@ export interface BadgeUserData {
  *           type: number
  *           description: 좋아요 수
  *           example: 4
- *         viewDiff:
- *           type: number
- *           description: 조회수 증가량
- *           example: 20
  */
 export interface BadgeRecentPost {
   title: string;
