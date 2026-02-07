@@ -11,6 +11,7 @@ const safeNumber = (value: string | number | null | undefined, defaultValue: num
 };
 
 const BADGE_DATE_RANGE = 30;
+const BADGE_RECENT_POSTS_LIMIT = 10;
 
 export const BADGE_CACHE_TTL = 60 * 10; // 뱃지 캐시 TTL 10분
 
@@ -70,7 +71,7 @@ export class TotalStatsService {
       }
 
       const recentPosts =
-        type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, BADGE_DATE_RANGE, 4) : [];
+        type === 'default' ? await this.totalStatsRepo.getUserRecentPosts(username, BADGE_RECENT_POSTS_LIMIT) : [];
 
       const result: BadgeData = {
         user: {
@@ -87,7 +88,6 @@ export class TotalStatsService {
           releasedAt: post.released_at,
           viewCount: safeNumber(post.today_view),
           likeCount: safeNumber(post.today_like),
-          viewDiff: safeNumber(post.view_diff),
         })),
       };
 

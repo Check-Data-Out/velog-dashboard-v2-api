@@ -120,12 +120,11 @@ export class TotalStatsRepository {
     }
   }
 
-  async getUserRecentPosts(username: string, dateRange: number = 30, limit: number = 4) {
+  async getUserRecentPosts(username: string, limit: number = 4) {
     try {
-      const pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
       const query = buildRecentPostsQuery();
 
-      const result = await this.pool.query(query, [username, limit, pastDateKST]);
+      const result = await this.pool.query(query, [username, limit]);
       return result.rows;
     } catch (error) {
       logger.error('TotalStatsRepository getUserRecentPosts error:', error);
@@ -224,17 +223,14 @@ function buildRecentPostsQuery(): string {
   return `
       WITH 
       ${buildUserPostsCTE(true, true)},
-      ${buildLatestStatsCTE()},
-      ${buildStartStatsCTE(false, 3)}
+      ${buildLatestStatsCTE()}
       SELECT
         up.title,
         up.released_at,
         COALESCE(ls.total_view, 0) AS today_view,
-        COALESCE(ls.total_like, 0) AS today_like,
-        ls.total_view - COALESCE(ss.start_view, 0) AS view_diff
+        COALESCE(ls.total_like, 0) AS today_like
       FROM user_posts up
       LEFT JOIN latest_stats ls ON ls.post_id = up.id
-      LEFT JOIN start_stats ss ON ss.post_id = up.id
       ORDER BY up.released_at DESC
     `;
 }
