@@ -1,11 +1,19 @@
 name: API CD
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: '롤백할 버전 (ex: v1.6.0)'
+        required: true
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout repository
@@ -25,14 +33,17 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-api:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-api:latest
+            ${{ secrets.DOCKER_USERNAME }}/velog-dashboard-v2-api:${{ github.ref_name }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push]
+    if: always() && (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped')
 
     steps:
       - name: Deploy to Server 1
@@ -44,19 +55,21 @@ jobs:
           command_timeout: 10m
           script: |
             export GIT_SSH_COMMAND='ssh -i ~/.ssh/velog-dashboard-v2-api'
+            export API_VERSION=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             sed '/docker compose logs -f/d' run.sh | bash
 
-      # - name: Deploy to Server 2
-      #   uses: appleboy/ssh-action@v1
-      #   with:
-      #     host: ${{ secrets.DEPLOY_HOST_2 }}
-      #     username: ${{ secrets.DEPLOY_USER }}
-      #     key: ${{ secrets.DEPLOY_SSH_KEY_2 }}
-      #     command_timeout: 10m
-      #     script: |
-      #       export GIT_SSH_COMMAND='ssh -i ~/.ssh/velog-dashboard-v2-api'
-      #       cd ${{ secrets.DEPLOY_PATH }}
-      #       git pull origin main
-      #       sed '/docker compose logs -f/d' run.sh | bash
+      - name: Deploy to Server 2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST_2 }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY_2 }}
+          command_timeout: 10m
+          script: |
+            export GIT_SSH_COMMAND='ssh -i ~/.ssh/velog-dashboard-v2-api'
+            export API_VERSION=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            sed '/docker compose logs -f/d' run.sh | bash
