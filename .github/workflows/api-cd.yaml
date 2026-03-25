@@ -73,3 +73,25 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             sed '/docker compose logs -f/d' run.sh | bash
+
+      - name: Notify Slack on Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "✅ API 배포 성공\n• 버전: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "❌ API 배포 실패\n• 버전: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
