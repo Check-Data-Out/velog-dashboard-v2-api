@@ -7,6 +7,7 @@ SYSTEM_DESIGN.md
 
 # 환경 변수 및 인증 정보
 .env
+.env.prod
 .env.local
 .env.*.local
 
