@@ -58,7 +58,7 @@ jobs:
             export API_VERSION=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
-            sed '/docker compose logs -f/d' run.sh | bash
+            bash run.sh
 
       - name: Deploy to Server 2
         uses: appleboy/ssh-action@v1
@@ -72,7 +72,7 @@ jobs:
             export API_VERSION=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
-            sed '/docker compose logs -f/d' run.sh | bash
+            bash run.sh
 
       - name: Notify Slack on Success
         if: success()
