@@ -46,18 +46,29 @@ jobs:
     if: always() && (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped')
 
     steps:
+      - name: Validate deploy version
+        id: version
+        run: |
+          RAW="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}"
+          if [[ ! "$RAW" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format: $RAW"
+            exit 1
+          fi
+          echo "value=$RAW" >> $GITHUB_OUTPUT
+
       - name: Deploy to Server 1
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST_1 }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY_1 }}
-          command_timeout: 10m
+          command_timeout: 15m
           script: |
             export GIT_SSH_COMMAND='ssh -i ~/.ssh/velog-dashboard-v2-api'
-            export API_VERSION=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
+            export API_VERSION="${{ steps.version.outputs.value }}"
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            git fetch --tags
+            git checkout "$API_VERSION"
             bash run.sh
 
       - name: Deploy to Server 2
@@ -66,12 +77,13 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST_2 }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY_2 }}
-          command_timeout: 10m
+          command_timeout: 15m
           script: |
             export GIT_SSH_COMMAND='ssh -i ~/.ssh/velog-dashboard-v2-api'
-            export API_VERSION=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
+            export API_VERSION="${{ steps.version.outputs.value }}"
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
+            git fetch --tags
+            git checkout "$API_VERSION"
             bash run.sh
 
       - name: Notify Slack on Success
@@ -80,7 +92,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "✅ API 배포 성공\n• 버전: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
+              "text": "✅ API 배포 성공\n• 버전: ${{ steps.version.outputs.value }}\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -91,7 +103,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "❌ API 배포 실패\n• 버전: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
+              "text": "❌ API 배포 실패\n• 버전: ${{ steps.version.outputs.value }}\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
