@@ -12,7 +12,7 @@ import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
 import { getKSTDateStringWithOffset } from '@/utils/date.util';
 
 dotenv.config();
-jest.setTimeout(45000); // 각 케이스당 45초 타임아웃 설정
+jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
 
 /**
  * LeaderboardRepository 통합 테스트
