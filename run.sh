@@ -144,6 +144,15 @@ check_services() {
     fi
 }
 
+# 인자 파싱
+FOLLOW=false
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -f) FOLLOW=true; shift ;;
+    *) shift ;;
+  esac
+done
+
 # 메인 실행 로직
 main() {
     print_step "Velog Dashboard V2 배포 스크립트 시작"
@@ -162,9 +171,11 @@ main() {
     echo -e "  Frontend: ${YELLOW}http://localhost:3000${NC}"
     echo -e "  API Health Check: ${YELLOW}http://localhost:8080/health${NC}"
 
-    echo -e "\n${YELLOW}로그 모니터링을 시작합니다... (Ctrl+C로 종료)${NC}"
-    sleep 2
-    docker compose logs -f
+    if [[ "$FOLLOW" == true ]]; then
+        echo -e "\n${YELLOW}로그 모니터링을 시작합니다... (Ctrl+C로 종료)${NC}"
+        sleep 2
+        docker compose logs -f
+    fi
 }
 
 # 스크립트 실행

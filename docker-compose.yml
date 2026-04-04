@@ -7,7 +7,7 @@ services:
     #   context: .
     #   dockerfile: Dockerfile
     # image: velog-dashboard-v2-api
-    image: nuung/velog-dashboard-v2-api:latest
+    image: nuung/velog-dashboard-v2-api:${API_VERSION:-latest}
     hostname: velog-dashboard-v2-api
     container_name: velog-dashboard-v2-api
     ports:
