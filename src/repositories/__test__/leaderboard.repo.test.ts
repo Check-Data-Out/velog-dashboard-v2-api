@@ -3,13 +3,30 @@ import { DBError } from '@/exception';
 import { UserLeaderboardSortType, PostLeaderboardSortType } from '@/types';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { mockPool, createMockQueryResult } from '@/utils/fixtures';
+import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 jest.mock('pg');
+
+// 날짜 유틸을 고정하지 않으면 실제 현재 시각이 쿼리에 박혀 값 단언이 불가능해진다.
+jest.mock('@/utils/date.util', () => ({
+  getCurrentKSTDateString: jest.fn(),
+  getKSTDateStringWithOffset: jest.fn(),
+}));
+
+const TODAY_KST = '2026-08-26 00:00:00+09';
+const YESTERDAY_KST = '2026-08-25 00:00:00+09';
+const PAST_KST = '2026-07-27 00:00:00+09';
 
 describe('LeaderboardRepository', () => {
   let repo: LeaderboardRepository;
 
   beforeEach(() => {
+    // mockReturnValue 를 두지 않으면 undefined 가 쿼리에 박혀도 기존 단언이 통과해버린다.
+    (getCurrentKSTDateString as jest.Mock).mockReturnValue(TODAY_KST);
+    (getKSTDateStringWithOffset as jest.Mock).mockImplementation((minutes: number) =>
+      minutes === -24 * 60 ? YESTERDAY_KST : PAST_KST,
+    );
+
     repo = new LeaderboardRepository(mockPool as unknown as Pool);
   });
 
@@ -79,7 +96,7 @@ describe('LeaderboardRepository', () => {
       await repo.getUserLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE date ='), // pastDateKST를 사용하는 부분 확인
+        expect.stringContaining(`WHERE date = '${PAST_KST}'`), // 기준일 CTE 가 pastDateKST 를 쓰는지 값으로 확인
         [expect.any(Number)], // limit
       );
     });
@@ -165,7 +182,7 @@ describe('LeaderboardRepository', () => {
       await repo.getPostLeaderboard('viewCount', mockDateRange, 10);
 
       expect(mockPool.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE date ='), // pastDateKST를 사용하는 부분 확인
+        expect.stringContaining(`WHERE date = '${PAST_KST}'`), // 기준일 CTE 가 pastDateKST 를 쓰는지 값으로 확인
         [expect.any(Number)], // limit
       );
     });
