@@ -84,11 +84,10 @@ export class LeaderboardRepository {
 
   // 오늘 날짜와 기준 날짜의 통계를 가져오는 CTE(임시 결과 집합) 쿼리 빌드
   private buildLeaderboardCteQuery(dateRange: number, pastDateKST?: string) {
-    // KST 기준 00시~01시 (UTC 15:00~16:00) 사이라면 전날 데이터를 사용
-    const nowDateKST =
-      new Date().getUTCHours() === 15
-        ? getKSTDateStringWithOffset(-24 * 60) // 전날 데이터
-        : getCurrentKSTDateString();
+    // 집계 배치는 하루 종일 50분 주기로 도는 구조라 벽시계 시각으로 완료 여부를 판정할 수 없다.
+    // 게시물별 최신 스냅샷(오늘 row 가 있으면 오늘, 없으면 어제)을 쓴다.
+    const todayKST = getCurrentKSTDateString();
+    const yesterdayKST = getKSTDateStringWithOffset(-24 * 60);
 
     if (!pastDateKST) {
       pastDateKST = getKSTDateStringWithOffset(-dateRange * 24 * 60);
@@ -102,7 +101,8 @@ export class LeaderboardRepository {
           daily_view_count AS today_view,
           daily_like_count AS today_like
         FROM posts_postdailystatistics
-        WHERE date = '${nowDateKST}'
+        WHERE date >= '${yesterdayKST}' AND date <= '${todayKST}'
+        ORDER BY post_id, date DESC
       ),
       start_stats AS (
         SELECT DISTINCT ON (post_id)

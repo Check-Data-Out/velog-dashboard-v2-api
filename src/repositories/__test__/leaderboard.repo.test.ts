@@ -116,6 +116,35 @@ describe('LeaderboardRepository', () => {
     });
   });
 
+  describe('today_stats CTE', () => {
+    /** today_stats 블록만 잘라낸다 (start_stats 직전까지) */
+    const extractTodayStats = (query: string): string =>
+      query.slice(query.indexOf('today_stats AS'), query.indexOf('start_stats AS'));
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('시스템 시각과 무관하게 항상 같은 블록을 만들어야 한다', async () => {
+      // 배치는 하루 종일 50분 주기로 돌기 때문에 벽시계 시각으로 완료 여부를 판정할 수 없다.
+      // UTC 15시대(KST 00시대) 앞뒤로 시각을 옮겨도 쿼리가 달라지면 안 된다.
+      const moments = ['2026-08-25T14:59:00Z', '2026-08-25T15:30:00Z', '2026-08-25T16:01:00Z'];
+      const blocks: string[] = [];
+
+      jest.useFakeTimers();
+      for (const moment of moments) {
+        jest.setSystemTime(new Date(moment));
+        mockPool.query.mockClear();
+        mockPool.query.mockResolvedValue(createMockQueryResult([]));
+
+        await repo.getUserLeaderboard('viewCount', 30, 10);
+        blocks.push(extractTodayStats(mockPool.query.mock.calls[0][0] as string));
+      }
+
+      expect(new Set(blocks).size).toBe(1);
+    });
+  });
+
   describe('getPostLeaderboard', () => {
     it('게시물 통계 배열로 이루어진 리더보드를 반환해야 한다', async () => {
       const mockResult = [
