@@ -374,7 +374,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
     it('오늘 통계가 없는 게시물은 어제 값을 오늘 값으로 사용해야 한다', async () => {
       // 집계 배치가 하루 종일 도는 구조라 오늘 row 가 아직 없는 게시물이 항상 존재한다.
-      // 벽시계 분기를 없앤 today_stats 가 이런 게시물을 0 이 아니라 어제 값으로 집계하는지 확인한다.
+      // 시각 기반 분기를 없앤 today_stats 가 이런 게시물을 0 이 아니라 어제 값으로 집계하는지 확인한다.
       const todayKST = getCurrentKSTDateString();
       const yesterdayKST = getKSTDateStringWithOffset(-24 * 60);
 

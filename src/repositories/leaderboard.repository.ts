@@ -84,7 +84,7 @@ export class LeaderboardRepository {
 
   // 오늘 날짜와 기준 날짜의 통계를 가져오는 CTE(임시 결과 집합) 쿼리 빌드
   private buildLeaderboardCteQuery(dateRange: number, pastDateKST?: string) {
-    // 집계 배치는 하루 종일 50분 주기로 도는 구조라 벽시계 시각으로 완료 여부를 판정할 수 없다.
+    // 집계 배치가 하루 종일 50분 주기로 돌기 때문에 현재 시각만 보고 배치가 끝났는지 알 수 없다.
     // 게시물별 최신 스냅샷(오늘 row 가 있으면 오늘, 없으면 어제)을 쓴다.
     const todayKST = getCurrentKSTDateString();
     const yesterdayKST = getKSTDateStringWithOffset(-24 * 60);
