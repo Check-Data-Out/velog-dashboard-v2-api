@@ -20,7 +20,7 @@ export interface GetTotalStatsQuery {
  *       properties:
  *         period:
  *           type: number
- *           description: 통계 조회 기간 (일수)
+ *           description: 통계 조회 기간 (오늘 포함 일수. 7이면 오늘 포함 최근 7일)
  *           enum: [7, 30]
  *           default: 7
  *         type:
