@@ -87,11 +87,18 @@ describe('TotalStatsRepository 통합 테스트', () => {
 
   describe('getTotalStats - post 타입', () => {
     it('세션 타임존이 UTC 여도 날짜 축이 KST 기준 오늘 포함 N일이어야 한다', async () => {
-      const result = await repo.getTotalStats(TEST_DATA.USER_ID, TEST_DATA.PERIOD, 'post');
-
-      const dates = result.map((row) => toDateString(row.date));
+      // 기대값은 쿼리 전에 잡는다. 쿼리 도중 KST 자정을 넘기면 결과와 기대값의 기준일이 갈라진다.
       const expectedStart = toKSTDatePart(getKSTDateStringWithOffset(-(TEST_DATA.PERIOD - 1) * 24 * 60));
       const expectedEnd = toKSTDatePart(getCurrentKSTDateString());
+
+      const result = await repo.getTotalStats(TEST_DATA.USER_ID, TEST_DATA.PERIOD, 'post');
+      const dates = result.map((row) => toDateString(row.date));
+
+      // 쿼리 전후로 날짜가 바뀌었다면 이 실행은 판정 불가이므로 건너뛴다 (자정 직후 1회성)
+      if (toKSTDatePart(getCurrentKSTDateString()) !== expectedEnd) {
+        logger.info('테스트 도중 KST 날짜가 바뀌어 날짜 축 검증을 건너뜁니다.');
+        return;
+      }
 
       expect(dates[0]).toBe(expectedStart);
       expect(dates[dates.length - 1]).toBe(expectedEnd);

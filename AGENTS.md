@@ -75,7 +75,7 @@ When approaching a new feature:
 
 Follow this process precisely, always prioritizing clean, well-tested code over quick implementation.
 
-Always write one test at a time, make it run, then improve structure. Always run all the tests (except long-running tests) each time.
+Always write one test at a time, make it run, then improve structure. While iterating, run the fast suite (`pnpm test`) each time. Before committing a change that touches a repository or its query, also run `pnpm test:integration` against a database you are allowed to hit — it is excluded from `pnpm test` because it needs a live DBMS.
 
 # OUTPUT
 
