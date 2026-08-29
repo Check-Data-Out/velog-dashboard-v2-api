@@ -30,17 +30,19 @@ cp .env.sample .env
 pnpm dev
 ```
 
-4. 로컬 테스팅을 위해서 `post.repo.integration.test` 를 필수 참조해주세요.
+4. 통합 테스트(`src/**/__test__/integration/`)는 `pnpm test` 에서 제외되어 있습니다.
 
 - 해당 테스트는 mocking 없이 DBMS connection 을 맺고 repo 계층의 실제 수행을 테스트 합니다.
-- 이에 따라, local DBMS 와 connection 을 맺는다면 **_테스트로 제공해야 할 TEST CASE 의 값들이 달라져야 합니다._**
-- 이 때문에 전체 테스트에 이슈가 있을 수 있으니 해당 값 꼭 체크 해주세요.
+- 그래서 DBMS 없이도 `pnpm test` 가 돌도록 분리해 두었고, 통합 테스트는 `pnpm test:integration` 으로 따로 실행합니다. CI 는 둘 다 실행합니다.
+- 실행 시 `.env` 의 DB 를 바라보므로 **_어떤 DB 에 붙는지 반드시 확인하고_** 돌려주세요.
+- local DBMS 와 connection 을 맺는다면 **_테스트로 제공해야 할 TEST CASE 의 값들이 달라져야 합니다._** `post.repo.integration.test` 를 필수 참조해주세요.
 
 ## 실행 가능한 명령어
 
 ```bash
 pnpm dev  # 개발 서버 실행
-pnpm test  # 테스트 실행
+pnpm test  # 테스트 실행 (통합 테스트 제외, DBMS 불필요)
+pnpm test:integration  # 통합 테스트만 실행 (DBMS 연결 필요)
 pnpm lint  # 린트 검사 (eslint + prettier)
 pnpm lint-staged  # 린트 자동 수정
 
