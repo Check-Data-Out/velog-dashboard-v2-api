@@ -43,6 +43,7 @@ pnpm dev
 pnpm dev  # 개발 서버 실행
 pnpm test  # 테스트 실행 (통합 테스트 제외, DBMS 불필요)
 pnpm test:integration  # 통합 테스트만 실행 (DBMS 연결 필요)
+pnpm test:coverage  # 커버리지 측정 (통합 테스트 제외 기준)
 pnpm lint  # 린트 검사 (eslint + prettier)
 pnpm lint-staged  # 린트 자동 수정
 
