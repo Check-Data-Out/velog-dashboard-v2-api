@@ -51,14 +51,15 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Create .env file
+        # 특수문자('#' 등)가 있는 값은 dotenv 가 인라인 주석으로 잘라내므로 따옴표로 감싼다 (.env.sample 참고)
         run: |
-          echo "SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}" >> .env
+          echo "SLACK_WEBHOOK_URL='${{ secrets.SLACK_WEBHOOK_URL }}'" >> .env
           echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> .env
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
           echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'" >> .env
           echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
-          echo "SENTRY_CLIENT_SECRET=${{ secrets.SENTRY_CLIENT_SECRET }}" >> .env
+          echo "SENTRY_CLIENT_SECRET='${{ secrets.SENTRY_CLIENT_SECRET }}'" >> .env
           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           # AES 키들 추가 (테스트용 더미 키)
           echo "AES_KEY_0=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" >> .env
