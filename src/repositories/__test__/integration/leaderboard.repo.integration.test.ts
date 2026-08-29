@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 import pg, { Pool } from 'pg';
 import { LeaderboardRepository } from '@/repositories/leaderboard.repository';
 import { PostLeaderboardSortType, UserLeaderboardSortType } from '@/types';
-import { getKSTDateStringWithOffset } from '@/utils/date.util';
+import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
 
 dotenv.config();
 jest.setTimeout(60000); // 각 케이스당 60초 타임아웃 설정
@@ -370,6 +370,33 @@ describe('LeaderboardRepository 통합 테스트', () => {
           expect(Number(post.total_views)).not.toBe(Number(post.view_diff));
         }
       });
+    });
+
+    it('오늘 통계가 없는 게시물은 어제 값을 오늘 값으로 사용해야 한다', async () => {
+      // 집계 배치가 하루 종일 도는 구조라 오늘 row 가 아직 없는 게시물이 항상 존재한다.
+      // 벽시계 분기를 없앤 today_stats 가 이런 게시물을 0 이 아니라 어제 값으로 집계하는지 확인한다.
+      const todayKST = getCurrentKSTDateString();
+      const yesterdayKST = getKSTDateStringWithOffset(-24 * 60);
+
+      const candidate = await testPool.query(
+        `SELECT y.post_id, y.daily_view_count AS yesterday_view
+           FROM posts_postdailystatistics y
+           JOIN posts_post p ON p.id = y.post_id AND p.is_active = true
+          WHERE y.date = $1
+            AND NOT EXISTS (SELECT 1 FROM posts_postdailystatistics t WHERE t.post_id = y.post_id AND t.date = $2)
+          LIMIT 1`,
+        [yesterdayKST, todayKST],
+      );
+
+      if (!isEnoughData(candidate.rows, 1, '오늘 통계 없는 게시물 폴백')) return;
+
+      const { post_id: postId, yesterday_view: yesterdayView } = candidate.rows[0];
+      const result = await repo.getPostLeaderboard(DEFAULT_PARAMS.POST_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
+      const target = result.find((post) => String(post.id) === String(postId));
+
+      if (!isEnoughData(target ? [target] : [], 1, '오늘 통계 없는 게시물이 상위 30위 내 존재')) return;
+
+      expect(Number(target?.total_views)).toBe(Number(yesterdayView));
     });
   });
 });

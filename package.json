@@ -8,7 +8,7 @@
     "build": "tsc && tsc-alias -p tsconfig.json",
     "lint": "eslint src/**/*.ts && prettier --check src/**/*.ts",
     "test": "jest",
-    "test:integration": "jest __test__/integration --testPathIgnorePatterns=",
+    "test:integration": "jest __test__/integration --testPathIgnorePatterns=/node_modules/",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "start": "node dist/index.js",
