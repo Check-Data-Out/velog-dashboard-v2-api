@@ -52,7 +52,7 @@ describe('TotalStatsRepository', () => {
 
         // Then
         expect(result).toEqual(mockViewStats);
-        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period * 24 * 60);
+        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-(period - 1) * 24 * 60);
         expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('SUM(pds.daily_view_count)'), [
           userId,
           mockStartDate,
@@ -86,7 +86,7 @@ describe('TotalStatsRepository', () => {
 
         // Then
         expect(result).toEqual(mockLikeStats);
-        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period * 24 * 60);
+        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-(period - 1) * 24 * 60);
         expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('SUM(pds.daily_like_count)'), [
           userId,
           mockStartDate,
@@ -120,7 +120,7 @@ describe('TotalStatsRepository', () => {
 
         // Then
         expect(result).toEqual(mockPostStats);
-        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period * 24 * 60);
+        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-(period - 1) * 24 * 60);
         expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('WITH date_series AS'), [
           userId,
           mockStartDate,
@@ -165,7 +165,7 @@ describe('TotalStatsRepository', () => {
         await repository.getTotalStats(userId, period30, 'view');
 
         // Then
-        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-period30 * 24 * 60);
+        expect(mockGetKSTDateStringWithOffset).toHaveBeenCalledWith(-(period30 - 1) * 24 * 60);
       });
     });
 

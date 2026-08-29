@@ -14,7 +14,7 @@ export class TotalStatsRepository {
 
   private async getTotalViewStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {
-      const startDateKST = getKSTDateStringWithOffset(-period * 24 * 60);
+      const startDateKST = getKSTDateStringWithOffset(-(period - 1) * 24 * 60);
 
       const query = `
         SELECT 
@@ -39,7 +39,7 @@ export class TotalStatsRepository {
 
   private async getTotalLikeStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {
-      const startDateKST = getKSTDateStringWithOffset(-period * 24 * 60);
+      const startDateKST = getKSTDateStringWithOffset(-(period - 1) * 24 * 60);
 
       const query = `
         SELECT 
@@ -64,7 +64,7 @@ export class TotalStatsRepository {
 
   private async getTotalPostStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {
-      const startDateKST = getKSTDateStringWithOffset(-period * 24 * 60);
+      const startDateKST = getKSTDateStringWithOffset(-(period - 1) * 24 * 60);
 
       const query = `
         WITH date_series AS (

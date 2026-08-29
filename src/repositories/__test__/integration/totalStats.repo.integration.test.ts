@@ -90,7 +90,7 @@ describe('TotalStatsRepository 통합 테스트', () => {
       const result = await repo.getTotalStats(TEST_DATA.USER_ID, TEST_DATA.PERIOD, 'post');
 
       const dates = result.map((row) => toDateString(row.date));
-      const expectedStart = toKSTDatePart(getKSTDateStringWithOffset(-TEST_DATA.PERIOD * 24 * 60));
+      const expectedStart = toKSTDatePart(getKSTDateStringWithOffset(-(TEST_DATA.PERIOD - 1) * 24 * 60));
       const expectedEnd = toKSTDatePart(getCurrentKSTDateString());
 
       expect(dates[0]).toBe(expectedStart);
@@ -104,7 +104,7 @@ describe('TotalStatsRepository 통합 테스트', () => {
       const uniqueSorted = [...new Set(dates)].sort();
 
       expect(dates).toEqual(uniqueSorted);
-      expect(dates).toHaveLength(TEST_DATA.PERIOD + 1);
+      expect(dates).toHaveLength(TEST_DATA.PERIOD);
     });
   });
 });
