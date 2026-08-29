@@ -69,18 +69,18 @@ export class TotalStatsRepository {
       const query = `
         WITH date_series AS (
           SELECT generate_series(
-            DATE($2),
-            CURRENT_DATE,
+            ($2::timestamptz AT TIME ZONE 'Asia/Seoul')::date,
+            (now() AT TIME ZONE 'Asia/Seoul')::date,
             '1 day'::interval
           )::date AS date
         )
-        SELECT 
+        SELECT
           ds.date,
-          (SELECT COUNT(id) 
-          FROM posts_post p 
-          WHERE p.user_id = $1 
-            AND p.is_active = true 
-            AND DATE(p.released_at) <= ds.date
+          (SELECT COUNT(id)
+          FROM posts_post p
+          WHERE p.user_id = $1
+            AND p.is_active = true
+            AND (p.released_at AT TIME ZONE 'Asia/Seoul')::date <= ds.date
           ) AS total_value
         FROM date_series ds
         ORDER BY ds.date ASC;

@@ -220,6 +220,17 @@ describe('TotalStatsRepository', () => {
         expect(calledQuery).toContain('WITH date_series AS');
         expect(calledQuery).toContain('generate_series');
       });
+
+      it('post 통계 쿼리가 날짜를 KST로 명시해야 한다', async () => {
+        // When
+        await repository.getTotalStats(userId, period, 'post');
+
+        // Then
+        // 세션 타임존(UTC)에 의존하는 CURRENT_DATE, DATE() 절단을 쓰면 KST 00~09시에 날짜가 하루 밀린다
+        const calledQuery = mockPool.query.mock.calls[0][0] as string;
+        expect(calledQuery).not.toContain('CURRENT_DATE');
+        expect(calledQuery.match(/AT TIME ZONE 'Asia\/Seoul'/g)).toHaveLength(3);
+      });
     });
   });
 
