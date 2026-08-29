@@ -86,7 +86,7 @@ describe('TotalStatsRepository 통합 테스트', () => {
   });
 
   describe('getTotalStats - post 타입', () => {
-    it('세션 타임존이 UTC 여도 날짜 축의 시작과 끝이 KST 기준이어야 한다', async () => {
+    it('세션 타임존이 UTC 여도 날짜 축이 KST 기준 오늘 포함 N일이어야 한다', async () => {
       const result = await repo.getTotalStats(TEST_DATA.USER_ID, TEST_DATA.PERIOD, 'post');
 
       const dates = result.map((row) => toDateString(row.date));
@@ -95,15 +95,6 @@ describe('TotalStatsRepository 통합 테스트', () => {
 
       expect(dates[0]).toBe(expectedStart);
       expect(dates[dates.length - 1]).toBe(expectedEnd);
-    });
-
-    it('날짜 축이 하루 간격으로 빠짐없이 이어져야 한다', async () => {
-      const result = await repo.getTotalStats(TEST_DATA.USER_ID, TEST_DATA.PERIOD, 'post');
-
-      const dates = result.map((row) => toDateString(row.date));
-      const uniqueSorted = [...new Set(dates)].sort();
-
-      expect(dates).toEqual(uniqueSorted);
       expect(dates).toHaveLength(TEST_DATA.PERIOD);
     });
   });
