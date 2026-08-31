@@ -6,7 +6,7 @@ FROM node:23-alpine AS builder
 WORKDIR /usr/src/app
 
 # pnpm 설치
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # 빌드에 필요한 파일만 복사
 COPY package.json pnpm-lock.yaml ./
@@ -25,7 +25,7 @@ FROM node:23-alpine
 
 WORKDIR /usr/src/app
 
-RUN npm install -g pnpm pm2
+RUN npm install -g pnpm@9 pm2
 
 # 프로덕션 의존성만 설치
 COPY package.json pnpm-lock.yaml ./
