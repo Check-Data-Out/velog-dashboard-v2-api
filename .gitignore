@@ -1,4 +1,7 @@
 # LLM 관련 파일들
+.omc/
+.omx/
+plans/
 .serena
 .claude
 CLAUDE.md

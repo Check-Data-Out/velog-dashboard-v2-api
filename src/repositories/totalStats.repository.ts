@@ -12,9 +12,18 @@ interface RawStatsResult {
 export class TotalStatsRepository {
   constructor(private pool: Pool) {}
 
+  /**
+   * period 일치 시계열의 시작일을 KST 로 반환한다.
+   * period 는 오늘을 포함한 일수이므로 period - 1 만큼만 거슬러 올라간다.
+   * (리더보드·배지의 dateRange 는 '두 시점 간 차이'라 의미가 달라 이 계산을 쓰지 않는다)
+   */
+  private getPeriodStartDateKST(period: number): string {
+    return getKSTDateStringWithOffset(-(period - 1) * 24 * 60);
+  }
+
   private async getTotalViewStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {
-      const startDateKST = getKSTDateStringWithOffset(-period * 24 * 60);
+      const startDateKST = this.getPeriodStartDateKST(period);
 
       const query = `
         SELECT 
@@ -39,7 +48,7 @@ export class TotalStatsRepository {
 
   private async getTotalLikeStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {
-      const startDateKST = getKSTDateStringWithOffset(-period * 24 * 60);
+      const startDateKST = this.getPeriodStartDateKST(period);
 
       const query = `
         SELECT 
@@ -64,23 +73,23 @@ export class TotalStatsRepository {
 
   private async getTotalPostStats(userId: number, period: number): Promise<RawStatsResult[]> {
     try {
-      const startDateKST = getKSTDateStringWithOffset(-period * 24 * 60);
+      const startDateKST = this.getPeriodStartDateKST(period);
 
       const query = `
         WITH date_series AS (
           SELECT generate_series(
-            DATE($2),
-            CURRENT_DATE,
+            ($2::timestamptz AT TIME ZONE 'Asia/Seoul')::date,
+            (now() AT TIME ZONE 'Asia/Seoul')::date,
             '1 day'::interval
           )::date AS date
         )
-        SELECT 
+        SELECT
           ds.date,
-          (SELECT COUNT(id) 
-          FROM posts_post p 
-          WHERE p.user_id = $1 
-            AND p.is_active = true 
-            AND DATE(p.released_at) <= ds.date
+          (SELECT COUNT(id)
+          FROM posts_post p
+          WHERE p.user_id = $1
+            AND p.is_active = true
+            AND (p.released_at AT TIME ZONE 'Asia/Seoul')::date <= ds.date
           ) AS total_value
         FROM date_series ds
         ORDER BY ds.date ASC;

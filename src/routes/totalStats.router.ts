@@ -28,7 +28,7 @@ const totalStatsController = new TotalStatsController(totalStatsService);
  *           type: number
  *           enum: [7, 30]
  *           default: 7
- *         description: 조회 기간 (일수)
+ *         description: 조회 기간 (오늘 포함 일수. 7이면 오늘 포함 최근 7일)
  *         example: 7
  *       - in: query
  *         name: type

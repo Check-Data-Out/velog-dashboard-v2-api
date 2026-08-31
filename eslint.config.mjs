@@ -9,7 +9,9 @@ export default typescriptEslint.config(
     files: ['**/*.ts'],
   },
   {
-    ignores: ['**/node_modules/**', 'dist/**', 'build/**', 'coverage/**'],
+    // jest.config.ts 는 tsconfig.json 의 exclude 대상이라 타입 기반 린팅이 불가능하다.
+    // lint 스크립트(src/**/*.ts)의 범위와도 일치시킨다.
+    ignores: ['**/node_modules/**', 'dist/**', 'build/**', 'coverage/**', 'jest.config.ts'],
   },
   eslint.configs.recommended,
   ...typescriptEslint.configs.recommended,
