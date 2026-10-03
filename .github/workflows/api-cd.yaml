@@ -27,14 +27,25 @@ jobs:
           RAW: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
         run: |
           if [[ ! "$RAW" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid version format: $RAW"
+            echo "::error::Invalid version format: $RAW"
             exit 1
           fi
           if [[ "$(printf '%s\n' "$LAST_UNSAFE_VERSION" "$RAW" | sort -V | tail -n 1)" == "$LAST_UNSAFE_VERSION" ]]; then
-            echo "$RAW 은(는) $LAST_UNSAFE_VERSION 이하라 배포할 수 없습니다 (TimescaleDB 확장 재생성)"
+            echo "::error::$RAW 은(는) $LAST_UNSAFE_VERSION 이하라 배포할 수 없습니다 (TimescaleDB 확장 재생성)"
             exit 1
           fi
           echo "value=$RAW" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "❌ API 배포 차단 (버전 검증 실패)\n• 트리거: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|액션 로그>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   build-and-push:
     runs-on: ubuntu-latest
