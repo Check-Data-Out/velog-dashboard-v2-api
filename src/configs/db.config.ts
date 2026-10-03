@@ -28,11 +28,11 @@ if (process.env.NODE_ENV === 'production') {
 const pool = new Pool(poolConfig);
 
 /**
- * 데이터베이스 연결을 초기화하고 TimescaleDB 확장을 보장
+ * 데이터베이스 연결을 확인
  * 최대 3회 재시도하며, 실패 시 서버를 종료
  *
  * @throws 연결에 3회 실패하면 서버가 종료
- * @returns {Promise<void>} 연결 및 확장 완료 시 resolve되는 프로미스
+ * @returns {Promise<void>} 연결 확인 시 resolve되는 프로미스
  */
 export async function initializeDatabase(): Promise<void> {
   const maxRetries = 3;
@@ -48,10 +48,6 @@ export async function initializeDatabase(): Promise<void> {
         // 연결 테스트
         await client.query('SELECT 1');
         logger.info('데이터베이스 연결 성공');
-
-        // TimescaleDB 확장 (필수)
-        await client.query('CREATE EXTENSION IF NOT EXISTS timescaledb;');
-        logger.info('TimescaleDB 확장 성공');
 
         return; // 성공
       } finally {
