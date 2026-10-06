@@ -19,7 +19,7 @@ describe('db.config pool error', () => {
     await pool.end();
   });
 
-  it('idle 클라이언트 오류가 발생해도 프로세스가 죽지 않고 warning 으로 보고해야 한다', () => {
+  it('idle 클라이언트 오류가 발생해도 프로세스가 죽지 않고 error 로그와 Sentry warning 으로 보고해야 한다', () => {
     const err = new Error('terminating connection due to administrator command');
 
     expect(() => pool.emit('error', err, {} as never)).not.toThrow();
