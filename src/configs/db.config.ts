@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import * as Sentry from '@sentry/node';
 import pg from 'pg';
 import logger from '@/configs/logger.config';
 
@@ -26,6 +27,13 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const pool = new Pool(poolConfig);
+
+// idle 클라이언트 오류는 pg-pool 이 해당 클라이언트를 이미 제거한 뒤 emit 한다.
+// 리스너가 없으면 EventEmitter 규칙상 throw → uncaughtException → exit(1).
+pool.on('error', (err: Error) => {
+  logger.error('PG Pool idle client error (client removed, pool continues):', err);
+  Sentry.captureException(err, { level: 'warning' });
+});
 
 /**
  * 데이터베이스 연결을 확인

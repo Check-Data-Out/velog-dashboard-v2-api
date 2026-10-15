@@ -3,7 +3,7 @@ import { initializeDatabase } from '@/configs/db.config';
 const mockClient = { query: jest.fn(), release: jest.fn() };
 
 jest.mock('pg', () => ({
-  Pool: jest.fn(() => ({ connect: async () => mockClient })),
+  Pool: jest.fn(() => ({ connect: async () => mockClient, on: jest.fn() })),
 }));
 
 jest.mock('@/configs/logger.config', () => ({
