@@ -50,7 +50,9 @@ export function createApp(cache: ICache): Application {
       ? (process.env.ALLOWED_ORIGINS?.split(',')
           .map((origin) => origin.trim())
           .filter(Boolean) ?? [])
-      : ['http://localhost:3000'];
+      : ['http://localhost:3000', `http://localhost:${process.env.PORT || 8080}`]; // FE, Swagger UI
+  // 비-GET 요청은 이 목록으로 출처를 확인하므로, 비어 있으면 로그인부터 전부 막힌다
+  if (allowedOrigins.length === 0) throw new Error('ALLOWED_ORIGINS must include the dashboard origin');
 
   app.use(
     cors({

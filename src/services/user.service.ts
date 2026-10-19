@@ -149,8 +149,8 @@ export class UserService {
     // 샘플 계정은 여러 방문자가 함께 쓰므로 자기 쿠키만 지운다
     if (user.velog_uuid === SAMPLE_USER_VELOG_UUID) return;
 
-    await this.userRepo.incrementSessionVersion(user.id);
     await this.userRepo.updateQRLoginTokenToUse(user.id);
+    await this.userRepo.incrementSessionVersion(user.id);
   }
 
   async unsubscribeNewsletter(email: string) {

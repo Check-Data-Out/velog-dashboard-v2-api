@@ -18,13 +18,16 @@ const toOrigin = (value: string): string | null => {
  * 비-GET 요청의 Origin(없으면 Referer)이 허용 목록에 없거나, 출처 없이 인증 쿠키가 실려 있으면 거부한다.
  */
 export const verifyRequestOrigin = (allowedOrigins: string[]) => {
+  // 요청의 Origin 과 같은 기준(new URL().origin)으로 맞춰 둔다
+  const allowed = new Set(allowedOrigins.map(toOrigin).filter((origin) => origin !== null && origin !== 'null'));
+
   return (req: Request, res: Response, next: NextFunction) => {
     if (SAFE_METHODS.has(req.method)) return next();
 
     const source = req.headers.origin ?? req.headers.referer;
     if (source) {
       const origin = toOrigin(source);
-      return origin !== null && origin !== 'null' && allowedOrigins.includes(origin)
+      return origin !== null && allowed.has(origin)
         ? next()
         : next(new ForbiddenError('허용되지 않은 출처의 요청입니다.'));
     }

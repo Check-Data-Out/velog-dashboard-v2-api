@@ -47,4 +47,14 @@ describe('verifyRequestOrigin', () => {
 
     expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
   });
+
+  it('허용 목록 값은 끝 슬래시 등 표기 차이와 무관하게 출처로 비교해야 한다', () => {
+    verifyRequestOrigin([`${DASHBOARD}/`])(
+      { method: 'POST', headers: { origin: DASHBOARD }, cookies: {} } as Request,
+      {} as Response,
+      nextFunction,
+    );
+
+    expect(nextFunction).toHaveBeenCalledWith();
+  });
 });
