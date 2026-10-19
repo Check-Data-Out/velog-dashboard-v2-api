@@ -8,6 +8,7 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   moduleFileExtensions: ['ts', 'js'],
+  setupFiles: ['<rootDir>/jest.setup.ts'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
