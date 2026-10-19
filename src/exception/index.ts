@@ -11,3 +11,4 @@ export { UnauthorizedError } from './unauthorized.exception';
 export { BadRequestError } from './badRequest.exception';
 export { NotFoundError } from './notFound.exception';
 export { ServiceUnavailableError } from './serviceUnavailable.exception';
+export { ForbiddenError } from './forbidden.exception';
