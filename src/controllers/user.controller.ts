@@ -5,7 +5,7 @@ import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception';
-import { cookieOption } from '@/utils/cookie.util';
+import { cookieOption, setSessionCookie } from '@/utils/cookie.util';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -21,12 +21,8 @@ export class UserController {
       // 2. 우리쪽 DB에 사용자 존재 여부 체크 후 로그인 바로 진행 또는 사용자 생성 후 로그인 진행
       const user = await this.userService.handleUserTokensByVelogUUID(velogUser, accessToken, refreshToken);
 
-      // 3. 로그이 완료 후 쿠키 세팅
-      res.clearCookie('access_token', cookieOption(true));
-      res.clearCookie('refresh_token', cookieOption(true));
-
-      res.cookie('access_token', accessToken, cookieOption());
-      res.cookie('refresh_token', refreshToken, cookieOption());
+      // 3. 로그인 완료 후 세션 쿠키 세팅 (velog 토큰은 브라우저로 보내지 않는다)
+      setSessionCookie(res, user);
 
       const response = new LoginResponseDto(
         true,
@@ -50,11 +46,7 @@ export class UserController {
     try {
       const sampleUser = await this.userService.findSampleUser();
 
-      res.clearCookie('access_token', cookieOption(true));
-      res.clearCookie('refresh_token', cookieOption(true));
-
-      res.cookie('access_token', sampleUser.decryptedAccessToken, cookieOption());
-      res.cookie('refresh_token', sampleUser.decryptedRefreshToken, cookieOption());
+      setSessionCookie(res, sampleUser.user);
 
       req.user = sampleUser.user;
 
@@ -134,11 +126,7 @@ export class UserController {
         throw new QRTokenExpiredError();
       }
 
-      res.clearCookie('access_token', cookieOption(true));
-      res.clearCookie('refresh_token', cookieOption(true));
-
-      res.cookie('access_token', userLoginToken.decryptedAccessToken, cookieOption());
-      res.cookie('refresh_token', userLoginToken.decryptedRefreshToken, cookieOption());
+      setSessionCookie(res, userLoginToken.user);
 
       res.redirect('/main');
     } catch (error) {

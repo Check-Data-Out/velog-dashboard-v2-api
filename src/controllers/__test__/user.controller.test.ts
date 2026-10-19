@@ -89,7 +89,7 @@ describe('UserController', () => {
         'valid-refresh-token',
       );
       expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
-      expect(namesOf(mockResponse.cookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -118,7 +118,7 @@ describe('UserController', () => {
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
-    it('프로덕션 환경에서 올바른 쿠키 옵션을 설정해야 한다', async () => {
+    it('프로덕션 환경에서 세션 쿠키를 400일 httpOnly 로 심어야 한다', async () => {
       process.env.NODE_ENV = 'production';
       mockRequest.body = {
         accessToken: 'valid-access-token',
@@ -131,13 +131,14 @@ describe('UserController', () => {
       await userController.login(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'access_token',
-        'valid-access-token',
+        'vd_session',
+        expect.any(String),
         expect.objectContaining({
           httpOnly: true,
           secure: true,
           sameSite: 'lax',
           domain: 'velog-dashboard.kro.kr',
+          maxAge: 400 * 24 * 60 * 60 * 1000,
         }),
       );
     });
@@ -157,7 +158,7 @@ describe('UserController', () => {
 
       expect(mockUserService.findSampleUser).toHaveBeenCalled();
       expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
-      expect(namesOf(mockResponse.cookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -306,7 +307,7 @@ describe('UserController', () => {
 
       expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token');
       expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
-      expect(namesOf(mockResponse.cookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
     });
 

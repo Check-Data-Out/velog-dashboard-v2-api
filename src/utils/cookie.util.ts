@@ -1,4 +1,6 @@
-import { CookieOptions } from 'express';
+import { CookieOptions, Response } from 'express';
+import { User } from '@/types';
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, signSession } from '@/utils/session.util';
 
 const THREE_WEEKS_IN_MS = 21 * 24 * 60 * 60 * 1000;
 
@@ -22,4 +24,18 @@ export const cookieOption = (isClear: boolean = false): CookieOptions => {
   }
 
   return options;
+};
+
+const LEGACY_TOKEN_COOKIES = ['access_token', 'refresh_token'] as const;
+
+/**
+ * velog 토큰 쿠키를 지우고 대시보드 세션 쿠키를 심습니다. 같은 이름의 세션 쿠키는 덮어쓴다.
+ */
+export const setSessionCookie = (res: Response, user: Pick<User, 'id' | 'velog_uuid' | 'session_version'>): void => {
+  LEGACY_TOKEN_COOKIES.forEach((name) => res.clearCookie(name, cookieOption(true)));
+  res.cookie(SESSION_COOKIE_NAME, signSession(user), {
+    ...cookieOption(),
+    httpOnly: true,
+    maxAge: SESSION_MAX_AGE_SECONDS * 1000,
+  });
 };
