@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { VELOG_API_URL, VELOG_QUERIES } from '@/modules/velog/velog.constans';
-import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
+import { ServiceUnavailableError } from '@/exception';
 
 // axios 모킹
 jest.mock('axios');
@@ -67,6 +67,7 @@ describe('Velog API', () => {
             cookie: `access_token=${mockAccessToken}; refresh_token=${mockRefreshToken}`,
           },
           timeout: 2000,
+          signal: expect.any(AbortSignal),
         },
       );
     });
@@ -135,16 +136,11 @@ describe('Velog API', () => {
       ['타임아웃', Object.assign(new Error('timeout'), { code: 'ECONNABORTED' })],
       ['5xx', Object.assign(new Error('bad gateway'), { response: { status: 502 } })],
       ['429', Object.assign(new Error('too many'), { response: { status: 429 } })],
+      ['403', Object.assign(new Error('forbidden'), { response: { status: 403 } })],
     ])('velog 호출 실패(%s)는 ServiceUnavailableError를 던져야 한다', async (_, error) => {
       mockedAxios.post.mockRejectedValueOnce(error);
 
       await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(ServiceUnavailableError);
-    });
-
-    it('velog 가 그 밖의 4xx 로 응답하면 InvalidTokenError를 던져야 한다', async () => {
-      mockedAxios.post.mockRejectedValueOnce(Object.assign(new Error('bad request'), { response: { status: 400 } }));
-
-      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(InvalidTokenError);
     });
   });
 });

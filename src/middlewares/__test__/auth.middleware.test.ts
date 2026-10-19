@@ -28,8 +28,10 @@ jest.mock('@/configs/cache.config', () => ({
 
 // 테스트 토큰들의 payload user_id
 const TOKEN_USER_UUID = 'c7507240-093b-11ea-9aae-a58a86bb0520';
+const REFRESH_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZWZyZXNoX3Rva2VuIn0.signature';
 
 beforeEach(() => {
+  (pool.query as jest.Mock).mockReset();
   // 기본값: velog 가 토큰 주인을 확인해 주고, 캐시는 비어 있다
   (fetchVelogApi as jest.Mock).mockResolvedValue({ id: TOKEN_USER_UUID });
   (cache.get as jest.Mock).mockResolvedValue(null);
@@ -67,7 +69,7 @@ describe('인증 미들웨어', () => {
       // 유효한 토큰 준비
       mockRequest.cookies = {
         access_token: validToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 사용자 정보 mock
@@ -92,7 +94,7 @@ describe('인증 미들웨어', () => {
       expect(mockRequest.user).toEqual(mockUser);
       expect(mockRequest.tokens).toEqual({
         accessToken: validToken,
-        refreshToken: 'refresh-token',
+        refreshToken: REFRESH_TOKEN,
       });
       expect(pool.query).toHaveBeenCalledWith('SELECT * FROM "users_user" WHERE velog_uuid = $1', [
         'c7507240-093b-11ea-9aae-a58a86bb0520',
@@ -100,7 +102,7 @@ describe('인증 미들웨어', () => {
     });
 
     it('velog 가 사용자를 돌려주지 않은 토큰은 InvalidTokenError를 전달해야 한다', async () => {
-      mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+      mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
       (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
       (fetchVelogApi as jest.Mock).mockRejectedValueOnce(new InvalidTokenError());
 
@@ -110,8 +112,8 @@ describe('인증 미들웨어', () => {
       expect(mockRequest.user).toBeUndefined();
     });
 
-    it('velog 가 돌려준 사용자가 토큰 payload 의 사용자와 다르면 InvalidTokenError를 전달해야 한다', async () => {
-      mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+    it('velog 가 확인한 사용자가 토큰의 사용자와 다르면 InvalidTokenError를 전달해야 한다', async () => {
+      mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
       (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
       (fetchVelogApi as jest.Mock).mockResolvedValueOnce({ id: '00000000-0000-4000-8000-000000000000' });
 
@@ -131,7 +133,7 @@ describe('인증 미들웨어', () => {
           store.set(key, value);
         });
         (pool.query as jest.Mock).mockResolvedValue({ rows: [mockUser] });
-        mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+        mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
       });
 
       it('같은 토큰 쌍의 두 번째 요청은 velog 를 다시 부르지 않아야 한다', async () => {
@@ -141,6 +143,15 @@ describe('인증 미들웨어', () => {
         expect(fetchVelogApi).toHaveBeenCalledTimes(1);
         expect(nextFunction).toHaveBeenNthCalledWith(2);
         expect([...store.keys()]).toEqual([expect.stringMatching(/^auth:velog:/)]);
+      });
+
+      it('캐시된 사용자가 토큰의 사용자와 다르면 velog 를 부르지 않고 InvalidTokenError를 전달해야 한다', async () => {
+        (cache.get as jest.Mock).mockResolvedValue('00000000-0000-4000-8000-000000000000');
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(fetchVelogApi).not.toHaveBeenCalled();
+        expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
       });
 
       it('velog 가 거부한 토큰 쌍은 1분 동안 velog 를 다시 부르지 않고 거부해야 한다', async () => {
@@ -198,7 +209,7 @@ describe('인증 미들웨어', () => {
       const invalidToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbnZhbGlkIjoidG9rZW4ifQ.invalidSignature';
       mockRequest.cookies = {
         access_token: invalidToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 미들웨어 실행
@@ -216,7 +227,7 @@ describe('인증 미들웨어', () => {
 
       mockRequest.cookies = {
         access_token: tokenWithoutUUID,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 미들웨어 실행
@@ -233,7 +244,7 @@ describe('인증 미들웨어', () => {
     });
 
     it('payload 사용자가 DB 에 없으면 velog 를 부르지 않고 InvalidTokenError를 전달해야 한다', async () => {
-      mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+      mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
       (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
       await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -243,11 +254,11 @@ describe('인증 미들웨어', () => {
       expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
-    it('쿠키에 토큰이 없으면 헤더에서 토큰을 가져와야 한다', async () => {
+    it('쿠키에 토큰이 없으면 요청 본문에서 토큰을 가져와야 한다', async () => {
       // 요청 본문에 토큰 설정
       mockRequest.body = {
         accessToken: validToken,
-        refreshToken: 'refresh-token',
+        refreshToken: REFRESH_TOKEN,
       };
 
       // DB 쿼리 결과 모킹
@@ -268,7 +279,7 @@ describe('인증 미들웨어', () => {
       // JWT 형식이 아닌 쓰레기 토큰
       mockRequest.cookies = {
         access_token: 'garbage-token-without-dots',
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 미들웨어 실행
@@ -281,6 +292,16 @@ describe('인증 미들웨어', () => {
         }),
       );
       expect(pool.query).not.toHaveBeenCalled();
+      expect(fetchVelogApi).not.toHaveBeenCalled();
+    });
+
+    it('refresh 토큰이 JWT 형식이 아니면 velog 를 부르지 않고 InvalidTokenError를 발생시켜야 한다', async () => {
+      mockRequest.cookies = { access_token: validToken, refresh_token: 'garbage;token' };
+
+      await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+      expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
     it('깨진 Base64 페이로드를 가진 토큰은 InvalidTokenError를 발생시켜야 한다', async () => {
@@ -291,7 +312,7 @@ describe('인증 미들웨어', () => {
 
       mockRequest.cookies = {
         access_token: corruptedToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 미들웨어 실행
@@ -304,13 +325,14 @@ describe('인증 미들웨어', () => {
         }),
       );
       expect(pool.query).not.toHaveBeenCalled();
+      expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
     it('Base64URL이 아닌 문자가 포함된 토큰은 InvalidTokenError를 발생시켜야 한다', async () => {
       // Base64URL에 허용되지 않는 문자(+, /, =, 한글 등) 포함
       mockRequest.cookies = {
         access_token: 'invalid+token/with=special.chars!@#.signature',
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 미들웨어 실행
@@ -323,6 +345,7 @@ describe('인증 미들웨어', () => {
         }),
       );
       expect(pool.query).not.toHaveBeenCalled();
+      expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
     it('user_id가 UUID 형식이 아니면 InvalidTokenError를 발생시켜야 한다', async () => {
@@ -333,7 +356,7 @@ describe('인증 미들웨어', () => {
 
       mockRequest.cookies = {
         access_token: tokenWithInvalidUUID,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
 
       // 미들웨어 실행
@@ -347,6 +370,7 @@ describe('인증 미들웨어', () => {
         }),
       );
       expect(pool.query).not.toHaveBeenCalled();
+      expect(fetchVelogApi).not.toHaveBeenCalled();
     });
   });
 });
@@ -401,7 +425,7 @@ describe('verifyBearerTokens', () => {
       mockRateLimitService.isIpBlocked.mockResolvedValue(false);
       mockRequest.cookies = {
         access_token: validToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
       (pool.query as jest.Mock).mockResolvedValueOnce({
         rows: [mockUser],
@@ -433,7 +457,7 @@ describe('verifyBearerTokens', () => {
       mockRateLimitService.isIpBlocked.mockResolvedValue(false);
       mockRequest.cookies = {
         access_token: validToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
       (pool.query as jest.Mock).mockResolvedValueOnce({
         rows: [mockUser],
@@ -451,7 +475,7 @@ describe('verifyBearerTokens', () => {
       mockRateLimitService.isIpBlocked.mockRejectedValue(new Error('Redis error'));
       mockRequest.cookies = {
         access_token: validToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
       (pool.query as jest.Mock).mockResolvedValueOnce({
         rows: [mockUser],
@@ -468,7 +492,7 @@ describe('verifyBearerTokens', () => {
     it('rate limit 서비스가 없으면 rate limit 체크 없이 토큰 검증만 해야 한다', async () => {
       mockRequest.cookies = {
         access_token: validToken,
-        refresh_token: 'refresh-token',
+        refresh_token: REFRESH_TOKEN,
       };
       (pool.query as jest.Mock).mockResolvedValueOnce({
         rows: [mockUser],

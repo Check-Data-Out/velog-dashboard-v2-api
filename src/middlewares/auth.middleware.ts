@@ -33,7 +33,7 @@ const VELOG_OWNER_CACHE = {
   KEY_PREFIX: 'auth:velog:',
   CONFIRMED_TTL_SECONDS: 10 * 60,
   REJECTED_TTL_SECONDS: 60,
-  // velog 가 거부한 토큰 쌍을 표시하는 값 (확인된 경우에는 velog uuid 를 저장)
+  // velog 가 거부한 토큰 쌍을 표시하는 값. 캐시 미스(null)와 구분된다 (확인된 경우에는 velog uuid 를 저장)
   REJECTED: '',
 } as const;
 
@@ -106,7 +106,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
       }
 
       // Fail-Fast: JWT 형식 검증
-      if (!isValidJwtFormat(accessToken)) {
+      if (!isValidJwtFormat(accessToken) || !isValidJwtFormat(refreshToken)) {
         throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
       }
 
@@ -124,7 +124,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
         .rows[0] as User;
       if (!user) throw new InvalidTokenError('사용자를 찾을 수 없습니다.');
 
-      // payload 는 서명 검증 없이 읽은 값이므로 velog 에 토큰 주인을 확인한다
+      // 토큰 주인은 velog 에서 확인한다
       const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
       if (velogUuid !== payload.user_id) {
         throw new InvalidTokenError('토큰 사용자 정보가 일치하지 않습니다.');
