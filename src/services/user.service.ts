@@ -3,8 +3,8 @@ import { NotFoundError, TokenError } from '@/exception/';
 import { getKeyByGroup } from '@/utils/key.util';
 import AESEncryption from '@/modules/token_encryption/aes_encryption';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
-import { UserRepository } from '@/repositories/user.repository';
-import { UserWithTokenDto, User, SampleUser } from '@/types';
+import { SAMPLE_USER_VELOG_UUID, UserRepository } from '@/repositories/user.repository';
+import { UserWithTokenDto, User } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import { VelogUserCurrentResponse } from '@/modules/velog/velog.type';
@@ -28,25 +28,6 @@ export class UserService {
     } catch (error) {
       logger.error('User Service encryptTokens error : ', error);
       throw new TokenError('토큰 암호화 처리에 실패하였습니다.');
-    }
-  }
-
-  private decryptTokens(groupId: number, accessToken: string, refreshToken: string) {
-    const key = getKeyByGroup(groupId);
-    if (!key) {
-      logger.error('그룹 키 조회 중 실패');
-      throw new TokenError('올바르지 않은 그룹 ID로 인해 암호화 키를 찾을 수 없습니다.');
-    }
-    try {
-      const aes = new AESEncryption(key);
-
-      return {
-        decryptedAccessToken: aes.decrypt(accessToken),
-        decryptedRefreshToken: aes.decrypt(refreshToken),
-      };
-    } catch (error) {
-      logger.error('User Service decryptTokens error : ', error);
-      throw new TokenError('토큰 복호화 처리에 실패하였습니다.');
     }
   }
 
@@ -95,19 +76,14 @@ export class UserService {
     }
   }
 
-  async findSampleUser(): Promise<SampleUser> {
+  async findSampleUser(): Promise<User> {
     const user = await this.userRepo.findSampleUser();
     if (!user) {
       throw new NotFoundError('샘플 유저 정보를 찾을 수 없습니다.');
     }
 
-    const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
-      user.group_id,
-      user.access_token,
-      user.refresh_token,
-    );
     logger.info('샘플 유저 로그인');
-    return { user, decryptedAccessToken, decryptedRefreshToken };
+    return user;
   }
 
   async createUser(userData: UserWithTokenDto) {
@@ -149,7 +125,7 @@ export class UserService {
     return token;
   }
 
-  async useToken(token: string): Promise<{ decryptedAccessToken: string; decryptedRefreshToken: string } | null> {
+  async useToken(token: string): Promise<User | null> {
     // 1. 사용자의 토큰을 찾는다.
     const qrToken = await this.userRepo.findQRLoginToken(token);
     if (!qrToken) {
@@ -163,12 +139,18 @@ export class UserService {
     }
 
     await this.userRepo.updateQRLoginTokenToUse(qrToken.user_id);
-    const { decryptedAccessToken, decryptedRefreshToken } = this.decryptTokens(
-      qrTokenUser.group_id,
-      qrTokenUser.access_token,
-      qrTokenUser.refresh_token,
-    );
-    return { decryptedAccessToken, decryptedRefreshToken };
+    return qrTokenUser;
+  }
+
+  /**
+   * 그 사용자의 모든 기기 세션을 끊고, 아직 쓰지 않은 QR 로그인 토큰도 사용 처리합니다.
+   */
+  async logout(user: User): Promise<void> {
+    // 샘플 계정은 여러 방문자가 함께 쓰므로 자기 쿠키만 지운다
+    if (user.velog_uuid === SAMPLE_USER_VELOG_UUID) return;
+
+    await this.userRepo.updateQRLoginTokenToUse(user.id);
+    await this.userRepo.incrementSessionVersion(user.id);
   }
 
   async unsubscribeNewsletter(email: string) {

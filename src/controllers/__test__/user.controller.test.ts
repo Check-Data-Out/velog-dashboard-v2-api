@@ -18,6 +18,9 @@ jest.mock('@/configs/logger.config', () => ({
   info: jest.fn(),
 }));
 
+// 응답에 심거나 지운 쿠키 이름 목록
+const namesOf = (mockFn: unknown): string[] => (mockFn as jest.Mock).mock.calls.map(([name]) => name);
+
 describe('UserController', () => {
   let userController: UserController;
   let mockUserService: jest.Mocked<UserService>;
@@ -85,8 +88,8 @@ describe('UserController', () => {
         'valid-access-token',
         'valid-refresh-token',
       );
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -115,7 +118,7 @@ describe('UserController', () => {
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
-    it('프로덕션 환경에서 올바른 쿠키 옵션을 설정해야 한다', async () => {
+    it('프로덕션 환경에서 세션 쿠키를 400일 httpOnly 로 심어야 한다', async () => {
       process.env.NODE_ENV = 'production';
       mockRequest.body = {
         accessToken: 'valid-access-token',
@@ -128,33 +131,28 @@ describe('UserController', () => {
       await userController.login(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'access_token',
-        'valid-access-token',
+        'vd_session',
+        expect.any(String),
         expect.objectContaining({
           httpOnly: true,
           secure: true,
           sameSite: 'lax',
           domain: 'velog-dashboard.kro.kr',
+          maxAge: 400 * 24 * 60 * 60 * 1000,
         }),
       );
     });
   });
 
   describe('sampleLogin', () => {
-    const mockSampleUser = {
-      user: mockUser,
-      decryptedAccessToken: 'decrypted-access-token',
-      decryptedRefreshToken: 'decrypted-refresh-token',
-    };
-
     it('샘플 로그인에 성공해야 한다', async () => {
-      mockUserService.findSampleUser.mockResolvedValue(mockSampleUser);
+      mockUserService.findSampleUser.mockResolvedValue(mockUser);
 
       await userController.sampleLogin(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.findSampleUser).toHaveBeenCalled();
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -180,18 +178,11 @@ describe('UserController', () => {
   });
 
   describe('logout', () => {
-    it('로그아웃에 성공해야 한다', async () => {
+    it('로그아웃하면 사용자 세션을 끊고 세션·velog 토큰 쿠키를 모두 지워야 한다', async () => {
       await userController.logout(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
-        'access_token',
-        expect.objectContaining({ domain: 'localhost' }),
-      );
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
-        'refresh_token',
-        expect.objectContaining({ domain: 'localhost' }),
-      );
+      expect(mockUserService.logout).toHaveBeenCalledWith(mockUser);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token', 'vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -199,6 +190,16 @@ describe('UserController', () => {
         data: {},
         error: null,
       });
+    });
+
+    it('로그아웃 처리 중 DB 오류는 에러 핸들러로 넘겨야 한다', async () => {
+      const error = new Error('DB 오류');
+      mockUserService.logout.mockRejectedValueOnce(error);
+
+      await userController.logout(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(error);
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
   });
 
@@ -289,20 +290,15 @@ describe('UserController', () => {
   });
 
   describe('getToken', () => {
-    const mockUserLoginToken = {
-      decryptedAccessToken: 'decrypted-access-token',
-      decryptedRefreshToken: 'decrypted-refresh-token',
-    };
-
     it('유효한 토큰으로 QR 로그인에 성공해야 한다', async () => {
       mockRequest.query = { token: 'valid-token' };
-      mockUserService.useToken.mockResolvedValue(mockUserLoginToken);
+      mockUserService.useToken.mockResolvedValue(mockUser);
 
       await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token');
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
     });
 

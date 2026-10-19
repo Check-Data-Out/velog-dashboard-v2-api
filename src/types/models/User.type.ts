@@ -13,10 +13,6 @@ export interface User {
   thumbnail: string | null;
   // 251004 추가
   newsletter_subscribed: boolean;
-}
-
-export interface SampleUser {
-  user: User;
-  decryptedAccessToken: string;
-  decryptedRefreshToken: string;
+  // 261019 추가 — 로그아웃 시 1 증가, 자체 세션의 ver 와 비교
+  session_version: number;
 }

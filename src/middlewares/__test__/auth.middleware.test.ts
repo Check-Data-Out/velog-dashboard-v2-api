@@ -6,6 +6,7 @@ import { AuthRateLimitService } from '@/services/authRateLimit.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
 import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
+import { signSession, verifySession } from '@/utils/session.util';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -53,6 +54,8 @@ describe('인증 미들웨어', () => {
     mockResponse = {
       json: jest.fn(),
       status: jest.fn().mockReturnThis(),
+      cookie: jest.fn().mockReturnThis(),
+      clearCookie: jest.fn().mockReturnThis(),
     };
     nextFunction = jest.fn();
   });
@@ -78,6 +81,7 @@ describe('인증 미들웨어', () => {
         username: 'testuser',
         email: 'test@example.com',
         velog_uuid: 'c7507240-093b-11ea-9aae-a58a86bb0520',
+        is_active: true,
       };
 
       // DB 쿼리 결과 모킹
@@ -121,6 +125,150 @@ describe('인증 미들웨어', () => {
 
       expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
       expect(mockRequest.user).toBeUndefined();
+    });
+
+    describe('세션 쿠키', () => {
+      it('유효한 세션 쿠키만으로 velog 확인 없이 인증해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession(mockUser) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith();
+        expect(mockRequest.user).toEqual(mockUser);
+        expect(fetchVelogApi).not.toHaveBeenCalled();
+      });
+
+      it('세션의 velog uuid 가 DB 사용자와 다르면 거부해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession({ ...mockUser, velog_uuid: 'other-uuid' }) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(nextFunction.mock.calls[0][0]).not.toBeInstanceOf(InvalidTokenError);
+        expect(mockRequest.user).toBeUndefined();
+      });
+
+      it('로그아웃 등으로 세션 버전이 DB 와 달라지면 거부해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession({ ...mockUser, session_version: 2 }) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, session_version: 3 }] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(nextFunction.mock.calls[0][0]).not.toBeInstanceOf(InvalidTokenError);
+        expect(mockRequest.user).toBeUndefined();
+      });
+
+      it('거부한 세션 쿠키는 지워서 브라우저가 로그인 화면으로 돌아오게 해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession({ ...mockUser, session_version: 2 }) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, session_version: 3 }] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(mockResponse.clearCookie).toHaveBeenCalledWith('vd_session', expect.anything());
+      });
+
+      it('DB 오류처럼 세션과 무관한 실패에는 세션 쿠키를 지우지 않아야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession(mockUser) };
+        (pool.query as jest.Mock).mockRejectedValueOnce(new Error('DB 연결 실패'));
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+        expect(mockResponse.clearCookie).not.toHaveBeenCalled();
+      });
+
+      it('세션 쿠키가 있으면 무효여도 velog 토큰 쿠키로 넘어가지 않아야 한다', async () => {
+        mockRequest.cookies = { vd_session: 'invalid-session', access_token: validToken, refresh_token: REFRESH_TOKEN };
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        // 서명은 대입으로 맞출 수 없으므로 IP 인증 실패로 세지 않는다 (키 교체·남이 심은 쿠키로 IP 가 막히지 않게)
+        expect(nextFunction.mock.calls[0][0]).not.toBeInstanceOf(InvalidTokenError);
+        expect(fetchVelogApi).not.toHaveBeenCalled();
+        expect(pool.query).not.toHaveBeenCalled();
+      });
+
+      it('velog 토큰 쿠키로 인증하면 세션 쿠키를 발급하고 velog 토큰 쿠키를 지워야 한다', async () => {
+        const user = { ...mockUser, session_version: 3 };
+        mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [user] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith();
+        const [name, issued] = (mockResponse.cookie as jest.Mock).mock.calls[0];
+        expect(name).toBe('vd_session');
+        expect(verifySession(issued)).toEqual(
+          expect.objectContaining({ sub: String(user.id), uid: user.velog_uuid, ver: 3 }),
+        );
+        expect((mockResponse.clearCookie as jest.Mock).mock.calls.map(([name]) => name)).toEqual([
+          'access_token',
+          'refresh_token',
+        ]);
+      });
+
+      it('비활성 사용자의 세션은 거부해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession(mockUser) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, is_active: false }] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(mockRequest.user).toBeUndefined();
+      });
+
+      it.each([
+        ['쿠키', 'cookies'],
+        ['헤더', 'headers'],
+      ] as const)('비활성 사용자의 velog 토큰(%s)은 거부해야 한다', async (_, source) => {
+        mockRequest[source] = { access_token: validToken, refresh_token: REFRESH_TOKEN };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, is_active: false }] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(mockRequest.user).toBeUndefined();
+        expect(mockResponse.cookie).not.toHaveBeenCalled();
+      });
+
+      describe('세션 연장', () => {
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const signedAgo = (ms: number, user = mockUser) => {
+          jest.useFakeTimers({ now: Date.now() - ms });
+          try {
+            return signSession(user);
+          } finally {
+            jest.useRealTimers();
+          }
+        };
+
+        it('발급 후 1일이 지난 세션은 같은 사용자·버전으로 다시 발급해야 한다', async () => {
+          const user = { ...mockUser, session_version: 2 };
+          mockRequest.cookies = { vd_session: signedAgo(2 * DAY_MS, user) };
+          (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [user] });
+
+          await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          const [name, reissued] = (mockResponse.cookie as jest.Mock).mock.calls[0];
+          expect(name).toBe('vd_session');
+          expect(verifySession(reissued)).toEqual(expect.objectContaining({ sub: String(user.id), ver: 2 }));
+          expect(nextFunction).toHaveBeenCalledWith();
+        });
+
+        it('발급 후 1일이 지나지 않은 세션은 다시 발급하지 않아야 한다', async () => {
+          mockRequest.cookies = { vd_session: signedAgo(DAY_MS / 2) };
+          (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+          await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          expect(mockResponse.cookie).not.toHaveBeenCalled();
+          expect(nextFunction).toHaveBeenCalledWith();
+        });
+      });
     });
 
     describe('velog 확인 캐시', () => {
@@ -266,27 +414,16 @@ describe('인증 미들웨어', () => {
       expect(fetchVelogApi).toHaveBeenCalledWith(validToken, REFRESH_TOKEN);
       expect(nextFunction).toHaveBeenCalledWith();
       expect(mockRequest.user).toEqual(mockUser);
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
     });
 
-    it('쿠키에 토큰이 없으면 요청 본문에서 토큰을 가져와야 한다', async () => {
-      // 요청 본문에 토큰 설정
-      mockRequest.body = {
-        accessToken: validToken,
-        refreshToken: REFRESH_TOKEN,
-      };
+    it('요청 본문의 토큰으로는 인증하지 않아야 한다', async () => {
+      mockRequest.body = { accessToken: validToken, refreshToken: REFRESH_TOKEN };
 
-      // DB 쿼리 결과 모킹
-      (pool.query as jest.Mock).mockResolvedValueOnce({
-        rows: [mockUser],
-      });
-
-      // 미들웨어 실행
       await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      // 검증
-      expect(nextFunction).toHaveBeenCalledTimes(1);
-      expect(nextFunction).not.toHaveBeenCalledWith(expect.any(Error));
-      expect(mockRequest.user).toEqual(mockUser);
+      expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+      expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
     it('JWT 형식이 아닌 토큰은 DB 쿼리 없이 InvalidTokenError를 발생시켜야 한다', async () => {
@@ -408,6 +545,8 @@ describe('verifyBearerTokens', () => {
     mockResponse = {
       json: jest.fn().mockReturnThis(),
       status: jest.fn().mockReturnThis(),
+      cookie: jest.fn().mockReturnThis(),
+      clearCookie: jest.fn().mockReturnThis(),
     };
     nextFunction = jest.fn();
 

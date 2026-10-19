@@ -4,6 +4,9 @@ import { User } from '@/types';
 import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { DBError } from '@/exception';
 
+// 로그인 없이 둘러보기용 샘플 계정
+export const SAMPLE_USER_VELOG_UUID = '8f561807-8304-4006-84a5-ee3fa8b46d23';
+
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -41,10 +44,10 @@ export class UserRepository {
     try {
       const query = `
         SELECT * FROM "users_user"
-        WHERE velog_uuid = '8f561807-8304-4006-84a5-ee3fa8b46d23';
+        WHERE velog_uuid = $1;
       `;
 
-      const result = await this.pool.query(query);
+      const result = await this.pool.query(query, [SAMPLE_USER_VELOG_UUID]);
       return result.rows[0];
     } catch (error) {
       logger.error('User Repo findSampleUser Error : ', error);
@@ -161,6 +164,19 @@ export class UserRepository {
     } catch (error) {
       logger.error('QRLoginToken Repo mark as used Error : ', error);
       throw new DBError('QR 코드 사용 처리 중 문제가 발생했습니다.');
+    }
+  }
+
+  /**
+   * 세션 버전을 1 올려 그 사용자의 모든 기기 세션을 무효화합니다.
+   */
+  async incrementSessionVersion(id: number): Promise<void> {
+    try {
+      const query = `UPDATE "users_user" SET session_version = session_version + 1 WHERE id = $1`;
+      await this.pool.query(query, [id]);
+    } catch (error) {
+      logger.error('User Repo incrementSessionVersion Error : ', error);
+      throw new DBError('로그아웃 처리 중 문제가 발생했습니다.');
     }
   }
 

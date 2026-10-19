@@ -9,22 +9,23 @@ import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
 import { AuthRateLimitService, AUTH_RATE_LIMIT_CONFIG } from '@/services/authRateLimit.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
+import { SESSION_COOKIE_NAME, verifySession } from '@/utils/session.util';
+import { cookieOption, setSessionCookie } from '@/utils/cookie.util';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
 
 /**
- * 요청에서 토큰을 추출하는 함수
+ * 요청에서 velog 토큰을 추출하는 함수
  * @param req - Express Request 객체
  * @returns  추출된 토큰 객체
  * @description 다음 순서로 토큰을 확인합니다:
- * 1. 요청 본문 (req.body) - 신규 로그인
- * 2. 요청 헤더 - API 호출
- * 3. 쿠키 - 웹 클라이언트
+ * 1. 쿠키 - 세션 쿠키 도입 전에 로그인한 웹 클라이언트
+ * 2. 요청 헤더 - 익스텐션
  */
 const extractTokens = (req: Request): { accessToken: string; refreshToken: string } => {
-  const accessToken = req.cookies['access_token'] || req.body.accessToken || req.headers['access_token'];
-  const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken || req.headers['refresh_token'];
+  const accessToken = req.cookies['access_token'] || req.headers['access_token'];
+  const refreshToken = req.cookies['refresh_token'] || req.headers['refresh_token'];
 
   return { accessToken, refreshToken };
 };
@@ -75,6 +76,71 @@ const confirmVelogOwner = async (accessToken: string, refreshToken: string): Pro
 };
 
 /**
+ * velog 토큰 쌍으로 사용자를 인증한다 (형식 검사 → DB 사용자 확인 → velog 확인).
+ */
+const authenticateVelogTokens = async (accessToken: string, refreshToken: string): Promise<User> => {
+  if (!accessToken || !refreshToken) {
+    // 로그인하지 않은 요청이므로 인증 실패로 세지 않는다
+    throw new UnauthorizedError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
+  }
+
+  // Fail-Fast: JWT 형식 검증
+  if (!isValidJwtFormat(accessToken) || !isValidJwtFormat(refreshToken)) {
+    throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
+  }
+
+  // 안전한 페이로드 추출 (JSON 파싱 실패 시 null 반환)
+  const payload = safeExtractPayload<VelogJWTPayload>(accessToken);
+  if (!payload) {
+    throw new InvalidTokenError('토큰 페이로드를 추출할 수 없습니다.');
+  }
+
+  if (!payload.user_id || !isUUID(payload.user_id)) {
+    throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
+  }
+
+  const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
+    .rows[0] as User;
+  // 가입 전·비활성 사용자는 거부하되 IP 인증 실패로 집계하지 않는다 (비활성은 다시 로그인하면 복귀)
+  if (!user || !user.is_active) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+
+  // 토큰 주인은 velog 에서 확인한다
+  const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
+  if (velogUuid !== payload.user_id) {
+    throw new InvalidTokenError('토큰 사용자 정보가 일치하지 않습니다.');
+  }
+
+  return user;
+};
+
+// 세션은 쓸 때마다 연장한다. 매 요청 다시 서명하지 않도록 발급 후 하루가 지났을 때만 새로 발급
+const SESSION_REISSUE_AFTER_SECONDS = 24 * 60 * 60;
+
+/**
+ * 대시보드 세션 쿠키로 사용자를 인증하고, 오래된 세션이면 다시 발급한다.
+ */
+const authenticateSession = async (sessionToken: string, res: Response): Promise<User> => {
+  const claims = verifySession(sessionToken);
+  // 서명은 대입으로 맞출 수 없으므로 IP 인증 실패로 세지 않는다 (키 교체·남이 심은 쿠키로 IP 가 막히지 않게)
+  if (!claims) throw new UnauthorizedError('유효하지 않은 세션입니다.');
+
+  const user = (await pool.query('SELECT * FROM "users_user" WHERE id = $1', [Number(claims.sub)])).rows[0] as User;
+  if (!user || !user.is_active) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+
+  // 서명은 우리가 했으므로 위조가 아니라 만료된 세션이다 → 인증 실패 집계 없이 거부
+  if (user.velog_uuid !== claims.uid || user.session_version !== claims.ver) {
+    throw new UnauthorizedError('세션이 만료되었습니다.');
+  }
+
+  // 방금 DB 와 일치를 확인한 버전을 그대로 담는다 (그사이 로그아웃했다면 다음 요청에서 거부된다)
+  if (Date.now() / 1000 - claims.iat > SESSION_REISSUE_AFTER_SECONDS) {
+    setSessionCookie(res, { id: user.id, velog_uuid: claims.uid, session_version: claims.ver });
+  }
+
+  return user;
+};
+
+/**
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
  *  @param rateLimitService - Rate limit 서비스 (선택적)
  */
@@ -102,38 +168,25 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
         }
       }
 
+      const sessionToken = req.cookies[SESSION_COOKIE_NAME];
+      if (sessionToken !== undefined) {
+        try {
+          req.user = await authenticateSession(sessionToken, res);
+        } catch (error) {
+          // 무효 세션 쿠키가 남아 있으면 FE 가드가 계속 대시보드로 들여보내므로 지운다 (DB 오류 등은 제외)
+          if (error instanceof UnauthorizedError) res.clearCookie(SESSION_COOKIE_NAME, cookieOption(true));
+          throw error;
+        }
+        next();
+        return;
+      }
+
       const { accessToken, refreshToken } = extractTokens(req);
 
-      if (!accessToken || !refreshToken) {
-        // 로그인하지 않은 요청이므로 인증 실패로 세지 않는다
-        throw new UnauthorizedError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
-      }
+      const user = await authenticateVelogTokens(accessToken, refreshToken);
 
-      // Fail-Fast: JWT 형식 검증
-      if (!isValidJwtFormat(accessToken) || !isValidJwtFormat(refreshToken)) {
-        throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
-      }
-
-      // 안전한 페이로드 추출 (JSON 파싱 실패 시 null 반환)
-      const payload = safeExtractPayload<VelogJWTPayload>(accessToken);
-      if (!payload) {
-        throw new InvalidTokenError('토큰 페이로드를 추출할 수 없습니다.');
-      }
-
-      if (!payload.user_id || !isUUID(payload.user_id)) {
-        throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
-      }
-
-      const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
-        .rows[0] as User;
-      // 가입 전 사용자(익스텐션 등)는 거부하되 IP 인증 실패로 집계하지 않는다
-      if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
-
-      // 토큰 주인은 velog 에서 확인한다
-      const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
-      if (velogUuid !== payload.user_id) {
-        throw new InvalidTokenError('토큰 사용자 정보가 일치하지 않습니다.');
-      }
+      // 브라우저의 velog 토큰 쿠키는 세션 쿠키로 바꿔 준다 (헤더로 보내는 익스텐션은 그대로)
+      if (req.cookies['access_token']) setSessionCookie(res, user);
 
       req.user = user;
       req.tokens = { accessToken, refreshToken };
