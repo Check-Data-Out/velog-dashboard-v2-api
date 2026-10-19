@@ -146,40 +146,52 @@ describe('인증 미들웨어', () => {
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
         expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(nextFunction.mock.calls[0][0]).not.toBeInstanceOf(InvalidTokenError);
         expect(mockRequest.user).toBeUndefined();
       });
+
       it('로그아웃 등으로 세션 버전이 DB 와 달라지면 거부해야 한다', async () => {
-        mockRequest.cookies = { vd_session: signSession(mockUser) };
-        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, session_version: 1 }] });
+        mockRequest.cookies = { vd_session: signSession({ ...mockUser, session_version: 2 }) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, session_version: 3 }] });
 
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
         expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(nextFunction.mock.calls[0][0]).not.toBeInstanceOf(InvalidTokenError);
         expect(mockRequest.user).toBeUndefined();
       });
+
       it('세션 쿠키가 있으면 무효여도 velog 토큰 쿠키로 넘어가지 않아야 한다', async () => {
         mockRequest.cookies = { vd_session: 'invalid-session', access_token: validToken, refresh_token: REFRESH_TOKEN };
 
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
-        expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        // 서명은 대입으로 맞출 수 없으므로 IP 인증 실패로 세지 않는다 (키 교체·남이 심은 쿠키로 IP 가 막히지 않게)
+        expect(nextFunction.mock.calls[0][0]).not.toBeInstanceOf(InvalidTokenError);
         expect(fetchVelogApi).not.toHaveBeenCalled();
         expect(pool.query).not.toHaveBeenCalled();
       });
 
       it('velog 토큰 쿠키로 인증하면 세션 쿠키를 발급하고 velog 토큰 쿠키를 지워야 한다', async () => {
+        const user = { ...mockUser, session_version: 3 };
         mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
-        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [user] });
 
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
         expect(nextFunction).toHaveBeenCalledWith();
-        expect(mockResponse.cookie).toHaveBeenCalledWith('vd_session', expect.any(String), expect.anything());
+        const [name, issued] = (mockResponse.cookie as jest.Mock).mock.calls[0];
+        expect(name).toBe('vd_session');
+        expect(verifySession(issued)).toEqual(
+          expect.objectContaining({ sub: String(user.id), uid: user.velog_uuid, ver: 3 }),
+        );
         expect((mockResponse.clearCookie as jest.Mock).mock.calls.map(([name]) => name)).toEqual([
           'access_token',
           'refresh_token',
         ]);
       });
+
       it('비활성 사용자의 세션은 거부해야 한다', async () => {
         mockRequest.cookies = { vd_session: signSession(mockUser) };
         (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, is_active: false }] });
@@ -203,13 +215,16 @@ describe('인증 미들웨어', () => {
         expect(mockRequest.user).toBeUndefined();
         expect(mockResponse.cookie).not.toHaveBeenCalled();
       });
+
       describe('세션 연장', () => {
         const DAY_MS = 24 * 60 * 60 * 1000;
         const signedAgo = (ms: number, user = mockUser) => {
           jest.useFakeTimers({ now: Date.now() - ms });
-          const token = signSession(user);
-          jest.useRealTimers();
-          return token;
+          try {
+            return signSession(user);
+          } finally {
+            jest.useRealTimers();
+          }
         };
 
         it('발급 후 1일이 지난 세션은 같은 사용자·버전으로 다시 발급해야 한다', async () => {

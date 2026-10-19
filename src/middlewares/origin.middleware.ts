@@ -23,7 +23,8 @@ export const verifyRequestOrigin = (allowedOrigins: string[]) => {
 
     const source = req.headers.origin ?? req.headers.referer;
     if (source) {
-      return allowedOrigins.includes(toOrigin(source) ?? '')
+      const origin = toOrigin(source);
+      return origin !== null && origin !== 'null' && allowedOrigins.includes(origin)
         ? next()
         : next(new ForbiddenError('허용되지 않은 출처의 요청입니다.'));
     }

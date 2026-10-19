@@ -10,12 +10,6 @@ jest.mock('@/modules/token_encryption/aes_encryption', () => {
   // TokenEncryptionService 인터페이스를 구현한 모의 객체 반환
   return jest.fn().mockImplementation(() => ({
     encrypt: jest.fn().mockReturnValue('encrypted-token'),
-    decrypt: jest.fn().mockImplementation((token) => {
-      // useToken 메서드에서 필요한 반환값 제공
-      if (token === 'encrypted-access-token') return 'decrypted-access-token';
-      if (token === 'encrypted-refresh-token') return 'decrypted-refresh-token';
-      return 'unknown-token';
-    }),
   }));
 });
 

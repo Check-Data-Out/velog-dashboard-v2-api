@@ -47,7 +47,9 @@ export function createApp(cache: ICache): Application {
 
   const allowedOrigins =
     process.env.NODE_ENV === 'production'
-      ? (process.env.ALLOWED_ORIGINS?.split(',').map((origin) => origin.trim()) ?? [])
+      ? (process.env.ALLOWED_ORIGINS?.split(',')
+          .map((origin) => origin.trim())
+          .filter(Boolean) ?? [])
       : ['http://localhost:3000'];
 
   app.use(

@@ -30,6 +30,8 @@ describe('session.util', () => {
       ],
       ['만료', () => jwt.sign({ ...claims, exp: Math.floor(Date.now() / 1000) - 60 }, SECRET, valid)],
       ['발급자 불일치', () => jwt.sign(claims, SECRET, { ...valid, issuer: 'someone-else' })],
+      ['대상 불일치', () => jwt.sign(claims, SECRET, { ...valid, audience: 'someone-else' })],
+      ['세션 버전이 없는', () => jwt.sign({ uid: mockUser.velog_uuid }, SECRET, valid)],
       ['다른 키', () => jwt.sign(claims, 'another-secret-0123456789abcdef0123', valid)],
     ])('%s 토큰은 null 을 돌려준다', (_, makeToken) => {
       expect(verifySession(makeToken())).toBeNull();

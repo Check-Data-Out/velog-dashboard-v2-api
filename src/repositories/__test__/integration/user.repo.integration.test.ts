@@ -8,6 +8,7 @@ jest.setTimeout(10000);
 
 /**
  * 어느 DB 에 붙든 데이터가 남지 않도록 테스트마다 트랜잭션 안에서 실행하고 되돌린다.
+ * 저장소에 트랜잭션을 연결한 클라이언트를 Pool 대신 넘기므로, 저장소 메서드가 pool.connect() 를 쓰게 되면 이 방식을 다시 봐야 한다.
  */
 describe('UserRepository 세션 버전 통합 테스트', () => {
   let testPool: Pool;
@@ -36,8 +37,11 @@ describe('UserRepository 세션 버전 통합 테스트', () => {
   });
 
   afterEach(async () => {
-    await client.query('ROLLBACK');
-    client.release();
+    try {
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
   });
 
   afterAll(async () => {

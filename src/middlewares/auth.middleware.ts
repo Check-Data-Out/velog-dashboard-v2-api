@@ -119,7 +119,8 @@ const SESSION_REISSUE_AFTER_SECONDS = 24 * 60 * 60;
  */
 const authenticateSession = async (sessionToken: string, res: Response): Promise<User> => {
   const claims = verifySession(sessionToken);
-  if (!claims) throw new InvalidTokenError('유효하지 않은 세션입니다.');
+  // 서명은 대입으로 맞출 수 없으므로 IP 인증 실패로 세지 않는다 (키 교체·남이 심은 쿠키로 IP 가 막히지 않게)
+  if (!claims) throw new UnauthorizedError('유효하지 않은 세션입니다.');
 
   const user = (await pool.query('SELECT * FROM "users_user" WHERE id = $1', [Number(claims.sub)])).rows[0] as User;
   if (!user || !user.is_active) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');

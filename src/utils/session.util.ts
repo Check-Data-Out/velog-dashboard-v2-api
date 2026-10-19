@@ -48,12 +48,15 @@ export const signSession = (user: Pick<User, 'id' | 'velog_uuid' | 'session_vers
  */
 export const verifySession = (token: string): SessionClaims | null => {
   try {
-    return jwt.verify(token, SECRET, {
+    const claims = jwt.verify(token, SECRET, {
       algorithms: [SESSION_JWT.ALGORITHM],
       issuer: SESSION_JWT.ISSUER,
       audience: SESSION_JWT.AUDIENCE,
       clockTolerance: SESSION_JWT.CLOCK_TOLERANCE_SECONDS,
     }) as SessionClaims;
+
+    // 버전이 빠진 세션은 로그아웃 무효화를 피해 가므로 받지 않는다
+    return typeof claims.uid === 'string' && Number.isInteger(claims.ver) ? claims : null;
   } catch {
     return null;
   }

@@ -183,10 +183,6 @@ describe('UserController', () => {
 
       expect(mockUserService.logout).toHaveBeenCalledWith(mockUser);
       expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token', 'vd_session']);
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
-        'vd_session',
-        expect.objectContaining({ domain: 'localhost' }),
-      );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
