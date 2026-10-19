@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { authMiddleware, verifyBearerTokens } from '@/middlewares/auth.middleware';
+import { authMiddleware, setRateLimitService, verifyBearerTokens } from '@/middlewares/auth.middleware';
 import pool from '@/configs/db.config';
 import { mockUser } from '@/utils/fixtures';
 import { AuthRateLimitService } from '@/services/authRateLimit.service';
@@ -272,6 +272,9 @@ describe('인증 미들웨어', () => {
         expect(fetchVelogApi).toHaveBeenCalledTimes(1);
         expect(nextFunction).toHaveBeenNthCalledWith(2);
         expect([...store.keys()]).toEqual([expect.stringMatching(/^auth:velog:/)]);
+        // 키에는 토큰 원문 대신 해시만 들어가고, 확인된 결과는 10분 캐시한다
+        expect([...store.keys()][0]).not.toContain(validToken);
+        expect(cache.set).toHaveBeenCalledWith(expect.any(String), TOKEN_USER_UUID, 600);
       });
 
       it('캐시된 사용자가 토큰의 사용자와 다르면 velog 를 부르지 않고 InvalidTokenError를 전달해야 한다', async () => {
@@ -548,6 +551,24 @@ describe('verifyBearerTokens', () => {
     it('AuthRateLimitService 없이도 동작해야 한다', () => {
       const middleware = verifyBearerTokens();
       expect(typeof middleware).toBe('function');
+    });
+  });
+
+  describe('전역 rate limit 서비스', () => {
+    afterEach(() => {
+      setRateLimitService(undefined as unknown as AuthRateLimitService);
+    });
+
+    it('라우터가 서비스 설정 전에 미들웨어를 가져갔어도 차단된 IP 는 429 를 받아야 한다', async () => {
+      // 라우터 모듈은 앱이 서비스를 설정하기 전에 import 되며 이때 미들웨어를 꺼내 둔다
+      const verify = authMiddleware.verify;
+      mockRateLimitService.isIpBlocked.mockResolvedValue(true);
+      setRateLimitService(mockRateLimitService);
+
+      await verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(429);
+      expect(nextFunction).not.toHaveBeenCalled();
     });
   });
 

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { VELOG_API_URL, VELOG_QUERIES } from '@/modules/velog/velog.constans';
 import { ServiceUnavailableError } from '@/exception';
+import logger from '@/configs/logger.config';
 
 // axios 모킹
 jest.mock('axios');
@@ -132,8 +133,7 @@ describe('Velog API', () => {
     });
 
     it.each([
-      ['네트워크 오류', new Error('socket hang up')],
-      ['타임아웃', Object.assign(new Error('timeout'), { code: 'ECONNABORTED' })],
+      ['연결 실패·타임아웃', Object.assign(new Error('timeout'), { code: 'ECONNABORTED' })],
       ['5xx', Object.assign(new Error('bad gateway'), { response: { status: 502 } })],
       ['429', Object.assign(new Error('too many'), { response: { status: 429 } })],
       ['403', Object.assign(new Error('forbidden'), { response: { status: 403 } })],
@@ -141,6 +141,21 @@ describe('Velog API', () => {
       mockedAxios.post.mockRejectedValueOnce(error);
 
       await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(ServiceUnavailableError);
+    });
+
+    it('velog 호출 실패 로그에 토큰을 남기지 않아야 한다', async () => {
+      mockedAxios.post.mockRejectedValueOnce(
+        Object.assign(new Error('bad gateway'), {
+          response: { status: 502 },
+          config: { headers: { cookie: `access_token=${mockAccessToken}; refresh_token=${mockRefreshToken}` } },
+        }),
+      );
+
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(ServiceUnavailableError);
+
+      const logged = JSON.stringify((logger.error as jest.Mock).mock.calls);
+      expect(logged).not.toContain(mockAccessToken);
+      expect(logged).not.toContain(mockRefreshToken);
     });
   });
 });
