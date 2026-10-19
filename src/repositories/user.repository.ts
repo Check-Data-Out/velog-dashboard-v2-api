@@ -167,6 +167,19 @@ export class UserRepository {
     }
   }
 
+  /**
+   * 세션 버전을 1 올려 그 사용자의 모든 기기 세션을 무효화합니다.
+   */
+  async incrementSessionVersion(id: number): Promise<void> {
+    try {
+      const query = `UPDATE "users_user" SET session_version = session_version + 1 WHERE id = $1`;
+      await this.pool.query(query, [id]);
+    } catch (error) {
+      logger.error('User Repo incrementSessionVersion Error : ', error);
+      throw new DBError('로그아웃 처리 중 문제가 발생했습니다.');
+    }
+  }
+
   async unsubscribeNewsletter(id: number): Promise<void> {
     try {
       const query = `UPDATE "users_user" SET newsletter_subscribed = false WHERE id = $1`;

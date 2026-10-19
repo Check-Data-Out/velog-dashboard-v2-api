@@ -3,7 +3,7 @@ import { NotFoundError, TokenError } from '@/exception/';
 import { getKeyByGroup } from '@/utils/key.util';
 import AESEncryption from '@/modules/token_encryption/aes_encryption';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
-import { UserRepository } from '@/repositories/user.repository';
+import { SAMPLE_USER_VELOG_UUID, UserRepository } from '@/repositories/user.repository';
 import { UserWithTokenDto, User } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
@@ -140,6 +140,17 @@ export class UserService {
 
     await this.userRepo.updateQRLoginTokenToUse(qrToken.user_id);
     return qrTokenUser;
+  }
+
+  /**
+   * 그 사용자의 모든 기기 세션을 끊고, 아직 쓰지 않은 QR 로그인 토큰도 사용 처리합니다.
+   */
+  async logout(user: User): Promise<void> {
+    // 샘플 계정은 여러 방문자가 함께 쓰므로 자기 쿠키만 지운다
+    if (user.velog_uuid === SAMPLE_USER_VELOG_UUID) return;
+
+    await this.userRepo.incrementSessionVersion(user.id);
+    await this.userRepo.updateQRLoginTokenToUse(user.id);
   }
 
   async unsubscribeNewsletter(email: string) {

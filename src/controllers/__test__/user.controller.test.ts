@@ -178,16 +178,13 @@ describe('UserController', () => {
   });
 
   describe('logout', () => {
-    it('로그아웃에 성공해야 한다', async () => {
+    it('로그아웃하면 사용자 세션을 끊고 세션·velog 토큰 쿠키를 모두 지워야 한다', async () => {
       await userController.logout(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(mockUserService.logout).toHaveBeenCalledWith(mockUser);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token', 'vd_session']);
       expect(mockResponse.clearCookie).toHaveBeenCalledWith(
-        'access_token',
-        expect.objectContaining({ domain: 'localhost' }),
-      );
-      expect(mockResponse.clearCookie).toHaveBeenCalledWith(
-        'refresh_token',
+        'vd_session',
         expect.objectContaining({ domain: 'localhost' }),
       );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
@@ -197,6 +194,16 @@ describe('UserController', () => {
         data: {},
         error: null,
       });
+    });
+
+    it('로그아웃 처리 중 DB 오류는 에러 핸들러로 넘겨야 한다', async () => {
+      const error = new Error('DB 오류');
+      mockUserService.logout.mockRejectedValueOnce(error);
+
+      await userController.logout(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(error);
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
   });
 

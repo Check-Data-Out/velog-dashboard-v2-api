@@ -6,6 +6,7 @@ import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception';
 import { cookieOption, setSessionCookie } from '@/utils/cookie.util';
+import { SESSION_COOKIE_NAME } from '@/utils/session.util';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -68,13 +69,21 @@ export class UserController {
     }
   };
 
-  logout: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>) => {
-    res.clearCookie('access_token', cookieOption(true));
-    res.clearCookie('refresh_token', cookieOption(true));
+  logout: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
+    try {
+      await this.userService.logout(req.user);
 
-    const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
+      res.clearCookie('access_token', cookieOption(true));
+      res.clearCookie('refresh_token', cookieOption(true));
+      res.clearCookie(SESSION_COOKIE_NAME, cookieOption(true));
 
-    res.status(200).json(response);
+      const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
+
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`로그아웃 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
+      next(error);
+    }
   };
 
   fetchCurrentUser: RequestHandler = async (req: Request, res: Response<LoginResponseDto>) => {
