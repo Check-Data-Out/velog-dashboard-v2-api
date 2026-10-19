@@ -16,17 +16,16 @@ import { setSessionCookie } from '@/utils/cookie.util';
 let globalRateLimitService: AuthRateLimitService | undefined;
 
 /**
- * 요청에서 토큰을 추출하는 함수
+ * 요청에서 velog 토큰을 추출하는 함수
  * @param req - Express Request 객체
  * @returns  추출된 토큰 객체
  * @description 다음 순서로 토큰을 확인합니다:
- * 1. 요청 본문 (req.body) - 신규 로그인
- * 2. 요청 헤더 - API 호출
- * 3. 쿠키 - 웹 클라이언트
+ * 1. 쿠키 - 세션 쿠키 도입 전에 로그인한 웹 클라이언트
+ * 2. 요청 헤더 - 익스텐션
  */
 const extractTokens = (req: Request): { accessToken: string; refreshToken: string } => {
-  const accessToken = req.cookies['access_token'] || req.body.accessToken || req.headers['access_token'];
-  const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken || req.headers['refresh_token'];
+  const accessToken = req.cookies['access_token'] || req.headers['access_token'];
+  const refreshToken = req.cookies['refresh_token'] || req.headers['refresh_token'];
 
   return { accessToken, refreshToken };
 };
@@ -100,8 +99,8 @@ const authenticateVelogTokens = async (accessToken: string, refreshToken: string
 
   const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
     .rows[0] as User;
-  // 가입 전 사용자(익스텐션 등)는 거부하되 IP 인증 실패로 집계하지 않는다
-  if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+  // 가입 전·비활성 사용자는 거부하되 IP 인증 실패로 집계하지 않는다 (비활성은 다시 로그인하면 복귀)
+  if (!user || !user.is_active) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
 
   // 토큰 주인은 velog 에서 확인한다
   const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
@@ -120,7 +119,7 @@ const authenticateSession = async (sessionToken: string): Promise<User> => {
   if (!claims) throw new InvalidTokenError('유효하지 않은 세션입니다.');
 
   const user = (await pool.query('SELECT * FROM "users_user" WHERE id = $1', [Number(claims.sub)])).rows[0] as User;
-  if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+  if (!user || !user.is_active) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
 
   // 서명은 우리가 했으므로 위조가 아니라 만료된 세션이다 → 인증 실패 집계 없이 거부
   if (user.velog_uuid !== claims.uid || user.session_version !== claims.ver) {
