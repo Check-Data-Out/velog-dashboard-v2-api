@@ -79,17 +79,13 @@ describe('UserService의 QR 로그인 기능', () => {
       user_agent: 'Chrome',
     };
 
-    it('유효한 토큰 사용 시 복호화된 토큰 정보 반환', async () => {
+    it('유효한 토큰 사용 시 토큰 주인 사용자 반환', async () => {
       userRepo.findQRLoginToken.mockResolvedValue(mockQRToken);
       userRepo.findByUserId.mockResolvedValue(mockUser);
 
       const result = await userService.useToken('token');
 
-      expect(result).toEqual({
-        user: mockUser,
-        decryptedAccessToken: 'decrypted-access-token',
-        decryptedRefreshToken: 'decrypted-refresh-token',
-      });
+      expect(result).toEqual(mockUser);
       expect(userRepo.findQRLoginToken).toHaveBeenCalledWith('token');
       expect(userRepo.findByUserId).toHaveBeenCalledWith(mockQRToken.user_id);
       expect(userRepo.updateQRLoginTokenToUse).toHaveBeenCalledWith(mockQRToken.user_id);

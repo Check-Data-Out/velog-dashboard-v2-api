@@ -16,9 +16,3 @@ export interface User {
   // 261019 추가 — 로그아웃 시 1 증가, 자체 세션의 ver 와 비교
   session_version: number;
 }
-
-export interface SampleUser {
-  user: User;
-  decryptedAccessToken: string;
-  decryptedRefreshToken: string;
-}

@@ -1,5 +1,5 @@
 // User, Login 관련
-export type { User, SampleUser } from '@/types/models/User.type';
+export type { User } from '@/types/models/User.type';
 export type { VelogJWTPayload, VelogUserCurrentResponse } from '@/modules/velog/velog.type';
 export { LoginRequestDto } from '@/types/dto/requests/loginRequest.type';
 export { LoginResponseDto } from '@/types/dto/responses/loginResponse.type';

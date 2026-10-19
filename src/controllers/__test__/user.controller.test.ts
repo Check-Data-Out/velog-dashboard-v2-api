@@ -145,14 +145,8 @@ describe('UserController', () => {
   });
 
   describe('sampleLogin', () => {
-    const mockSampleUser = {
-      user: mockUser,
-      decryptedAccessToken: 'decrypted-access-token',
-      decryptedRefreshToken: 'decrypted-refresh-token',
-    };
-
     it('샘플 로그인에 성공해야 한다', async () => {
-      mockUserService.findSampleUser.mockResolvedValue(mockSampleUser);
+      mockUserService.findSampleUser.mockResolvedValue(mockUser);
 
       await userController.sampleLogin(mockRequest as Request, mockResponse as Response, nextFunction);
 
@@ -293,15 +287,9 @@ describe('UserController', () => {
   });
 
   describe('getToken', () => {
-    const mockUserLoginToken = {
-      user: mockUser,
-      decryptedAccessToken: 'decrypted-access-token',
-      decryptedRefreshToken: 'decrypted-refresh-token',
-    };
-
     it('유효한 토큰으로 QR 로그인에 성공해야 한다', async () => {
       mockRequest.query = { token: 'valid-token' };
-      mockUserService.useToken.mockResolvedValue(mockUserLoginToken);
+      mockUserService.useToken.mockResolvedValue(mockUser);
 
       await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
 

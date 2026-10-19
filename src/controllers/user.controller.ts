@@ -46,15 +46,15 @@ export class UserController {
     try {
       const sampleUser = await this.userService.findSampleUser();
 
-      setSessionCookie(res, sampleUser.user);
+      setSessionCookie(res, sampleUser);
 
-      req.user = sampleUser.user;
+      req.user = sampleUser;
 
       const response = new LoginResponseDto(
         true,
         '로그인에 성공하였습니다.',
         {
-          id: sampleUser.user.id,
+          id: sampleUser.id,
           username: '테스트 유저',
           profile: { thumbnail: 'https://velog.io/favicon.ico' },
         },
@@ -126,7 +126,7 @@ export class UserController {
         throw new QRTokenExpiredError();
       }
 
-      setSessionCookie(res, userLoginToken.user);
+      setSessionCookie(res, userLoginToken);
 
       res.redirect('/main');
     } catch (error) {
