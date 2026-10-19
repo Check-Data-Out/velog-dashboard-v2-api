@@ -143,6 +143,9 @@ describe('인증 미들웨어', () => {
         expect(fetchVelogApi).toHaveBeenCalledTimes(1);
         expect(nextFunction).toHaveBeenNthCalledWith(2);
         expect([...store.keys()]).toEqual([expect.stringMatching(/^auth:velog:/)]);
+        // 키에는 토큰 원문 대신 해시만 들어가고, 확인된 결과는 10분 캐시한다
+        expect([...store.keys()][0]).not.toContain(validToken);
+        expect(cache.set).toHaveBeenCalledWith(expect.any(String), TOKEN_USER_UUID, 600);
       });
 
       it('캐시된 사용자가 토큰의 사용자와 다르면 velog 를 부르지 않고 InvalidTokenError를 전달해야 한다', async () => {
