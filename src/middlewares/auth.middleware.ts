@@ -58,7 +58,8 @@ const confirmVelogOwner = async (accessToken: string, refreshToken: string): Pro
   const key = `${VELOG_OWNER_CACHE.KEY_PREFIX}${hash}`;
 
   const cached = await readOwnerCache(key);
-  if (cached === VELOG_OWNER_CACHE.REJECTED) throw new InvalidTokenError('Velog 사용자 정보를 가져오지 못했습니다.');
+  // 같은 쌍의 반복은 대입 시도가 아니므로 인증 실패로 세지 않는다 (velog 가 거부한 첫 요청만 집계)
+  if (cached === VELOG_OWNER_CACHE.REJECTED) throw new UnauthorizedError('Velog 사용자 정보를 가져오지 못했습니다.');
   if (cached) return cached;
 
   try {
@@ -79,7 +80,8 @@ const confirmVelogOwner = async (accessToken: string, refreshToken: string): Pro
  */
 const authenticateVelogTokens = async (accessToken: string, refreshToken: string): Promise<User> => {
   if (!accessToken || !refreshToken) {
-    throw new InvalidTokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
+    // 로그인하지 않은 요청이므로 인증 실패로 세지 않는다
+    throw new UnauthorizedError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
   }
 
   // Fail-Fast: JWT 형식 검증

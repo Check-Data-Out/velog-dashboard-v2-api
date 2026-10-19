@@ -290,7 +290,10 @@ describe('인증 미들웨어', () => {
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
         expect(fetchVelogApi).toHaveBeenCalledTimes(1);
-        expect(nextFunction).toHaveBeenNthCalledWith(2, expect.any(InvalidTokenError));
+        // 같은 쌍을 다시 보내는 것은 대입 시도가 아니므로 velog 가 거부한 첫 번째만 인증 실패로 센다
+        const replayed = nextFunction.mock.calls[1][0];
+        expect(replayed).toEqual(expect.objectContaining({ statusCode: 401 }));
+        expect(replayed).not.toBeInstanceOf(InvalidTokenError);
         expect(cache.set).toHaveBeenCalledWith(expect.stringMatching(/^auth:velog:/), expect.anything(), 60);
       });
 
@@ -316,21 +319,16 @@ describe('인증 미들웨어', () => {
       });
     });
 
-    it('토큰이 없으면 InvalidTokenError를 전달해야 한다', async () => {
-      // 토큰 없음
+    it('토큰이 없으면 인증 실패 집계 없이 401 로 거부해야 한다', async () => {
       mockRequest.cookies = {};
 
-      // 미들웨어 실행
       await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      // 검증
-      expect(nextFunction).toHaveBeenCalledTimes(1);
-      expect(nextFunction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'InvalidTokenError',
-          message: 'accessToken과 refreshToken의 입력이 올바르지 않습니다',
-        }),
+      const error = nextFunction.mock.calls[0][0];
+      expect(error).toEqual(
+        expect.objectContaining({ statusCode: 401, message: 'accessToken과 refreshToken의 입력이 올바르지 않습니다' }),
       );
+      expect(error).not.toBeInstanceOf(InvalidTokenError);
     });
 
     it('유효하지 않은 토큰으로 InvalidTokenError를 전달해야 한다', async () => {
@@ -402,7 +400,7 @@ describe('인증 미들웨어', () => {
 
       await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+      expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
       expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
