@@ -89,7 +89,7 @@ router.post('/login-sample', userController.sampleLogin);
  *     summary: 사용자 로그아웃
  *     responses:
  *       '200':
- *         description: 쿠키가 삭제되며 성공적으로 로그아웃함
+ *         description: 쿠키가 삭제되고 이 사용자의 모든 기기 세션이 무효가 되며 성공적으로 로그아웃함
  *         content:
  *           application/json:
  *             schema:

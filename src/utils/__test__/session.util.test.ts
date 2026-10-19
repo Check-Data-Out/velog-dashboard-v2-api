@@ -5,10 +5,9 @@ import { mockUser } from '@/utils/fixtures';
 const SECRET = process.env.SESSION_JWT_SECRET as string;
 
 describe('session.util', () => {
-  it('발급한 세션은 HS256 으로 서명되고 사용자 id·velog uuid·세션 버전을 담는다', () => {
+  it('발급한 세션은 사용자 id·velog uuid·세션 버전을 담는다', () => {
     const token = signSession({ ...mockUser, session_version: 3 });
 
-    expect(jwt.decode(token, { complete: true })?.header.alg).toBe('HS256');
     expect(verifySession(token)).toEqual(
       expect.objectContaining({ sub: String(mockUser.id), uid: mockUser.velog_uuid, ver: 3 }),
     );

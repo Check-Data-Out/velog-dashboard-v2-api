@@ -13,21 +13,29 @@ export const options = {
     ],
     components: {
       securitySchemes: {
+        SessionCookieAuth: {
+          type: 'apiKey',
+          description: '로그인하면 발급되는 대시보드 세션 쿠키입니다. 브라우저 요청은 이 쿠키로 인증합니다.',
+          name: 'vd_session',
+          in: 'cookie',
+        },
         AccessTokenAuth: {
           type: 'apiKey',
-          description: 'API 인증을 위한 액세스 토큰입니다. 헤더, 쿠키 또는 요청 본문을 통해 전달할 수 있습니다.',
+          description: 'velog 액세스 토큰입니다. 세션 쿠키가 없을 때 헤더(익스텐션)로 전달합니다.',
           name: 'access_token',
           in: 'header',
         },
         RefreshTokenAuth: {
           type: 'apiKey',
-          description: '토큰 갱신을 위한 리프레시 토큰입니다. 헤더, 쿠키 또는 요청 본문을 통해 전달할 수 있습니다.',
+          description: 'velog 리프레시 토큰입니다. 세션 쿠키가 없을 때 헤더(익스텐션)로 전달합니다.',
           name: 'refresh_token',
           in: 'header',
         },
       },
     },
+    // 세션 쿠키 또는 velog 토큰 헤더 쌍 중 하나
     security: [
+      { SessionCookieAuth: [] },
       {
         AccessTokenAuth: [],
         RefreshTokenAuth: [],
