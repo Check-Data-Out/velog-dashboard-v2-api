@@ -3,6 +3,8 @@ import { authMiddleware, verifyBearerTokens } from '@/middlewares/auth.middlewar
 import pool from '@/configs/db.config';
 import { mockUser } from '@/utils/fixtures';
 import { AuthRateLimitService } from '@/services/authRateLimit.service';
+import { fetchVelogApi } from '@/modules/velog/velog.api';
+import { cache } from '@/configs/cache.config';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -14,6 +16,24 @@ jest.mock('@/configs/logger.config', () => ({
   error: jest.fn(),
   info: jest.fn(),
 }));
+
+jest.mock('@/modules/velog/velog.api', () => ({
+  fetchVelogApi: jest.fn(),
+}));
+
+jest.mock('@/configs/cache.config', () => ({
+  cache: { get: jest.fn(), set: jest.fn() },
+}));
+
+// 테스트 토큰들의 payload user_id
+const TOKEN_USER_UUID = 'c7507240-093b-11ea-9aae-a58a86bb0520';
+
+beforeEach(() => {
+  // 기본값: velog 가 토큰 주인을 확인해 주고, 캐시는 비어 있다
+  (fetchVelogApi as jest.Mock).mockResolvedValue({ id: TOKEN_USER_UUID });
+  (cache.get as jest.Mock).mockResolvedValue(null);
+  (cache.set as jest.Mock).mockResolvedValue(undefined);
+});
 
 describe('인증 미들웨어', () => {
   let mockRequest: Partial<Request>;
