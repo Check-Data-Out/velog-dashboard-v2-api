@@ -2,11 +2,13 @@ import { NextFunction, Request, Response } from 'express';
 import { isUUID } from 'class-validator';
 import logger from '@/configs/logger.config';
 import pool from '@/configs/db.config';
-import { CustomError, DBError, InvalidTokenError } from '@/exception';
+import { CustomError, InvalidTokenError, UnauthorizedError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 import crypto from 'crypto';
 import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
 import { AuthRateLimitService, AUTH_RATE_LIMIT_CONFIG } from '@/services/authRateLimit.service';
+import { fetchVelogApi } from '@/modules/velog/velog.api';
+import { cache } from '@/configs/cache.config';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
@@ -27,6 +29,51 @@ const extractTokens = (req: Request): { accessToken: string; refreshToken: strin
   return { accessToken, refreshToken };
 };
 
+const VELOG_OWNER_CACHE = {
+  KEY_PREFIX: 'auth:velog:',
+  CONFIRMED_TTL_SECONDS: 10 * 60,
+  REJECTED_TTL_SECONDS: 60,
+  // velog 가 거부한 토큰 쌍을 표시하는 값. 캐시 미스(null)와 구분된다 (확인된 경우에는 velog uuid 를 저장)
+  REJECTED: '',
+} as const;
+
+// 캐시는 velog 호출을 줄이는 용도라 실패해도 인증을 막지 않는다 (fail-open)
+const readOwnerCache = async (key: string): Promise<string | null> =>
+  cache.get<string>(key).catch((error) => {
+    logger.error('velog 확인 캐시 조회 실패', { error });
+    return null;
+  });
+
+const writeOwnerCache = async (key: string, value: string, ttlSeconds: number): Promise<void> =>
+  cache.set(key, value, ttlSeconds).catch((error) => {
+    logger.error('velog 확인 캐시 저장 실패', { error });
+  });
+
+/**
+ * velog 에 토큰 쌍의 주인(velog uuid)을 확인한다. 같은 토큰 쌍은 잠시 캐시해 velog 호출을 줄인다.
+ */
+const confirmVelogOwner = async (accessToken: string, refreshToken: string): Promise<string> => {
+  const hash = crypto.createHash('sha256').update(`${accessToken}.${refreshToken}`).digest('hex');
+  const key = `${VELOG_OWNER_CACHE.KEY_PREFIX}${hash}`;
+
+  const cached = await readOwnerCache(key);
+  // 같은 쌍의 반복은 대입 시도가 아니므로 인증 실패로 세지 않는다 (velog 가 거부한 첫 요청만 집계)
+  if (cached === VELOG_OWNER_CACHE.REJECTED) throw new UnauthorizedError('Velog 사용자 정보를 가져오지 못했습니다.');
+  if (cached) return cached;
+
+  try {
+    const velogUser = await fetchVelogApi(accessToken, refreshToken);
+    await writeOwnerCache(key, velogUser.id, VELOG_OWNER_CACHE.CONFIRMED_TTL_SECONDS);
+    return velogUser.id;
+  } catch (error) {
+    // velog 가 명시적으로 거부한 경우만 캐시한다. 장애(ServiceUnavailableError)는 다음 요청에서 다시 확인
+    if (error instanceof InvalidTokenError) {
+      await writeOwnerCache(key, VELOG_OWNER_CACHE.REJECTED, VELOG_OWNER_CACHE.REJECTED_TTL_SECONDS);
+    }
+    throw error;
+  }
+};
+
 /**
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
  *  @param rateLimitService - Rate limit 서비스 (선택적)
@@ -35,10 +82,12 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Rate Limit 체크 (서비스가 주입된 경우에만)
-      if (rateLimitService) {
+      // 라우터는 앱이 전역 서비스를 설정하기 전에 미들웨어를 만들어 두므로, 전역 서비스는 요청 시점에 읽는다
+      const limiter = rateLimitService ?? globalRateLimitService;
+      if (limiter) {
         try {
           const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-          const isBlocked = await rateLimitService.isIpBlocked(ip);
+          const isBlocked = await limiter.isIpBlocked(ip);
           if (isBlocked) {
             res.status(429).json({
               success: false,
@@ -56,11 +105,12 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
       const { accessToken, refreshToken } = extractTokens(req);
 
       if (!accessToken || !refreshToken) {
-        throw new InvalidTokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
+        // 로그인하지 않은 요청이므로 인증 실패로 세지 않는다
+        throw new UnauthorizedError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
       }
 
       // Fail-Fast: JWT 형식 검증
-      if (!isValidJwtFormat(accessToken)) {
+      if (!isValidJwtFormat(accessToken) || !isValidJwtFormat(refreshToken)) {
         throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
       }
 
@@ -76,7 +126,14 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
 
       const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
         .rows[0] as User;
-      if (!user) throw new DBError('사용자를 찾을 수 없습니다.');
+      // 가입 전 사용자(익스텐션 등)는 거부하되 IP 인증 실패로 집계하지 않는다
+      if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+
+      // 토큰 주인은 velog 에서 확인한다
+      const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
+      if (velogUuid !== payload.user_id) {
+        throw new InvalidTokenError('토큰 사용자 정보가 일치하지 않습니다.');
+      }
 
       req.user = user;
       req.tokens = { accessToken, refreshToken };
@@ -133,13 +190,11 @@ export const setRateLimitService = (service: AuthRateLimitService) => {
 
 /**
  * 사용자 인증을 위한 미들웨어 모음
- * 전역 rate limit 서비스가 설정되면 자동으로 rate limit 체크 수행
+ * 전역 rate limit 서비스가 설정되면 요청마다 rate limit 체크 수행
  * @property {Function} verify
  * @property {Function} verifySignature
  */
 export const authMiddleware = {
-  get verify() {
-    return verifyBearerTokens(globalRateLimitService);
-  },
+  verify: verifyBearerTokens(),
   verifySignature: verifySentrySignature(),
 };

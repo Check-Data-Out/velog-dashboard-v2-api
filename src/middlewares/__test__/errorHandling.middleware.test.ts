@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { createErrorHandlingMiddleware } from '../errorHandling.middleware';
 import { AuthRateLimitService } from '@/services/authRateLimit.service';
-import { CustomError, InvalidTokenError } from '@/exception';
+import { CustomError, InvalidTokenError, ServiceUnavailableError } from '@/exception';
 import * as Sentry from '@sentry/node';
 
 jest.mock('@/configs/logger.config', () => ({
@@ -96,6 +96,19 @@ describe('ErrorHandlingMiddleware', () => {
       const middleware = createErrorHandlingMiddleware(mockService);
       await middleware(customError, mockRequest as Request, mockResponse as Response, nextFunction);
 
+      expect(mockService.trackAuthFailure).not.toHaveBeenCalled();
+    });
+
+    it('ServiceUnavailableError는 503으로 응답하고 인증 실패로 집계하지 않아야 한다', async () => {
+      const middleware = createErrorHandlingMiddleware(mockService);
+      await middleware(
+        new ServiceUnavailableError('velog 장애'),
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(503);
       expect(mockService.trackAuthFailure).not.toHaveBeenCalled();
     });
 
