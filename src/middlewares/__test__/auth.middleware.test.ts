@@ -161,6 +161,25 @@ describe('인증 미들웨어', () => {
         expect(mockRequest.user).toBeUndefined();
       });
 
+      it('거부한 세션 쿠키는 지워서 브라우저가 로그인 화면으로 돌아오게 해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession({ ...mockUser, session_version: 2 }) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, session_version: 3 }] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(mockResponse.clearCookie).toHaveBeenCalledWith('vd_session', expect.anything());
+      });
+
+      it('DB 오류처럼 세션과 무관한 실패에는 세션 쿠키를 지우지 않아야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession(mockUser) };
+        (pool.query as jest.Mock).mockRejectedValueOnce(new Error('DB 연결 실패'));
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+        expect(mockResponse.clearCookie).not.toHaveBeenCalled();
+      });
+
       it('세션 쿠키가 있으면 무효여도 velog 토큰 쿠키로 넘어가지 않아야 한다', async () => {
         mockRequest.cookies = { vd_session: 'invalid-session', access_token: validToken, refresh_token: REFRESH_TOKEN };
 
