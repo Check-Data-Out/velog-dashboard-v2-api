@@ -42,9 +42,13 @@ export const fetchVelogApi = async (accessToken: string, refreshToken: string): 
       throw new ServiceUnavailableError('Velog API 응답에 오류가 있습니다.');
     }
 
-    if (!result.data.currentUser) {
+    // 토큰 무효는 currentUser 가 명시적으로 null 인 경우뿐이다. 필드가 없으면 velog 응답 이상으로 본다
+    if (result.data?.currentUser === null) {
       logger.error('Velog API 응답에 currentUser 정보가 없습니다.');
       throw new InvalidTokenError('Velog 사용자 정보를 가져오지 못했습니다.');
+    }
+    if (!result.data?.currentUser) {
+      throw new ServiceUnavailableError('Velog API 응답 형식이 예상과 다릅니다.');
     }
 
     // email이 undefined인 경우 null로 변환

@@ -132,6 +132,12 @@ describe('Velog API', () => {
       );
     });
 
+    it('응답에 currentUser 필드가 아예 없으면 토큰 무효가 아니라 ServiceUnavailableError를 던져야 한다', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: { data: {} } });
+
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(ServiceUnavailableError);
+    });
+
     it.each([
       ['연결 실패·타임아웃', Object.assign(new Error('timeout'), { code: 'ECONNABORTED' })],
       ['5xx', Object.assign(new Error('bad gateway'), { response: { status: 502 } })],
