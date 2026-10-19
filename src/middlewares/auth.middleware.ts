@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { isUUID } from 'class-validator';
 import logger from '@/configs/logger.config';
 import pool from '@/configs/db.config';
-import { CustomError, InvalidTokenError } from '@/exception';
+import { CustomError, InvalidTokenError, UnauthorizedError } from '@/exception';
 import { VelogJWTPayload, User } from '@/types';
 import crypto from 'crypto';
 import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
@@ -122,7 +122,8 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
 
       const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
         .rows[0] as User;
-      if (!user) throw new InvalidTokenError('사용자를 찾을 수 없습니다.');
+      // 가입 전 사용자(익스텐션 등)는 거부하되 IP 인증 실패로 집계하지 않는다
+      if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
 
       // 토큰 주인은 velog 에서 확인한다
       const velogUuid = await confirmVelogOwner(accessToken, refreshToken);

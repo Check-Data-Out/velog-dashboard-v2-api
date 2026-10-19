@@ -243,15 +243,28 @@ describe('인증 미들웨어', () => {
       );
     });
 
-    it('payload 사용자가 DB 에 없으면 velog 를 부르지 않고 InvalidTokenError를 전달해야 한다', async () => {
+    it('가입하지 않은 사용자의 토큰은 velog 를 부르지 않고 인증 실패 집계 없이 401 로 거부해야 한다', async () => {
       mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
       (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
       await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+      const error = nextFunction.mock.calls[0][0];
+      expect(error).toEqual(expect.objectContaining({ statusCode: 401 }));
+      expect(error).not.toBeInstanceOf(InvalidTokenError);
       expect(mockRequest.user).toBeUndefined();
       expect(fetchVelogApi).not.toHaveBeenCalled();
+    });
+
+    it('쿠키가 없으면 요청 헤더의 토큰으로 인증해야 한다', async () => {
+      mockRequest.headers = { access_token: validToken, refresh_token: REFRESH_TOKEN };
+      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+      await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(fetchVelogApi).toHaveBeenCalledWith(validToken, REFRESH_TOKEN);
+      expect(nextFunction).toHaveBeenCalledWith();
+      expect(mockRequest.user).toEqual(mockUser);
     });
 
     it('쿠키에 토큰이 없으면 요청 본문에서 토큰을 가져와야 한다', async () => {
