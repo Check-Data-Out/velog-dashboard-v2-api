@@ -82,10 +82,12 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Rate Limit 체크 (서비스가 주입된 경우에만)
-      if (rateLimitService) {
+      // 라우터는 앱이 전역 서비스를 설정하기 전에 미들웨어를 만들어 두므로, 전역 서비스는 요청 시점에 읽는다
+      const limiter = rateLimitService ?? globalRateLimitService;
+      if (limiter) {
         try {
           const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-          const isBlocked = await rateLimitService.isIpBlocked(ip);
+          const isBlocked = await limiter.isIpBlocked(ip);
           if (isBlocked) {
             res.status(429).json({
               success: false,
@@ -188,13 +190,11 @@ export const setRateLimitService = (service: AuthRateLimitService) => {
 
 /**
  * 사용자 인증을 위한 미들웨어 모음
- * 전역 rate limit 서비스가 설정되면 자동으로 rate limit 체크 수행
+ * 전역 rate limit 서비스가 설정되면 요청마다 rate limit 체크 수행
  * @property {Function} verify
  * @property {Function} verifySignature
  */
 export const authMiddleware = {
-  get verify() {
-    return verifyBearerTokens(globalRateLimitService);
-  },
+  verify: verifyBearerTokens(),
   verifySignature: verifySentrySignature(),
 };
