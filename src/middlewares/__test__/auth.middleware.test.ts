@@ -6,7 +6,7 @@ import { AuthRateLimitService } from '@/services/authRateLimit.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
 import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
-import { signSession } from '@/utils/session.util';
+import { signSession, verifySession } from '@/utils/session.util';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -202,6 +202,38 @@ describe('인증 미들웨어', () => {
         expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
         expect(mockRequest.user).toBeUndefined();
         expect(mockResponse.cookie).not.toHaveBeenCalled();
+      });
+      describe('세션 연장', () => {
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const signedAgo = (ms: number, user = mockUser) => {
+          jest.useFakeTimers({ now: Date.now() - ms });
+          const token = signSession(user);
+          jest.useRealTimers();
+          return token;
+        };
+
+        it('발급 후 1일이 지난 세션은 같은 사용자·버전으로 다시 발급해야 한다', async () => {
+          const user = { ...mockUser, session_version: 2 };
+          mockRequest.cookies = { vd_session: signedAgo(2 * DAY_MS, user) };
+          (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [user] });
+
+          await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          const [name, reissued] = (mockResponse.cookie as jest.Mock).mock.calls[0];
+          expect(name).toBe('vd_session');
+          expect(verifySession(reissued)).toEqual(expect.objectContaining({ sub: String(user.id), ver: 2 }));
+          expect(nextFunction).toHaveBeenCalledWith();
+        });
+
+        it('발급 후 1일이 지나지 않은 세션은 다시 발급하지 않아야 한다', async () => {
+          mockRequest.cookies = { vd_session: signedAgo(DAY_MS / 2) };
+          (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+          await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          expect(mockResponse.cookie).not.toHaveBeenCalled();
+          expect(nextFunction).toHaveBeenCalledWith();
+        });
       });
     });
 

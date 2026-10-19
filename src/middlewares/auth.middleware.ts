@@ -111,10 +111,13 @@ const authenticateVelogTokens = async (accessToken: string, refreshToken: string
   return user;
 };
 
+// 세션은 쓸 때마다 연장한다. 매 요청 다시 서명하지 않도록 발급 후 하루가 지났을 때만 새로 발급
+const SESSION_REISSUE_AFTER_SECONDS = 24 * 60 * 60;
+
 /**
- * 대시보드 세션 쿠키로 사용자를 인증한다.
+ * 대시보드 세션 쿠키로 사용자를 인증하고, 오래된 세션이면 다시 발급한다.
  */
-const authenticateSession = async (sessionToken: string): Promise<User> => {
+const authenticateSession = async (sessionToken: string, res: Response): Promise<User> => {
   const claims = verifySession(sessionToken);
   if (!claims) throw new InvalidTokenError('유효하지 않은 세션입니다.');
 
@@ -124,6 +127,11 @@ const authenticateSession = async (sessionToken: string): Promise<User> => {
   // 서명은 우리가 했으므로 위조가 아니라 만료된 세션이다 → 인증 실패 집계 없이 거부
   if (user.velog_uuid !== claims.uid || user.session_version !== claims.ver) {
     throw new UnauthorizedError('세션이 만료되었습니다.');
+  }
+
+  // 방금 DB 와 일치를 확인한 버전을 그대로 담는다 (그사이 로그아웃했다면 다음 요청에서 거부된다)
+  if (Date.now() / 1000 - claims.iat > SESSION_REISSUE_AFTER_SECONDS) {
+    setSessionCookie(res, { id: user.id, velog_uuid: claims.uid, session_version: claims.ver });
   }
 
   return user;
@@ -157,7 +165,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
 
       const sessionToken = req.cookies[SESSION_COOKIE_NAME];
       if (sessionToken !== undefined) {
-        req.user = await authenticateSession(sessionToken);
+        req.user = await authenticateSession(sessionToken, res);
         next();
         return;
       }
