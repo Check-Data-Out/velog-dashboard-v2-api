@@ -18,6 +18,9 @@ jest.mock('@/configs/logger.config', () => ({
   info: jest.fn(),
 }));
 
+// 응답에 심거나 지운 쿠키 이름 목록
+const namesOf = (mockFn: unknown): string[] => (mockFn as jest.Mock).mock.calls.map(([name]) => name);
+
 describe('UserController', () => {
   let userController: UserController;
   let mockUserService: jest.Mocked<UserService>;
@@ -85,8 +88,8 @@ describe('UserController', () => {
         'valid-access-token',
         'valid-refresh-token',
       );
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['access_token', 'refresh_token']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -153,8 +156,8 @@ describe('UserController', () => {
       await userController.sampleLogin(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.findSampleUser).toHaveBeenCalled();
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['access_token', 'refresh_token']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         success: true,
@@ -183,7 +186,7 @@ describe('UserController', () => {
     it('로그아웃에 성공해야 한다', async () => {
       await userController.logout(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
       expect(mockResponse.clearCookie).toHaveBeenCalledWith(
         'access_token',
         expect.objectContaining({ domain: 'localhost' }),
@@ -290,6 +293,7 @@ describe('UserController', () => {
 
   describe('getToken', () => {
     const mockUserLoginToken = {
+      user: mockUser,
       decryptedAccessToken: 'decrypted-access-token',
       decryptedRefreshToken: 'decrypted-refresh-token',
     };
@@ -301,8 +305,8 @@ describe('UserController', () => {
       await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token');
-      expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(namesOf(mockResponse.cookie)).toEqual(['access_token', 'refresh_token']);
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
     });
 

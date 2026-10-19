@@ -149,7 +149,7 @@ export class UserService {
     return token;
   }
 
-  async useToken(token: string): Promise<{ decryptedAccessToken: string; decryptedRefreshToken: string } | null> {
+  async useToken(token: string): Promise<SampleUser | null> {
     // 1. 사용자의 토큰을 찾는다.
     const qrToken = await this.userRepo.findQRLoginToken(token);
     if (!qrToken) {
@@ -168,7 +168,7 @@ export class UserService {
       qrTokenUser.access_token,
       qrTokenUser.refresh_token,
     );
-    return { decryptedAccessToken, decryptedRefreshToken };
+    return { user: qrTokenUser, decryptedAccessToken, decryptedRefreshToken };
   }
 
   async unsubscribeNewsletter(email: string) {

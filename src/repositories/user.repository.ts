@@ -4,6 +4,9 @@ import { User } from '@/types';
 import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { DBError } from '@/exception';
 
+// 로그인 없이 둘러보기용 샘플 계정
+export const SAMPLE_USER_VELOG_UUID = '8f561807-8304-4006-84a5-ee3fa8b46d23';
+
 export class UserRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -41,10 +44,10 @@ export class UserRepository {
     try {
       const query = `
         SELECT * FROM "users_user"
-        WHERE velog_uuid = '8f561807-8304-4006-84a5-ee3fa8b46d23';
+        WHERE velog_uuid = $1;
       `;
 
-      const result = await this.pool.query(query);
+      const result = await this.pool.query(query, [SAMPLE_USER_VELOG_UUID]);
       return result.rows[0];
     } catch (error) {
       logger.error('User Repo findSampleUser Error : ', error);

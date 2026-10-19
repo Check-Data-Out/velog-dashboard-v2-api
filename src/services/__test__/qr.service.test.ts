@@ -86,6 +86,7 @@ describe('UserService의 QR 로그인 기능', () => {
       const result = await userService.useToken('token');
 
       expect(result).toEqual({
+        user: mockUser,
         decryptedAccessToken: 'decrypted-access-token',
         decryptedRefreshToken: 'decrypted-refresh-token',
       });
