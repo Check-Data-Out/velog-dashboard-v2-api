@@ -74,6 +74,43 @@ const confirmVelogOwner = async (accessToken: string, refreshToken: string): Pro
 };
 
 /**
+ * velog 토큰 쌍으로 사용자를 인증한다 (형식 검사 → DB 사용자 확인 → velog 확인).
+ */
+const authenticateVelogTokens = async (accessToken: string, refreshToken: string): Promise<User> => {
+  if (!accessToken || !refreshToken) {
+    throw new InvalidTokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
+  }
+
+  // Fail-Fast: JWT 형식 검증
+  if (!isValidJwtFormat(accessToken) || !isValidJwtFormat(refreshToken)) {
+    throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
+  }
+
+  // 안전한 페이로드 추출 (JSON 파싱 실패 시 null 반환)
+  const payload = safeExtractPayload<VelogJWTPayload>(accessToken);
+  if (!payload) {
+    throw new InvalidTokenError('토큰 페이로드를 추출할 수 없습니다.');
+  }
+
+  if (!payload.user_id || !isUUID(payload.user_id)) {
+    throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
+  }
+
+  const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
+    .rows[0] as User;
+  // 가입 전 사용자(익스텐션 등)는 거부하되 IP 인증 실패로 집계하지 않는다
+  if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+
+  // 토큰 주인은 velog 에서 확인한다
+  const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
+  if (velogUuid !== payload.user_id) {
+    throw new InvalidTokenError('토큰 사용자 정보가 일치하지 않습니다.');
+  }
+
+  return user;
+};
+
+/**
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
  *  @param rateLimitService - Rate limit 서비스 (선택적)
  */
@@ -101,35 +138,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
 
       const { accessToken, refreshToken } = extractTokens(req);
 
-      if (!accessToken || !refreshToken) {
-        throw new InvalidTokenError('accessToken과 refreshToken의 입력이 올바르지 않습니다');
-      }
-
-      // Fail-Fast: JWT 형식 검증
-      if (!isValidJwtFormat(accessToken) || !isValidJwtFormat(refreshToken)) {
-        throw new InvalidTokenError('유효하지 않은 JWT 형식입니다.');
-      }
-
-      // 안전한 페이로드 추출 (JSON 파싱 실패 시 null 반환)
-      const payload = safeExtractPayload<VelogJWTPayload>(accessToken);
-      if (!payload) {
-        throw new InvalidTokenError('토큰 페이로드를 추출할 수 없습니다.');
-      }
-
-      if (!payload.user_id || !isUUID(payload.user_id)) {
-        throw new InvalidTokenError('유효하지 않은 토큰 페이로드 입니다.');
-      }
-
-      const user = (await pool.query('SELECT * FROM "users_user" WHERE velog_uuid = $1', [payload.user_id]))
-        .rows[0] as User;
-      // 가입 전 사용자(익스텐션 등)는 거부하되 IP 인증 실패로 집계하지 않는다
-      if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
-
-      // 토큰 주인은 velog 에서 확인한다
-      const velogUuid = await confirmVelogOwner(accessToken, refreshToken);
-      if (velogUuid !== payload.user_id) {
-        throw new InvalidTokenError('토큰 사용자 정보가 일치하지 않습니다.');
-      }
+      const user = await authenticateVelogTokens(accessToken, refreshToken);
 
       req.user = user;
       req.tokens = { accessToken, refreshToken };

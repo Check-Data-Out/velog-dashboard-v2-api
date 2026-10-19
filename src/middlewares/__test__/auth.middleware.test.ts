@@ -53,6 +53,8 @@ describe('인증 미들웨어', () => {
     mockResponse = {
       json: jest.fn(),
       status: jest.fn().mockReturnThis(),
+      cookie: jest.fn().mockReturnThis(),
+      clearCookie: jest.fn().mockReturnThis(),
     };
     nextFunction = jest.fn();
   });
