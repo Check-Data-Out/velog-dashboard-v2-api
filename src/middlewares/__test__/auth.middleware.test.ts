@@ -6,6 +6,7 @@ import { AuthRateLimitService } from '@/services/authRateLimit.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
 import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
+import { signSession } from '@/utils/session.util';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -123,6 +124,61 @@ describe('인증 미들웨어', () => {
 
       expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
       expect(mockRequest.user).toBeUndefined();
+    });
+
+    describe('세션 쿠키', () => {
+      it('유효한 세션 쿠키만으로 velog 확인 없이 인증해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession(mockUser) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith();
+        expect(mockRequest.user).toEqual(mockUser);
+        expect(fetchVelogApi).not.toHaveBeenCalled();
+      });
+
+      it('세션의 velog uuid 가 DB 사용자와 다르면 거부해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession({ ...mockUser, velog_uuid: 'other-uuid' }) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(mockRequest.user).toBeUndefined();
+      });
+      it('로그아웃 등으로 세션 버전이 DB 와 달라지면 거부해야 한다', async () => {
+        mockRequest.cookies = { vd_session: signSession(mockUser) };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [{ ...mockUser, session_version: 1 }] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 401 }));
+        expect(mockRequest.user).toBeUndefined();
+      });
+      it('세션 쿠키가 있으면 무효여도 velog 토큰 쿠키로 넘어가지 않아야 한다', async () => {
+        mockRequest.cookies = { vd_session: 'invalid-session', access_token: validToken, refresh_token: REFRESH_TOKEN };
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+        expect(fetchVelogApi).not.toHaveBeenCalled();
+        expect(pool.query).not.toHaveBeenCalled();
+      });
+
+      it('velog 토큰 쿠키로 인증하면 세션 쿠키를 발급하고 velog 토큰 쿠키를 지워야 한다', async () => {
+        mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
+        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(nextFunction).toHaveBeenCalledWith();
+        expect(mockResponse.cookie).toHaveBeenCalledWith('vd_session', expect.any(String), expect.anything());
+        expect((mockResponse.clearCookie as jest.Mock).mock.calls.map(([name]) => name)).toEqual([
+          'access_token',
+          'refresh_token',
+        ]);
+      });
     });
 
     describe('velog 확인 캐시', () => {
@@ -409,6 +465,8 @@ describe('verifyBearerTokens', () => {
     mockResponse = {
       json: jest.fn().mockReturnThis(),
       status: jest.fn().mockReturnThis(),
+      cookie: jest.fn().mockReturnThis(),
+      clearCookie: jest.fn().mockReturnThis(),
     };
     nextFunction = jest.fn();
 

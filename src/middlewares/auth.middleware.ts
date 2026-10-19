@@ -9,6 +9,8 @@ import { isValidJwtFormat, safeExtractPayload } from '@/utils/jwt.util';
 import { AuthRateLimitService, AUTH_RATE_LIMIT_CONFIG } from '@/services/authRateLimit.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
+import { SESSION_COOKIE_NAME, verifySession } from '@/utils/session.util';
+import { setSessionCookie } from '@/utils/cookie.util';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
@@ -111,6 +113,24 @@ const authenticateVelogTokens = async (accessToken: string, refreshToken: string
 };
 
 /**
+ * 대시보드 세션 쿠키로 사용자를 인증한다.
+ */
+const authenticateSession = async (sessionToken: string): Promise<User> => {
+  const claims = verifySession(sessionToken);
+  if (!claims) throw new InvalidTokenError('유효하지 않은 세션입니다.');
+
+  const user = (await pool.query('SELECT * FROM "users_user" WHERE id = $1', [Number(claims.sub)])).rows[0] as User;
+  if (!user) throw new UnauthorizedError('사용자를 찾을 수 없습니다.');
+
+  // 서명은 우리가 했으므로 위조가 아니라 만료된 세션이다 → 인증 실패 집계 없이 거부
+  if (user.velog_uuid !== claims.uid || user.session_version !== claims.ver) {
+    throw new UnauthorizedError('세션이 만료되었습니다.');
+  }
+
+  return user;
+};
+
+/**
  *  Bearer 토큰을 검증한뒤 user정보를 Request 객체에 담는 인가 함수
  *  @param rateLimitService - Rate limit 서비스 (선택적)
  */
@@ -136,9 +156,19 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
         }
       }
 
+      const sessionToken = req.cookies[SESSION_COOKIE_NAME];
+      if (sessionToken !== undefined) {
+        req.user = await authenticateSession(sessionToken);
+        next();
+        return;
+      }
+
       const { accessToken, refreshToken } = extractTokens(req);
 
       const user = await authenticateVelogTokens(accessToken, refreshToken);
+
+      // 브라우저의 velog 토큰 쿠키는 세션 쿠키로 바꿔 준다 (헤더로 보내는 익스텐션은 그대로)
+      if (req.cookies['access_token']) setSessionCookie(res, user);
 
       req.user = user;
       req.tokens = { accessToken, refreshToken };
