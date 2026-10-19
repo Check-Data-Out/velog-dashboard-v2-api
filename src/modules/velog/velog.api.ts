@@ -1,15 +1,18 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 import logger from '@/configs/logger.config';
-import { InvalidTokenError } from '@/exception';
+import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
 import { VELOG_API_URL, VELOG_QUERIES } from '@/modules/velog/velog.constans';
 import { VelogUserCurrentResponse } from '@/types';
+
+const VELOG_TIMEOUT_MS = 2000;
 
 /**
  * Velog API를 통해 사용자 정보를 조회합니다.
  * @param accessToken - Velog access token
  * @param refreshToken - Velog refresh token
- * @throws {Error} API 호출 실패 시
+ * @throws {InvalidTokenError} velog 가 토큰 주인을 돌려주지 않을 때
+ * @throws {ServiceUnavailableError} velog 연결 실패·타임아웃·5xx·429·GraphQL 오류일 때
  * @returns Promise<VelogUserLoginResponse | null>
  */
 export const fetchVelogApi = async (accessToken: string, refreshToken: string): Promise<VelogUserCurrentResponse> => {
@@ -25,14 +28,16 @@ export const fetchVelogApi = async (accessToken: string, refreshToken: string): 
           'content-type': 'application/json',
           cookie: `access_token=${accessToken}; refresh_token=${refreshToken}`,
         },
+        timeout: VELOG_TIMEOUT_MS,
       },
     );
 
     const result = response.data;
 
+    // 토큰이 무효하면 velog 는 오류 없이 currentUser 를 null 로 준다. 오류는 velog 쪽 문제로 본다
     if (result.errors) {
       logger.error('GraphQL Errors : ', result.errors);
-      throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
+      throw new ServiceUnavailableError('Velog API 응답에 오류가 있습니다.');
     }
 
     if (!result.data.currentUser) {
@@ -47,12 +52,17 @@ export const fetchVelogApi = async (accessToken: string, refreshToken: string): 
       email: currentUser.email ?? null,
     };
   } catch (error) {
-    // 이미 InvalidTokenError인 경우 그대로 다시 던지기
-    if (error instanceof InvalidTokenError) {
+    if (error instanceof InvalidTokenError || error instanceof ServiceUnavailableError) {
       throw error;
     }
 
     logger.error('Velog API 호출 중 오류 : ', error);
-    throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
+
+    // 연결 실패·타임아웃·5xx·429 는 토큰 문제가 아니므로 인증 실패로 다루지 않는다
+    const status = (error as AxiosError).response?.status;
+    if (status && status < 500 && status !== 429) {
+      throw new InvalidTokenError('Velog API 인증에 실패했습니다.');
+    }
+    throw new ServiceUnavailableError('Velog API 를 호출할 수 없습니다.');
   }
 };

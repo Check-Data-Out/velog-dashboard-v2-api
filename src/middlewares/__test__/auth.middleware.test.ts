@@ -5,6 +5,7 @@ import { mockUser } from '@/utils/fixtures';
 import { AuthRateLimitService } from '@/services/authRateLimit.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
+import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
 
 // pool.query 모킹
 jest.mock('@/configs/db.config', () => ({
@@ -98,6 +99,83 @@ describe('인증 미들웨어', () => {
       ]);
     });
 
+    it('velog 가 사용자를 돌려주지 않은 토큰은 InvalidTokenError를 전달해야 한다', async () => {
+      mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+      (fetchVelogApi as jest.Mock).mockRejectedValueOnce(new InvalidTokenError());
+
+      await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+      expect(mockRequest.user).toBeUndefined();
+    });
+
+    it('velog 가 돌려준 사용자가 토큰 payload 의 사용자와 다르면 InvalidTokenError를 전달해야 한다', async () => {
+      mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
+      (fetchVelogApi as jest.Mock).mockResolvedValueOnce({ id: '00000000-0000-4000-8000-000000000000' });
+
+      await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
+      expect(mockRequest.user).toBeUndefined();
+    });
+
+    describe('velog 확인 캐시', () => {
+      let store: Map<string, unknown>;
+
+      beforeEach(() => {
+        store = new Map();
+        (cache.get as jest.Mock).mockImplementation(async (key: string) => store.get(key) ?? null);
+        (cache.set as jest.Mock).mockImplementation(async (key: string, value: unknown) => {
+          store.set(key, value);
+        });
+        (pool.query as jest.Mock).mockResolvedValue({ rows: [mockUser] });
+        mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+      });
+
+      it('같은 토큰 쌍의 두 번째 요청은 velog 를 다시 부르지 않아야 한다', async () => {
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(fetchVelogApi).toHaveBeenCalledTimes(1);
+        expect(nextFunction).toHaveBeenNthCalledWith(2);
+        expect([...store.keys()]).toEqual([expect.stringMatching(/^auth:velog:/)]);
+      });
+
+      it('velog 가 거부한 토큰 쌍은 1분 동안 velog 를 다시 부르지 않고 거부해야 한다', async () => {
+        (fetchVelogApi as jest.Mock).mockRejectedValue(new InvalidTokenError());
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(fetchVelogApi).toHaveBeenCalledTimes(1);
+        expect(nextFunction).toHaveBeenNthCalledWith(2, expect.any(InvalidTokenError));
+        expect(cache.set).toHaveBeenCalledWith(expect.stringMatching(/^auth:velog:/), expect.anything(), 60);
+      });
+
+      it('velog 장애로 확인하지 못한 토큰 쌍은 캐시하지 않아야 한다', async () => {
+        (fetchVelogApi as jest.Mock).mockRejectedValue(new ServiceUnavailableError('velog 장애'));
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(fetchVelogApi).toHaveBeenCalledTimes(2);
+        expect(nextFunction).toHaveBeenNthCalledWith(2, expect.any(ServiceUnavailableError));
+      });
+
+      it('캐시 조회·저장이 실패해도 velog 확인으로 인증해야 한다', async () => {
+        (cache.get as jest.Mock).mockRejectedValue(new Error('Redis error'));
+        (cache.set as jest.Mock).mockRejectedValue(new Error('Redis error'));
+
+        await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
+
+        expect(fetchVelogApi).toHaveBeenCalledTimes(1);
+        expect(nextFunction).toHaveBeenCalledWith();
+        expect(mockRequest.user).toEqual(mockUser);
+      });
+    });
+
     it('토큰이 없으면 InvalidTokenError를 전달해야 한다', async () => {
       // 토큰 없음
       mockRequest.cookies = {};
@@ -154,30 +232,15 @@ describe('인증 미들웨어', () => {
       );
     });
 
-    it('사용자를 찾을 수 없으면 DBError가 발생해야 한다', async () => {
-      // 유효한 토큰 준비
-      mockRequest.cookies = {
-        access_token: validToken,
-        refresh_token: 'refresh-token',
-      };
+    it('payload 사용자가 DB 에 없으면 velog 를 부르지 않고 InvalidTokenError를 전달해야 한다', async () => {
+      mockRequest.cookies = { access_token: validToken, refresh_token: 'refresh-token' };
+      (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
-      // 사용자가 없음 모킹
-      (pool.query as jest.Mock).mockResolvedValueOnce({
-        rows: [],
-      });
-
-      // 미들웨어 실행
       await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      // 검증
-      expect(nextFunction).toHaveBeenCalledTimes(1);
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(InvalidTokenError));
       expect(mockRequest.user).toBeUndefined();
-      expect(nextFunction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'DBError',
-          message: '사용자를 찾을 수 없습니다.',
-        }),
-      );
+      expect(fetchVelogApi).not.toHaveBeenCalled();
     });
 
     it('쿠키에 토큰이 없으면 헤더에서 토큰을 가져와야 한다', async () => {

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { VELOG_API_URL, VELOG_QUERIES } from '@/modules/velog/velog.constans';
+import { InvalidTokenError, ServiceUnavailableError } from '@/exception';
 
 // axios 모킹
 jest.mock('axios');
@@ -65,6 +66,7 @@ describe('Velog API', () => {
             'content-type': 'application/json',
             cookie: `access_token=${mockAccessToken}; refresh_token=${mockRefreshToken}`,
           },
+          timeout: 2000,
         },
       );
     });
@@ -101,24 +103,10 @@ describe('Velog API', () => {
       });
     });
 
-    it('API 응답에 오류가 있으면 InvalidTokenError를 던져야 한다', async () => {
-      // 오류가 포함된 API 응답 모킹
-      const mockResponse = {
-        data: {
-          errors: [{ message: '인증 실패' }],
-          data: { currentUser: null },
-        },
-      };
+    it('API 응답에 GraphQL 오류가 있으면 ServiceUnavailableError를 던져야 한다', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: { errors: [{ message: 'error' }], data: { currentUser: null } } });
 
-      mockedAxios.post.mockResolvedValueOnce(mockResponse);
-
-      // 함수 호출 시 예외 발생 검증
-      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(
-        expect.objectContaining({
-          name: 'InvalidTokenError',
-          message: 'Velog API 인증에 실패했습니다.',
-        }),
-      );
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(ServiceUnavailableError);
     });
 
     it('currentUser가 null이면 InvalidTokenError를 던져야 한다', async () => {
@@ -142,17 +130,21 @@ describe('Velog API', () => {
       );
     });
 
-    it('API 호출 자체가 실패하면 InvalidTokenError를 던져야 한다', async () => {
-      // axios 호출 실패 모킹
-      mockedAxios.post.mockRejectedValueOnce(new Error('네트워크 오류'));
+    it.each([
+      ['네트워크 오류', new Error('socket hang up')],
+      ['타임아웃', Object.assign(new Error('timeout'), { code: 'ECONNABORTED' })],
+      ['5xx', Object.assign(new Error('bad gateway'), { response: { status: 502 } })],
+      ['429', Object.assign(new Error('too many'), { response: { status: 429 } })],
+    ])('velog 호출 실패(%s)는 ServiceUnavailableError를 던져야 한다', async (_, error) => {
+      mockedAxios.post.mockRejectedValueOnce(error);
 
-      // 함수 호출 시 예외 발생 검증
-      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(
-        expect.objectContaining({
-          name: 'InvalidTokenError',
-          message: 'Velog API 인증에 실패했습니다.',
-        }),
-      );
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(ServiceUnavailableError);
+    });
+
+    it('velog 가 그 밖의 4xx 로 응답하면 InvalidTokenError를 던져야 한다', async () => {
+      mockedAxios.post.mockRejectedValueOnce(Object.assign(new Error('bad request'), { response: { status: 400 } }));
+
+      await expect(fetchVelogApi(mockAccessToken, mockRefreshToken)).rejects.toThrow(InvalidTokenError);
     });
   });
 });
