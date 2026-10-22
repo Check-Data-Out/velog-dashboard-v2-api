@@ -180,8 +180,9 @@ describe('인증 미들웨어', () => {
         expect(mockResponse.clearCookie).not.toHaveBeenCalled();
       });
 
-      it('세션 쿠키가 있으면 무효여도 velog 토큰 쿠키로 넘어가지 않아야 한다', async () => {
-        mockRequest.cookies = { vd_session: 'invalid-session', access_token: validToken, refresh_token: REFRESH_TOKEN };
+      it('세션 쿠키가 있으면 무효여도 요청 헤더의 velog 토큰으로 넘어가지 않아야 한다', async () => {
+        mockRequest.cookies = { vd_session: 'invalid-session' };
+        mockRequest.headers = { access_token: validToken, refresh_token: REFRESH_TOKEN };
 
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
