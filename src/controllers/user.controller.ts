@@ -5,8 +5,7 @@ import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception';
-import { cookieOption, setSessionCookie } from '@/utils/cookie.util';
-import { SESSION_COOKIE_NAME } from '@/utils/session.util';
+import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -73,9 +72,7 @@ export class UserController {
     try {
       await this.userService.logout(req.user);
 
-      res.clearCookie('access_token', cookieOption(true));
-      res.clearCookie('refresh_token', cookieOption(true));
-      res.clearCookie(SESSION_COOKIE_NAME, cookieOption(true));
+      clearAuthCookies(res);
 
       const response = new EmptyResponseDto(true, '로그아웃에 성공하였습니다.', {}, null);
 

@@ -88,7 +88,6 @@ describe('UserController', () => {
         'valid-access-token',
         'valid-refresh-token',
       );
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -151,7 +150,6 @@ describe('UserController', () => {
       await userController.sampleLogin(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.findSampleUser).toHaveBeenCalled();
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -297,7 +295,6 @@ describe('UserController', () => {
       await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token');
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
     });

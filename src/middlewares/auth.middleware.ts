@@ -10,7 +10,7 @@ import { AuthRateLimitService, AUTH_RATE_LIMIT_CONFIG } from '@/services/authRat
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
 import { SESSION_COOKIE_NAME, verifySession } from '@/utils/session.util';
-import { cookieOption, setSessionCookie } from '@/utils/cookie.util';
+import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
@@ -172,7 +172,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
           req.user = await authenticateSession(sessionToken, res);
         } catch (error) {
           // 무효 세션 쿠키가 남아 있으면 FE 가드가 계속 대시보드로 들여보내므로 지운다 (DB 오류 등은 제외)
-          if (error instanceof UnauthorizedError) res.clearCookie(SESSION_COOKIE_NAME, cookieOption(true));
+          if (error instanceof UnauthorizedError) clearAuthCookies(res);
           throw error;
         }
         next();
