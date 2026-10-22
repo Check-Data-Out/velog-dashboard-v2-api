@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
-import { PoolClient } from 'pg';
+import { Pool, PoolClient } from 'pg';
+import { UserRepository } from '@/repositories/user.repository';
 
 /**
  * 통합 테스트 시드 헬퍼. 트랜잭션을 연 client 를 받아 최소 행을 넣고, 테스트가 끝나면 ROLLBACK 으로 사라진다.
@@ -7,15 +8,18 @@ import { PoolClient } from 'pg';
  * NOT NULL 컬럼은 모두 값을 명시한다 (session_version 만 db_default 가 있다).
  */
 
+/** 컬럼 목록을 중복하지 않도록 실제 UserRepository.createUser 로 넣는다 (is_active·newsletter_subscribed 는 true 고정) */
 export const insertUser = async (client: PoolClient, username: string | null = 'integration-test'): Promise<number> => {
-  const result = await client.query(
-    `INSERT INTO users_user
-       (created_at, updated_at, velog_uuid, access_token, refresh_token, group_id, email, is_active, username, thumbnail, newsletter_subscribed)
-     VALUES (NOW(), NOW(), $1, 'enc-access', 'enc-refresh', 1, NULL, true, $2, NULL, false)
-     RETURNING id`,
-    [randomUUID(), username],
+  const user = await new UserRepository(client as unknown as Pool).createUser(
+    randomUUID(),
+    null,
+    username,
+    null,
+    'enc-access',
+    'enc-refresh',
+    1,
   );
-  return Number(result.rows[0].id);
+  return Number(user.id);
 };
 
 export const insertPost = async (

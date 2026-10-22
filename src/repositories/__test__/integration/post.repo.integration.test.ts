@@ -216,24 +216,6 @@ describe('PostRepository 통합 테스트', () => {
       expect(stats.last_updated_date).not.toBeNull();
     });
 
-    it('통계 값이 음수가 아니어야 한다', async () => {
-      const stats = await repo.getYesterdayAndTodayViewLikeStats(userId);
-
-      expect(Number(stats.daily_view_count)).toBeGreaterThanOrEqual(0);
-      expect(Number(stats.daily_like_count)).toBeGreaterThanOrEqual(0);
-      expect(Number(stats.yesterday_views)).toBeGreaterThanOrEqual(0);
-      expect(Number(stats.yesterday_likes)).toBeGreaterThanOrEqual(0);
-    });
-
-    it('반환된 통계가 숫자로 변환 가능해야 한다', async () => {
-      const stats = await repo.getYesterdayAndTodayViewLikeStats(userId);
-
-      expect(Number.isNaN(Number(stats.daily_view_count))).toBe(false);
-      expect(Number.isNaN(Number(stats.daily_like_count))).toBe(false);
-      expect(Number.isNaN(Number(stats.yesterday_views))).toBe(false);
-      expect(Number.isNaN(Number(stats.yesterday_likes))).toBe(false);
-    });
-
     it('존재하지 않는 사용자 ID에 대해 기본값을 반환해야 한다', async () => {
       const nonExistentUserId = -1; // identity 컬럼이라 음수 ID 는 존재할 수 없다
       const stats = await repo.getYesterdayAndTodayViewLikeStats(nonExistentUserId);

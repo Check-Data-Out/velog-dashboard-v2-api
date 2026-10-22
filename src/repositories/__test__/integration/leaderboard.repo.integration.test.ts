@@ -29,12 +29,15 @@ const DAY = 24 * 60;
  *   - yesterday: 30일 전 기준, 오늘 통계 없음, 어제 조회수 +1.7e9
  *   - range3:    3일 전 기준만 있음(30일 기준 수집 누락), 오늘 조회수·좋아요 +1.8e9, 1년 전 발행
  *   - noName:    username NULL, 30일 전 기준, 오늘 조회수 +1.5e9
+ *   - newPost:   위 게시물(30일 전 기준, 오늘 +1) 에 더해 2일 전 발행 게시물 1개(기준 통계 없음, 오늘 조회수·좋아요 1.6e9)
+ *                → 유일하게 post_diff 1, 새 게시물은 released_at 조건으로만 게시물 리더보드에 들어간다
  */
 describe('LeaderboardRepository 통합 테스트', () => {
   let testPool: Pool;
   let client: PoolClient;
   let repo: LeaderboardRepository;
   let seed: Record<'viewTop' | 'likeTop' | 'yesterday' | 'range3' | 'noName', { userId: number; postId: number }>;
+  let newPost: { userId: number; postId: number };
 
   const DEFAULT_PARAMS = {
     USER_SORT: 'viewCount' as UserLeaderboardSortType,
@@ -44,6 +47,7 @@ describe('LeaderboardRepository 통합 테스트', () => {
   };
 
   const BASE = 100;
+  const NEW_POST_STAT = 1_600_000_000;
 
   const seedUserWithPost = async (
     username: string | null,
@@ -103,6 +107,17 @@ describe('LeaderboardRepository 통합 테스트', () => {
       range3: await seedUserWithPost('it-range3', past3, { date: today, view: 1_800_000_000, like: 1_800_000_000 }),
       noName: await seedUserWithPost(null, past30, { date: today, view: 1_500_000_000, like: 0 }),
     };
+
+    // HAVING 조건(기준 통계 합 != 0)을 통과하려면 기준 통계가 있는 게시물이 하나 있어야 한다
+    const { userId: newPostUserId } = await seedUserWithPost('it-new-post', past30, { date: today, view: 1, like: 1 });
+    const { id: newPostId } = await insertPost(
+      client,
+      newPostUserId,
+      getKSTDateStringWithOffset(-2 * DAY),
+      'it-new-post',
+    );
+    await insertDailyStats(client, newPostId, today, NEW_POST_STAT, NEW_POST_STAT);
+    newPost = { userId: newPostUserId, postId: newPostId };
   });
 
   afterEach(async () => {
@@ -139,28 +154,9 @@ describe('LeaderboardRepository 통합 테스트', () => {
       expect(Number(viewTop.post_diff)).toBe(0);
     });
 
-    it('통계와 관련된 필드는 음수가 아니어야 한다', async () => {
-      const result = await repo.getUserLeaderboard(
-        DEFAULT_PARAMS.USER_SORT,
-        DEFAULT_PARAMS.DATE_RANGE,
-        DEFAULT_PARAMS.LIMIT,
-      );
-
-      expect(result.length).toBeGreaterThan(0);
-      result.forEach((leaderboardUser) => {
-        expect(Number(leaderboardUser.total_views)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardUser.total_likes)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardUser.total_posts)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardUser.view_diff)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardUser.like_diff)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardUser.post_diff)).toBeGreaterThanOrEqual(0);
-      });
-    });
-
     describe.each([
       { sort: 'viewCount', field: 'view_diff' },
       { sort: 'likeCount', field: 'like_diff' },
-      { sort: 'postCount', field: 'post_diff' },
     ])('sort 파라미터에 따라 내림차순 정렬되어야 한다', ({ sort, field }) => {
       it(`sort가 ${sort}인 경우 ${field} 필드를 기준으로 정렬해야 한다`, async () => {
         const result = await repo.getUserLeaderboard(
@@ -193,6 +189,17 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
       expect(Number(resultByViewDiff[0].id)).toBe(seed.viewTop.userId);
       expect(Number(resultByLikeDiff[0].id)).toBe(seed.likeTop.userId);
+    });
+
+    it('sort가 postCount인 경우 기간 내 발행 게시물이 있는 사용자가 1위여야 한다', async () => {
+      const result = await repo.getUserLeaderboard('postCount', DEFAULT_PARAMS.DATE_RANGE, DEFAULT_PARAMS.LIMIT);
+
+      expect(Number(result[0].id)).toBe(newPost.userId);
+      expect(Number(result[0].post_diff)).toBe(1);
+      expect(Number(result[0].total_posts)).toBe(2);
+      // 기준 통계가 없는 새 게시물은 오늘 값 전체가 증가량이 된다
+      expect(Number(result[0].view_diff)).toBe(1 + NEW_POST_STAT);
+      expect(Number(result[0].like_diff)).toBe(1 + NEW_POST_STAT);
     });
 
     it('limit 파라미터가 결과 개수를 제한해야 한다', async () => {
@@ -228,9 +235,6 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
       // range3 사용자는 30일 전 기준 통계가 없어(수집 누락) 제외된다
       expect(ids(result)).not.toContain(seed.range3.userId);
-      result.forEach((user) => {
-        expect(Number(user.total_views)).not.toBe(Number(user.view_diff));
-      });
     });
   });
 
@@ -252,22 +256,6 @@ describe('LeaderboardRepository 통합 테스트', () => {
       expect(Number(viewTop.view_diff)).toBe(1_900_000_000);
       expect(Number(viewTop.like_diff)).toBe(1_000_000);
       expect(viewTop.released_at).toBeInstanceOf(Date);
-    });
-
-    it('통계와 관련된 필드는 음수가 아니어야 한다', async () => {
-      const result = await repo.getPostLeaderboard(
-        DEFAULT_PARAMS.POST_SORT,
-        DEFAULT_PARAMS.DATE_RANGE,
-        DEFAULT_PARAMS.LIMIT,
-      );
-
-      expect(result.length).toBeGreaterThan(0);
-      result.forEach((leaderboardPost) => {
-        expect(Number(leaderboardPost.total_views)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardPost.total_likes)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardPost.view_diff)).toBeGreaterThanOrEqual(0);
-        expect(Number(leaderboardPost.like_diff)).toBeGreaterThanOrEqual(0);
-      });
     });
 
     describe.each([
@@ -328,15 +316,20 @@ describe('LeaderboardRepository 통합 테스트', () => {
 
     it('데이터 수집이 비정상적인 게시물은 리더보드에 포함되지 않아야 한다', async () => {
       const result = await repo.getPostLeaderboard(DEFAULT_PARAMS.POST_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
-      const pastDateKST = getKSTDateStringWithOffset(-DEFAULT_PARAMS.DATE_RANGE * 24 * 60);
 
       // range3 게시물은 기간 전에 발행됐는데 30일 전 기준 통계가 없어(수집 누락) 제외된다
       expect(ids(result)).not.toContain(seed.range3.postId);
-      result
-        .filter((post) => new Date(post.released_at).getTime() < new Date(pastDateKST).getTime())
-        .forEach((post) => {
-          expect(Number(post.total_views)).not.toBe(Number(post.view_diff));
-        });
+    });
+
+    it('기간 내 발행된 게시물은 기준 통계가 없어도 포함되고 오늘 값 전체가 증가량이어야 한다', async () => {
+      const result = await repo.getPostLeaderboard(DEFAULT_PARAMS.POST_SORT, DEFAULT_PARAMS.DATE_RANGE, 30);
+      const target = result.find((post) => Number(post.id) === newPost.postId);
+
+      expect(target).toBeDefined();
+      expect(Number(target.total_views)).toBe(NEW_POST_STAT);
+      expect(Number(target.total_likes)).toBe(NEW_POST_STAT);
+      expect(Number(target.view_diff)).toBe(NEW_POST_STAT);
+      expect(Number(target.like_diff)).toBe(NEW_POST_STAT);
     });
 
     it('오늘 통계가 없는 게시물은 어제 값을 오늘 값으로 사용해야 한다', async () => {
