@@ -9,6 +9,12 @@ import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 
 type Token10 = string & { __lengthBrand: 10 };
 
+// 프록시 뒤에서 받은 요청의 클라이언트 IP. x-forwarded-for 첫 값이라 위조할 수 있으므로 참고용이다.
+const getClientIp = (req: Request): string =>
+  typeof req.headers['x-forwarded-for'] === 'string'
+    ? req.headers['x-forwarded-for'].split(',')[0].trim()
+    : (req.ip ?? '');
+
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -103,10 +109,7 @@ export class UserController {
   createToken: RequestHandler = async (req: Request, res: Response<QRLoginTokenResponseDto>, next: NextFunction) => {
     try {
       const user = req.user;
-      const ip =
-        typeof req.headers['x-forwarded-for'] === 'string'
-          ? req.headers['x-forwarded-for'].split(',')[0].trim()
-          : (req.ip ?? '');
+      const ip = getClientIp(req);
       const userAgent = req.headers['user-agent'] || '';
 
       const token = await this.userService.createUserQRToken(user.id, ip, userAgent);
