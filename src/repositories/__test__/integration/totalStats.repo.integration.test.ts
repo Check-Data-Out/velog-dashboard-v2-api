@@ -1,8 +1,9 @@
 import dotenv from 'dotenv';
-import pg, { Pool } from 'pg';
+import pg, { Pool, PoolClient } from 'pg';
 import logger from '@/configs/logger.config';
 import { TotalStatsRepository } from '@/repositories/totalStats.repository';
 import { getCurrentKSTDateString, getKSTDateStringWithOffset } from '@/utils/date.util';
+import { insertPost, insertUser } from './fixtures';
 
 dotenv.config();
 jest.setTimeout(30000);
@@ -16,10 +17,10 @@ jest.setTimeout(30000);
  */
 describe('TotalStatsRepository 통합 테스트', () => {
   let testPool: Pool;
+  let client: PoolClient;
   let repo: TotalStatsRepository;
 
   const TEST_DATA = {
-    USER_ID: 1,
     PERIOD: 7 as const,
   };
 
@@ -36,53 +37,49 @@ describe('TotalStatsRepository 통합 테스트', () => {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   };
 
-  beforeAll(async () => {
-    try {
-      const testPoolConfig: pg.PoolConfig = {
-        database: process.env.DATABASE_NAME,
-        user: process.env.POSTGRES_USER,
-        host: process.env.POSTGRES_HOST,
-        password: process.env.POSTGRES_PASSWORD,
-        port: Number(process.env.POSTGRES_PORT),
-        max: 1, // SET TIME ZONE 이 이후 모든 쿼리에 유지되도록 단일 커넥션 사용
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
-        allowExitOnIdle: false,
-        statement_timeout: 30000,
+  beforeAll(() => {
+    const testPoolConfig: pg.PoolConfig = {
+      database: process.env.DATABASE_NAME,
+      user: process.env.POSTGRES_USER,
+      host: process.env.POSTGRES_HOST,
+      password: process.env.POSTGRES_PASSWORD,
+      port: Number(process.env.POSTGRES_PORT),
+      max: 1,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+      allowExitOnIdle: false,
+      statement_timeout: 30000,
+    };
+
+    // localhost 가 아니면 ssl 필수
+    if (process.env.POSTGRES_HOST != 'localhost') {
+      testPoolConfig.ssl = {
+        rejectUnauthorized: false,
       };
+    }
 
-      // localhost 가 아니면 ssl 필수
-      if (process.env.POSTGRES_HOST != 'localhost') {
-        testPoolConfig.ssl = {
-          rejectUnauthorized: false,
-        };
-      }
+    testPool = new Pool(testPoolConfig);
+  });
 
-      testPool = new Pool(testPoolConfig);
+  beforeEach(async () => {
+    client = await testPool.connect();
+    await client.query('BEGIN');
+    // production 과 동일한 UTC 세션을 재현한다.
+    // pooler 가 startup parameter 를 무시하므로 연결 옵션이 아니라 쿼리로 설정하고, 트랜잭션이 끝나면 되돌아간다.
+    await client.query("SET LOCAL TIME ZONE 'UTC'");
+    repo = new TotalStatsRepository(client as unknown as Pool);
+  });
 
-      await testPool.query('SELECT 1');
-      logger.info('TotalStatsRepository 통합 테스트 DB 연결 성공');
-
-      // production 과 동일한 UTC 세션을 재현한다.
-      // pooler 가 startup parameter 를 무시하므로 연결 옵션이 아니라 쿼리로 설정한다.
-      await testPool.query("SET TIME ZONE 'UTC'");
-
-      repo = new TotalStatsRepository(testPool);
-    } catch (error) {
-      logger.error('TotalStatsRepository 통합 테스트 설정 중 오류 발생:', error);
-      throw error;
+  afterEach(async () => {
+    try {
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   });
 
   afterAll(async () => {
-    try {
-      if (testPool) {
-        await testPool.end();
-      }
-      logger.info('TotalStatsRepository 통합 테스트 DB 연결 종료');
-    } catch (error) {
-      logger.error('TotalStatsRepository 통합 테스트 종료 중 오류:', error);
-    }
+    await testPool.end();
   });
 
   describe('getTotalStats - post 타입', () => {
@@ -90,8 +87,11 @@ describe('TotalStatsRepository 통합 테스트', () => {
       // 기대값은 쿼리 전에 잡는다. 쿼리 도중 KST 자정을 넘기면 결과와 기대값의 기준일이 갈라진다.
       const expectedStart = toKSTDatePart(getKSTDateStringWithOffset(-(TEST_DATA.PERIOD - 1) * 24 * 60));
       const expectedEnd = toKSTDatePart(getCurrentKSTDateString());
+      // KST 기준 2일 전 자정에 발행된 게시글 1개 → 마지막 3일만 누적 1
+      const userId = await insertUser(client);
+      await insertPost(client, userId, getKSTDateStringWithOffset(-2 * 24 * 60));
 
-      const result = await repo.getTotalStats(TEST_DATA.USER_ID, TEST_DATA.PERIOD, 'post');
+      const result = await repo.getTotalStats(userId, TEST_DATA.PERIOD, 'post');
       const dates = result.map((row) => toDateString(row.date));
 
       // 쿼리 전후로 날짜가 바뀌었다면 이 실행은 판정 불가이므로 건너뛴다 (자정 직후 1회성)
@@ -103,6 +103,7 @@ describe('TotalStatsRepository 통합 테스트', () => {
       expect(dates[0]).toBe(expectedStart);
       expect(dates[dates.length - 1]).toBe(expectedEnd);
       expect(dates).toHaveLength(TEST_DATA.PERIOD);
+      expect(result.map((row) => Number(row.total_value))).toEqual([0, 0, 0, 0, 1, 1, 1]);
     });
   });
 });
