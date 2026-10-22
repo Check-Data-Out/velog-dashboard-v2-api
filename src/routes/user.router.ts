@@ -121,7 +121,7 @@ router.get('/me', authMiddleware.verify, userController.fetchCurrentUser);
  *     summary: QR 로그인 토큰 생성
  *     tags: [QRLogin]
  *     security:
- *       - bearerAuth: []
+ *       - SessionCookieAuth: []
  *     responses:
  *       200:
  *         description: QR 로그인 토큰 생성 성공

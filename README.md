@@ -25,7 +25,7 @@ cp .env.sample .env
 ```
 
 - `SESSION_JWT_SECRET` 은 로그인 세션 쿠키(`vd_session`) 서명 키입니다. `openssl rand -base64 48` 로 만든 값을 넣어 주세요. 테스트(`pnpm test`)는 `jest.setup.ts` 의 테스트용 값을 씁니다.
-- 로그인한 브라우저는 `vd_session` 쿠키 하나로 인증합니다. 세션 쿠키가 없을 때만 velog 토큰 쿠키·헤더(익스텐션)를 velog 에 확인하므로, 이 경로는 로컬에서도 velog 를 실제로 호출합니다(Redis 가 있으면 10분 캐시).
+- 로그인한 브라우저는 `vd_session` 쿠키 하나로 인증합니다. 익스텐션은 velog 토큰을 요청 헤더로 보내고 이 토큰은 velog 에 확인하므로, 이 경로는 로컬에서도 velog 를 실제로 호출합니다(Redis 가 있으면 10분 캐시).
 
 3. 서버 실행
 
