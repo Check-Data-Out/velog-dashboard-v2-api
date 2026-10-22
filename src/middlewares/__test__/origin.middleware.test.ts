@@ -20,7 +20,6 @@ describe('verifyRequestOrigin', () => {
     ["값이 'null' 인 Origin", { headers: { origin: 'null' }, cookies: { vd_session: 'session' } }],
     ['다른 사이트 Referer', { headers: { referer: 'https://other.example/page' }, cookies: { vd_session: 'session' } }],
     ['출처 헤더 없이 세션 쿠키', { cookies: { vd_session: 'session' } }],
-    ['출처 헤더 없이 velog 토큰 쿠키', { cookies: { access_token: 'token' } }],
   ])('%s 가 실린 비-GET 요청은 403 으로 거부해야 한다', (_, req) => {
     run(req as Partial<Request>);
 
@@ -31,6 +30,7 @@ describe('verifyRequestOrigin', () => {
     ['대시보드 Origin', { headers: { origin: DASHBOARD }, cookies: { vd_session: 'session' } }],
     ['Origin 없이 대시보드 Referer', { headers: { referer: `${DASHBOARD}/main` }, cookies: { vd_session: 'session' } }],
     ['쿠키 없는 서버 간 요청(웹훅·헤더 토큰)', { headers: { access_token: 'token' } }],
+    ['인증에 쓰지 않는 velog 토큰 쿠키만 실린 요청', { cookies: { access_token: 'token', refresh_token: 'token' } }],
     ['GET 요청', { method: 'GET', headers: { origin: 'https://other.example' }, cookies: { vd_session: 'session' } }],
   ])('%s 은 통과시켜야 한다', (_, req) => {
     run(req as Partial<Request>);
