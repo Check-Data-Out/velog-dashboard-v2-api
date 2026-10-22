@@ -36,9 +36,10 @@ pnpm dev
 4. 통합 테스트(`src/**/__test__/integration/`)는 `pnpm test` 에서 제외되어 있습니다.
 
 - 해당 테스트는 mocking 없이 DBMS connection 을 맺고 repo 계층의 실제 수행을 테스트 합니다.
-- 그래서 DBMS 없이도 `pnpm test` 가 돌도록 분리해 두었고, 통합 테스트는 `pnpm test:integration` 으로 따로 실행합니다. CI 는 둘 다 실행합니다.
-- 실행 시 `.env` 의 DB 를 바라보므로 **_어떤 DB 에 붙는지 반드시 확인하고_** 돌려주세요.
-- local DBMS 와 connection 을 맺는다면 **_테스트로 제공해야 할 TEST CASE 의 값들이 달라져야 합니다._** `post.repo.integration.test` 를 필수 참조해주세요.
+- 그래서 DBMS 없이도 `pnpm test` 가 돌도록 분리해 두었고, 통합 테스트는 `pnpm test:integration` 으로 따로 실행합니다.
+- CI 는 job 안에 빈 Postgres 를 띄우고 back-office 마이그레이션으로 스키마를 만든 뒤 통합 테스트를 돌립니다. 운영 DB 에는 붙지 않습니다.
+- 테스트는 필요한 데이터를 직접 넣고(`fixtures.ts`) 트랜잭션을 되돌리므로 데이터를 남기지 않습니다.
+- 로컬에서는 `.env` 의 DB 를 바라봅니다. `.env` 가 운영 DB 를 가리키면 운영에 붙으니 **_어떤 DB 에 붙는지 반드시 확인하고_** 돌려주세요.
 
 ## 실행 가능한 명령어
 

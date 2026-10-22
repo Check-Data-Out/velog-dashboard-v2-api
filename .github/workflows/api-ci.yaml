@@ -54,11 +54,6 @@ jobs:
         # 특수문자('#' 등)가 있는 값은 dotenv 가 인라인 주석으로 잘라내므로 따옴표로 감싼다 (.env.sample 참고)
         run: |
           echo "SLACK_WEBHOOK_URL='${{ secrets.SLACK_WEBHOOK_URL }}'" >> .env
-          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> .env
-          echo "POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'" >> .env
-          echo "POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}" >> .env
           echo "SENTRY_CLIENT_SECRET='${{ secrets.SENTRY_CLIENT_SECRET }}'" >> .env
           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
           # AES 키들 추가 (테스트용 더미 키)
@@ -79,8 +74,85 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
-      - name: Run integration tests
-        run: pnpm run test:integration
-
       - name: Run build
         run: pnpm run build
+
+  # 통합 테스트는 운영 DB 가 아니라 job 안의 빈 Postgres 에서만 돈다.
+  # 스키마는 테이블을 관리하는 back-office 의 Django 마이그레이션으로 만든다.
+  integration:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: vd2
+          POSTGRES_PASSWORD: vd2
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout back-office
+        uses: actions/checkout@v4
+        with:
+          repository: Check-Data-Out/velog-dashboard-v2-back-office
+          ref: main
+          path: back-office
+          persist-credentials: false
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.13.0
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.8.4
+
+      - name: Back-office migrate
+        working-directory: back-office
+        run: |
+          poetry config virtualenvs.in-project true --local
+          poetry install --with dev --no-root
+          echo "SECRET_KEY=ci-only-secret" >> .env
+          echo "DATABASE_ENGINE=django.db.backends.postgresql" >> .env
+          echo "DATABASE_NAME=postgres" >> .env
+          echo "POSTGRES_USER=vd2" >> .env
+          echo "POSTGRES_PASSWORD=vd2" >> .env
+          echo "POSTGRES_HOST=localhost" >> .env
+          echo "POSTGRES_PORT=5432" >> .env
+          poetry run python manage.py migrate --noinput
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run integration tests
+        # 테스트의 SSL 분기는 POSTGRES_HOST 가 정확히 localhost 일 때만 꺼진다
+        env:
+          DATABASE_NAME: postgres
+          POSTGRES_USER: vd2
+          POSTGRES_PASSWORD: vd2
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+        run: pnpm run test:integration
