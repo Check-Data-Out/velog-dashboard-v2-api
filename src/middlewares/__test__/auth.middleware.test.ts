@@ -96,10 +96,6 @@ describe('인증 미들웨어', () => {
       expect(nextFunction).toHaveBeenCalledTimes(1);
       expect(nextFunction).not.toHaveBeenCalledWith(expect.any(Error));
       expect(mockRequest.user).toEqual(mockUser);
-      expect(mockRequest.tokens).toEqual({
-        accessToken: validToken,
-        refreshToken: REFRESH_TOKEN,
-      });
       expect(pool.query).toHaveBeenCalledWith('SELECT * FROM "users_user" WHERE velog_uuid = $1', [
         'c7507240-093b-11ea-9aae-a58a86bb0520',
       ]);

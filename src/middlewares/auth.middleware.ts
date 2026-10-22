@@ -184,7 +184,6 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
       const user = await authenticateVelogTokens(accessToken, refreshToken);
 
       req.user = user;
-      req.tokens = { accessToken, refreshToken };
       next();
     } catch (error) {
       logger.error('인증 처리중 오류가 발생하였습니다. : ', error);
