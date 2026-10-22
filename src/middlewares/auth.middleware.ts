@@ -19,13 +19,11 @@ let globalRateLimitService: AuthRateLimitService | undefined;
  * 요청에서 velog 토큰을 추출하는 함수
  * @param req - Express Request 객체
  * @returns  추출된 토큰 객체
- * @description 다음 순서로 토큰을 확인합니다:
- * 1. 쿠키 - 세션 쿠키 도입 전에 로그인한 웹 클라이언트
- * 2. 요청 헤더 - 익스텐션
+ * @description 익스텐션이 보내는 요청 헤더에서만 읽는다. 웹 클라이언트는 세션 쿠키로 인증한다.
  */
 const extractTokens = (req: Request): { accessToken: string; refreshToken: string } => {
-  const accessToken = req.cookies['access_token'] || req.headers['access_token'];
-  const refreshToken = req.cookies['refresh_token'] || req.headers['refresh_token'];
+  const accessToken = req.headers['access_token'] as string;
+  const refreshToken = req.headers['refresh_token'] as string;
 
   return { accessToken, refreshToken };
 };
@@ -184,9 +182,6 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
       const { accessToken, refreshToken } = extractTokens(req);
 
       const user = await authenticateVelogTokens(accessToken, refreshToken);
-
-      // 브라우저의 velog 토큰 쿠키는 세션 쿠키로 바꿔 준다 (헤더로 보내는 익스텐션은 그대로)
-      if (req.cookies['access_token']) setSessionCookie(res, user);
 
       req.user = user;
       req.tokens = { accessToken, refreshToken };
