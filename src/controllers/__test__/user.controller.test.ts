@@ -265,7 +265,7 @@ describe('UserController', () => {
       });
     });
 
-    it('IP 주소가 없는 경우 빈 문자열을 사용해야 한다', async () => {
+    it('IP 주소가 없는 경우 unknown 을 사용해야 한다', async () => {
       const mockToken = 'ABCD123456';
       const mockRequestWithoutIp = {
         ...mockRequest,
@@ -276,7 +276,7 @@ describe('UserController', () => {
 
       await userController.createToken(mockRequestWithoutIp as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, '', 'Test Browser');
+      expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, 'unknown', 'Test Browser');
     });
 
     it('User-Agent 가 255자를 넘으면 255자로 잘라 넘겨야 한다', async () => {
