@@ -182,4 +182,57 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
       expect((await findRow(token)).used_user_agent).toBe(longUserAgent);
     });
   });
+
+  describe('QR 토큰 상태 조회', () => {
+    it('쓰지 않았고 만료되지 않은 본인 토큰은 pending 이어야 한다', async () => {
+      const token = generateRandomToken();
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+
+      expect(await repo.findQRLoginTokenStatus(token, userId)).toEqual({ status: 'pending' });
+    });
+
+    it('확인으로 소비된 본인 토큰은 used 와 사용 기기 정보를 돌려줘야 한다', async () => {
+      const token = generateRandomToken();
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+      await repo.consumeQRLoginToken(token, '10.0.0.1', 'phone-agent');
+
+      const result = await repo.findQRLoginTokenStatus(token, userId);
+
+      expect(result).toEqual({
+        status: 'used',
+        usedAt: expect.any(String),
+        userAgent: 'phone-agent',
+        ip: '10.0.0.1',
+      });
+      expect(new Date((result as { usedAt: string }).usedAt).toISOString()).toBe((result as { usedAt: string }).usedAt);
+    });
+
+    it('만료된 본인 토큰은 expired 여야 한다', async () => {
+      const token = generateRandomToken();
+      await insertQRLoginToken(client, userId, token, -5, false);
+
+      expect(await repo.findQRLoginTokenStatus(token, userId)).toEqual({ status: 'expired' });
+    });
+
+    it('로그아웃으로 무효화된 본인 토큰은 expired 여야 한다', async () => {
+      const token = generateRandomToken();
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+      await repo.updateQRLoginTokenToUse(userId);
+
+      expect(await repo.findQRLoginTokenStatus(token, userId)).toEqual({ status: 'expired' });
+    });
+
+    it('다른 사용자의 토큰은 사용됐더라도 expired 여야 한다', async () => {
+      const token = generateRandomToken();
+      const otherUserId = await insertUser(client, 'integration-test-other');
+      await repo.createQRLoginToken(token, otherUserId, ip, userAgent);
+      await repo.consumeQRLoginToken(token, '10.0.0.1', 'phone-agent');
+
+      expect(await repo.findQRLoginTokenStatus(token, userId)).toEqual({ status: 'expired' });
+    });
+
+    it('없는 토큰은 expired 여야 한다', async () => {
+      expect(await repo.findQRLoginTokenStatus(generateRandomToken(), userId)).toEqual({ status: 'expired' });
+    });
+  });
 });
