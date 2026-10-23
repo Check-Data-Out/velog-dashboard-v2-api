@@ -19,7 +19,12 @@ export const validateRequestDto = <T extends object>(
         throw new BadRequestError(`API 입력 검증 실패, errors: ${errors}`);
       }
 
-      req[key] = value as T;
+      // Express 5 의 req.query 는 getter 전용이라 대입할 수 없어 검증된 query 는 res.locals.query 에 둔다
+      if (key === 'query') {
+        res.locals.query = value;
+      } else {
+        req[key] = value as T;
+      }
       next();
     } catch (error) {
       next(error);

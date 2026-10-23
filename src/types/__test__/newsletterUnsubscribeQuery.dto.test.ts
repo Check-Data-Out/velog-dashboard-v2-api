@@ -8,7 +8,7 @@ describe('NewsletterUnsubscribeQueryDto', () => {
   const middleware = validateRequestDto(NewsletterUnsubscribeQueryDto, 'query');
   const run = async (query: object) => {
     const next = jest.fn();
-    await middleware({ query } as unknown as Request, {} as Response, next);
+    await middleware({ query } as unknown as Request, { locals: {} } as Response, next);
     return next;
   };
 

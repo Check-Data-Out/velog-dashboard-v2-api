@@ -12,12 +12,12 @@ export class LeaderboardController {
   constructor(private leaderboardService: LeaderboardService) {}
 
   getUserLeaderboard: RequestHandler = async (
-    req: Request<object, object, object, GetUserLeaderboardQuery>,
+    req: Request,
     res: Response<UserLeaderboardResponseDto>,
     next: NextFunction,
   ) => {
     try {
-      const { sort, dateRange, limit } = req.query;
+      const { sort, dateRange, limit } = res.locals.query as GetUserLeaderboardQuery;
 
       const users = await this.leaderboardService.getUserLeaderboard(sort, dateRange, limit);
       const response = new UserLeaderboardResponseDto(true, '사용자 리더보드 조회에 성공하였습니다.', users, null);
@@ -30,12 +30,12 @@ export class LeaderboardController {
   };
 
   getPostLeaderboard: RequestHandler = async (
-    req: Request<object, object, object, GetPostLeaderboardQuery>,
+    req: Request,
     res: Response<PostLeaderboardResponseDto>,
     next: NextFunction,
   ) => {
     try {
-      const { sort, dateRange, limit } = req.query;
+      const { sort, dateRange, limit } = res.locals.query as GetPostLeaderboardQuery;
 
       const posts = await this.leaderboardService.getPostLeaderboard(sort, dateRange, limit);
       const response = new PostLeaderboardResponseDto(true, '게시물 리더보드 조회에 성공하였습니다.', posts, null);

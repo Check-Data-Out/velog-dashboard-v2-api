@@ -1,6 +1,12 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '@/configs/logger.config';
-import { EmptyResponseDto, LoginResponseDto, NewsletterUnsubscribeQueryDto, QRLoginConfirmRequestDto } from '@/types';
+import {
+  EmptyResponseDto,
+  LoginResponseDto,
+  NewsletterUnsubscribeQueryDto,
+  QRLoginConfirmRequestDto,
+  QRLoginStatusQueryDto,
+} from '@/types';
 import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
@@ -167,7 +173,7 @@ export class UserController {
   ) => {
     try {
       // validateRequestDto(QRLoginStatusQueryDto, 'query') 가 10자리 문자열임을 보장한다
-      const token = req.query.token as string;
+      const { token } = res.locals.query as QRLoginStatusQueryDto;
       const status = await this.userService.getQRLoginTokenStatus(token, req.user.id);
 
       const response = new QRLoginStatusResponseDto(true, 'QR 토큰 상태 조회 완료', status, null);
@@ -222,7 +228,7 @@ export class UserController {
   ) => {
     try {
       // validateRequestDto(NewsletterUnsubscribeQueryDto, 'query') 가 uid·sig 형식을 보장한다
-      const { uid, sig } = req.query as unknown as NewsletterUnsubscribeQueryDto;
+      const { uid, sig } = res.locals.query as NewsletterUnsubscribeQueryDto;
       if (!verifyUnsubscribe(NEWSLETTER_UNSUBSCRIBE_SECRET, uid, sig)) {
         throw new BadRequestError('유효하지 않은 수신거부 링크입니다.', 'INVALID_UNSUBSCRIBE_LINK');
       }
@@ -237,7 +243,7 @@ export class UserController {
       const response = new EmptyResponseDto(true, '뉴스레터 수신거부가 처리되었습니다.', {}, null);
       res.status(200).json(response);
     } catch (error) {
-      logger.error(`뉴스레터 수신거부 실패: [uid: ${req.query.uid}]`, error);
+      logger.error(`뉴스레터 수신거부 실패: [uid: ${res.locals.query?.uid}]`, error);
       next(error);
     }
   };
