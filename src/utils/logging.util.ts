@@ -16,6 +16,9 @@ export const getClientIp = (req: Request): string => {
   );
 };
 
+// 뉴스레터 수신거부 링크의 서명(sig)은 만료되지 않으므로 로그에 원문을 남기지 않는다
+const maskSignature = (url: string): string => url.replace(/([?&]sig=)[^&#]*/g, '$1***');
+
 /**
  * 요청에서 기본 로그 컨텍스트 생성
  */
@@ -24,7 +27,7 @@ export const createLogContext = (req: Request): LogContext => {
     requestId: req.requestId || randomUUID(),
     userId: req.user?.id,
     method: req.method,
-    url: req.originalUrl || req.url,
+    url: maskSignature(req.originalUrl || req.url),
     userAgent: req.headers['user-agent'],
     ip: getClientIp(req),
   };
