@@ -10,7 +10,7 @@ import {
 import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { BadRequestError, CustomError, QRTokenExpiredError } from '@/exception';
+import { BadRequestError, QRTokenExpiredError, ServiceUnavailableError } from '@/exception';
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 import { verifyUnsubscribe } from '@/utils/unsubscribe.util';
 import { getNewsletterUnsubscribeSecret } from '@/configs/newsletter.config';
@@ -232,7 +232,7 @@ export class UserController {
       const { uid, sig } = res.locals.query as NewsletterUnsubscribeQueryDto;
       const secret = getNewsletterUnsubscribeSecret();
       if (!secret) {
-        throw new CustomError('지금은 수신거부를 처리할 수 없습니다.', 'UNSUBSCRIBE_UNAVAILABLE', 503);
+        throw new ServiceUnavailableError('지금은 수신거부를 처리할 수 없습니다.', 'UNSUBSCRIBE_UNAVAILABLE');
       }
       if (!verifyUnsubscribe(secret, uid, sig)) {
         throw new BadRequestError('유효하지 않은 수신거부 링크입니다.', 'INVALID_UNSUBSCRIBE_LINK');

@@ -492,7 +492,7 @@ describe('UserController', () => {
       );
     });
 
-    it('서명이 맞지 않으면 BadRequestError 를 넘기고 수신거부하지 않아야 한다', async () => {
+    it('서명이 맞지 않으면 BadRequestError 를 넘기고 수신거부하지 않으며, 스캐너·변조 링크라 warn 으로만 남겨야 한다', async () => {
       mockResponse.locals = { query: { uid: '43', sig } };
 
       await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -500,13 +500,6 @@ describe('UserController', () => {
       expect(nextFunction).toHaveBeenCalledWith(expect.any(BadRequestError));
       expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
       expect(mockResponse.json).not.toHaveBeenCalled();
-    });
-
-    it('서명이 맞지 않는 요청(스캐너·변조 링크)은 error 가 아닌 warn 으로 남겨야 한다', async () => {
-      mockResponse.locals = { query: { uid: '43', sig } };
-
-      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
-
       expect(logger.warn).toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });
