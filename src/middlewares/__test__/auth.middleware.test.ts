@@ -191,7 +191,6 @@ describe('인증 미들웨어', () => {
 
       it('velog 토큰 쿠키로는 인증 실패 집계 없이 401 로 거부해야 한다', async () => {
         mockRequest.cookies = { access_token: validToken, refresh_token: REFRESH_TOKEN };
-        (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [mockUser] });
 
         await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
 
@@ -199,6 +198,7 @@ describe('인증 미들웨어', () => {
         expect(error).toEqual(expect.objectContaining({ statusCode: 401 }));
         expect(error).not.toBeInstanceOf(InvalidTokenError);
         expect(mockRequest.user).toBeUndefined();
+        expect(pool.query).not.toHaveBeenCalled();
         expect(fetchVelogApi).not.toHaveBeenCalled();
         expect(mockResponse.cookie).not.toHaveBeenCalled();
       });
