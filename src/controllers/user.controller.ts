@@ -181,12 +181,13 @@ export class UserController {
   /**
    * 메일 링크 진입점. 서명 링크(uid·sig)는 링크 미리보기·스캐너가 먼저 열어도 수신거부되지 않도록
    * 상태를 바꾸지 않고 FE 확인 페이지로 보낸다. 서명 검증은 POST 에서 한다.
+   * uid·sig 는 분석 도구가 수집하는 query 가 아니라 fragment 에 담아 넘긴다.
    * 기존 `?email=` 링크는 서명 링크로 옮기는 동안 바로 수신거부한다.
    */
   unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
     const { uid, sig } = req.query;
     if (typeof uid === 'string' && typeof sig === 'string') {
-      res.redirect(`/newsletter/unsubscribe?uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
+      res.redirect(`/newsletter/unsubscribe#uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
       return;
     }
 

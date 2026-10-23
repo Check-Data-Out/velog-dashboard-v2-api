@@ -440,15 +440,16 @@ describe('UserController', () => {
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('서명 링크(uid·sig)로 들어오면 상태를 바꾸지 않고 FE 확인 페이지로 리다이렉트해야 한다', async () => {
+    it('서명 링크(uid·sig)로 들어오면 상태를 바꾸지 않고 서명을 fragment 에 담아 FE 확인 페이지로 리다이렉트해야 한다', async () => {
       mockRequest.query = { uid: '42', sig: 'a+b/c=' };
 
       await userController.unsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
       expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      // 분석 도구가 수집하는 query 대신 fragment 에 담아 서명이 새지 않게 한다
       expect(mockResponse.redirect).toHaveBeenCalledWith(
-        `/newsletter/unsubscribe?uid=42&sig=${encodeURIComponent('a+b/c=')}`,
+        `/newsletter/unsubscribe#uid=42&sig=${encodeURIComponent('a+b/c=')}`,
       );
     });
   });
