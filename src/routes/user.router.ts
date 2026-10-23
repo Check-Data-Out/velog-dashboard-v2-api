@@ -230,6 +230,7 @@ router.get(
  *     summary: 뉴스레터 수신거부 메일 링크 진입점
  *     description: |
  *       서명 링크(uid·sig)는 상태를 바꾸지 않고 FE 확인 페이지로 리디렉션한다. 서명 검증은 POST 에서 한다.
+ *       uid·sig 는 분석 도구에 수집되지 않도록 query 가 아닌 fragment 로 넘긴다.
  *       기존 email 링크는 서명 링크로 옮기는 동안 바로 수신거부한 뒤 메인 페이지로 리디렉션한다.
  *     security: []
  *     parameters:
@@ -254,7 +255,7 @@ router.get(
  *         description: 구독을 해제할 이메일 (기존 링크, 이전 기간 동안만 지원)
  *     responses:
  *       302:
- *         description: 'uid·sig 가 있으면 /newsletter/unsubscribe?uid=<uid>&sig=<sig>, 그 외에는 수신거부 시도 후 /main'
+ *         description: 'uid·sig 가 있으면 /newsletter/unsubscribe#uid=<uid>&sig=<sig> (fragment), 그 외에는 수신거부 시도 후 /main'
  *   post:
  *     tags:
  *       - User

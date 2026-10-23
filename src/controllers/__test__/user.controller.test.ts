@@ -7,6 +7,7 @@ import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { BadRequestError, NotFoundError, QRTokenExpiredError, UnauthorizedError } from '@/exception';
 import { signUnsubscribe } from '@/utils/unsubscribe.util';
 import { mockUser, mockPool } from '@/utils/fixtures';
+import logger from '@/configs/logger.config';
 import { Pool } from 'pg';
 
 // Mock dependencies
@@ -16,6 +17,7 @@ jest.mock('@/modules/velog/velog.api');
 // logger 모킹
 jest.mock('@/configs/logger.config', () => ({
   error: jest.fn(),
+  warn: jest.fn(),
   info: jest.fn(),
 }));
 
@@ -440,15 +442,16 @@ describe('UserController', () => {
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('서명 링크(uid·sig)로 들어오면 상태를 바꾸지 않고 FE 확인 페이지로 리다이렉트해야 한다', async () => {
+    it('서명 링크(uid·sig)로 들어오면 상태를 바꾸지 않고 서명을 fragment 에 담아 FE 확인 페이지로 리다이렉트해야 한다', async () => {
       mockRequest.query = { uid: '42', sig: 'a+b/c=' };
 
       await userController.unsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
       expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      // 분석 도구가 수집하는 query 대신 fragment 에 담아 서명이 새지 않게 한다
       expect(mockResponse.redirect).toHaveBeenCalledWith(
-        `/newsletter/unsubscribe?uid=42&sig=${encodeURIComponent('a+b/c=')}`,
+        `/newsletter/unsubscribe#uid=42&sig=${encodeURIComponent('a+b/c=')}`,
       );
     });
   });
@@ -497,6 +500,15 @@ describe('UserController', () => {
       expect(nextFunction).toHaveBeenCalledWith(expect.any(BadRequestError));
       expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
       expect(mockResponse.json).not.toHaveBeenCalled();
+    });
+
+    it('서명이 맞지 않는 요청(스캐너·변조 링크)은 error 가 아닌 warn 으로 남겨야 한다', async () => {
+      mockResponse.locals = { query: { uid: '43', sig } };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(logger.warn).toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
     });
   });
 });

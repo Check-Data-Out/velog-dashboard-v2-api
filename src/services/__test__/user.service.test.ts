@@ -104,7 +104,7 @@ describe('UserService 뉴스레터 수신거부 (id)', () => {
 
   it('Slack 전송이 실패해도 수신거부는 성공으로 끝나야 한다', async () => {
     userRepo.findByUserId.mockResolvedValue(mockUser);
-    (sendSlackMessage as jest.Mock).mockRejectedValue(new Error('slack down'));
+    (sendSlackMessage as jest.Mock).mockRejectedValueOnce(new Error('slack down'));
 
     await expect(userService.unsubscribeNewsletterById(mockUser.id, context)).resolves.toBeUndefined();
 

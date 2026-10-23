@@ -187,12 +187,13 @@ export class UserController {
   /**
    * 메일 링크 진입점. 서명 링크(uid·sig)는 링크 미리보기·스캐너가 먼저 열어도 수신거부되지 않도록
    * 상태를 바꾸지 않고 FE 확인 페이지로 보낸다. 서명 검증은 POST 에서 한다.
+   * uid·sig 는 분석 도구가 수집하는 query 가 아니라 fragment 에 담아 넘긴다.
    * 기존 `?email=` 링크는 서명 링크로 옮기는 동안 바로 수신거부한다.
    */
   unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
     const { uid, sig } = req.query;
     if (typeof uid === 'string' && typeof sig === 'string') {
-      res.redirect(`/newsletter/unsubscribe?uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
+      res.redirect(`/newsletter/unsubscribe#uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
       return;
     }
 
@@ -243,7 +244,12 @@ export class UserController {
       const response = new EmptyResponseDto(true, '뉴스레터 수신거부가 처리되었습니다.', {}, null);
       res.status(200).json(response);
     } catch (error) {
-      logger.error(`뉴스레터 수신거부 실패: [uid: ${res.locals.query?.uid}]`, error);
+      // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류라 경고로만 남긴다
+      if (error instanceof BadRequestError) {
+        logger.warn(`뉴스레터 수신거부 거부: [uid: ${res.locals.query?.uid}] ${error.message}`);
+      } else {
+        logger.error(`뉴스레터 수신거부 실패: [uid: ${res.locals.query?.uid}]`, error);
+      }
       next(error);
     }
   };
