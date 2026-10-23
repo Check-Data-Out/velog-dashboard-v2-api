@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '@/configs/logger.config';
 import { EmptyResponseDto, LoginResponseDto, QRLoginConfirmRequestDto } from '@/types';
-import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
+import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { QRTokenExpiredError } from '@/exception';
@@ -150,6 +150,24 @@ export class UserController {
       res.status(200).json(response);
     } catch (error) {
       logger.error('QR 토큰 로그인 확인 실패 : ', error);
+      next(error);
+    }
+  };
+
+  getTokenStatus: RequestHandler = async (
+    req: Request,
+    res: Response<QRLoginStatusResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      // validateRequestDto(QRLoginStatusQueryDto, 'query') 가 10자리 문자열임을 보장한다
+      const token = req.query.token as string;
+      const status = await this.userService.getQRLoginTokenStatus(token, req.user.id);
+
+      const response = new QRLoginStatusResponseDto(true, 'QR 토큰 상태 조회 완료', status, null);
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`QR 토큰 상태 조회 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
       next(error);
     }
   };

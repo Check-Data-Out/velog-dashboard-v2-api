@@ -378,6 +378,25 @@ describe('UserController', () => {
     });
   });
 
+  describe('getTokenStatus', () => {
+    it('본인 토큰의 상태를 서비스 결과 그대로 응답해야 한다', async () => {
+      mockRequest.query = { token: 'ABC123EFGH' };
+      const status = {
+        status: 'used' as const,
+        usedAt: '2026-10-22T00:00:00.000Z',
+        userAgent: 'phone-agent',
+        ip: '10.0.0.1',
+      };
+      mockUserService.getQRLoginTokenStatus.mockResolvedValue(status);
+
+      await userController.getTokenStatus(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.getQRLoginTokenStatus).toHaveBeenCalledWith('ABC123EFGH', mockUser.id);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, data: status }));
+    });
+  });
+
   describe('unsubscribeNewsletter', () => {
     beforeEach(() => {
       mockRequest.query = {};

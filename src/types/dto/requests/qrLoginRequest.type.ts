@@ -25,3 +25,28 @@ export class QRLoginConfirmRequestDto {
     this.token = token;
   }
 }
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     QRLoginStatusQueryDto:
+ *       type: object
+ *       required:
+ *         - token
+ *       properties:
+ *         token:
+ *           type: string
+ *           minLength: 10
+ *           maxLength: 10
+ *           description: 데스크톱에서 발급한 10자리 QR 토큰
+ */
+export class QRLoginStatusQueryDto {
+  @IsString()
+  @Length(10, 10)
+  token: string;
+
+  constructor(token: string) {
+    this.token = token;
+  }
+}

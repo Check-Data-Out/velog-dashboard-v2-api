@@ -5,7 +5,7 @@ import { UserRepository } from '@/repositories/user.repository';
 import { UserService } from '@/services/user.service';
 import { authMiddleware } from '@/middlewares/auth.middleware';
 import { validateRequestDto } from '@/middlewares/validation.middleware';
-import { LoginRequestDto, QRLoginConfirmRequestDto } from '@/types';
+import { LoginRequestDto, QRLoginConfirmRequestDto, QRLoginStatusQueryDto } from '@/types';
 
 const router: Router = express.Router();
 
@@ -179,6 +179,42 @@ router.get('/qr-login', userController.getToken);
  *         description: 로그인할 수 없는 사용자 (없거나 비활성)
  */
 router.post('/qr-login/confirm', validateRequestDto(QRLoginConfirmRequestDto, 'body'), userController.confirmToken);
+
+/**
+ * @swagger
+ * /qr-login/status:
+ *   get:
+ *     summary: 데스크톱에서 발급한 본인 QR 토큰의 상태 조회 (폴링용)
+ *     tags: [QRLogin]
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 10
+ *           maxLength: 10
+ *         description: 조회할 QR 토큰
+ *     responses:
+ *       '200':
+ *         description: 토큰 상태. 다른 사용자의 토큰이나 없는 토큰도 expired 로 응답한다
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/QRLoginStatusResponseDto'
+ *       '400':
+ *         description: DTO 검증 실패
+ *       '401':
+ *         description: 인증 실패
+ */
+router.get(
+  '/qr-login/status',
+  authMiddleware.verify,
+  validateRequestDto(QRLoginStatusQueryDto, 'query'),
+  userController.getTokenStatus,
+);
 
 /**
  * @swagger

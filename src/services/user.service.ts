@@ -8,6 +8,7 @@ import { UserWithTokenDto, User } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import { VelogUserCurrentResponse } from '@/modules/velog/velog.type';
+import { QRLoginTokenStatus } from '@/types/models/QRLoginToken.type';
 
 export class UserService {
   constructor(private userRepo: UserRepository) {}
@@ -140,6 +141,10 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async getQRLoginTokenStatus(token: string, userId: number): Promise<QRLoginTokenStatus> {
+    return await this.userRepo.findQRLoginTokenStatus(token, userId);
   }
 
   /**
