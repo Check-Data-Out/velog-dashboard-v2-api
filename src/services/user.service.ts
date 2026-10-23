@@ -204,6 +204,10 @@ export class UserService {
       return;
     }
 
+    await this.unsubscribeAndNotify(user, context);
+  }
+
+  private async unsubscribeAndNotify(user: User, context: NewsletterUnsubscribeContext): Promise<void> {
     const alreadyUnsubscribed = !user.newsletter_subscribed;
     if (!alreadyUnsubscribed) {
       await this.userRepo.unsubscribeNewsletter(user.id);
