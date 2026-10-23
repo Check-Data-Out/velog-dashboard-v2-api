@@ -81,6 +81,12 @@ describe('Logging Utilities', () => {
       expect(context.userAgent).toBeUndefined();
       expect(context.ip).toBe('127.0.0.1');
     });
+
+    it('수신거부 링크의 서명은 가리고 나머지 query 는 남겨야 한다', () => {
+      mockRequest.originalUrl = '/api/newsletter-unsubscribe?uid=42&sig=PJT8snaX4RoJtPxS8SJBVracgxS_c0eIMiT9gFKdIKc';
+
+      expect(createLogContext(mockRequest as Request).url).toBe('/api/newsletter-unsubscribe?uid=42&sig=***');
+    });
   });
 
   describe('logError', () => {

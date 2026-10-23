@@ -4,10 +4,10 @@ import { EmptyResponseDto, LoginResponseDto, NewsletterUnsubscribeQueryDto, QRLo
 import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { BadRequestError, QRTokenExpiredError } from '@/exception';
+import { BadRequestError, CustomError, QRTokenExpiredError } from '@/exception';
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 import { verifyUnsubscribe } from '@/utils/unsubscribe.util';
-import { NEWSLETTER_UNSUBSCRIBE_SECRET } from '@/configs/newsletter.config';
+import { getNewsletterUnsubscribeSecret } from '@/configs/newsletter.config';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -181,12 +181,13 @@ export class UserController {
   /**
    * 메일 링크 진입점. 서명 링크(uid·sig)는 링크 미리보기·스캐너가 먼저 열어도 수신거부되지 않도록
    * 상태를 바꾸지 않고 FE 확인 페이지로 보낸다. 서명 검증은 POST 에서 한다.
+   * uid·sig 는 분석 도구가 수집하는 query 가 아니라 fragment 에 담아 넘긴다.
    * 기존 `?email=` 링크는 서명 링크로 옮기는 동안 바로 수신거부한다.
    */
   unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
     const { uid, sig } = req.query;
     if (typeof uid === 'string' && typeof sig === 'string') {
-      res.redirect(`/newsletter/unsubscribe?uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
+      res.redirect(`/newsletter/unsubscribe#uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
       return;
     }
 
@@ -223,7 +224,11 @@ export class UserController {
     try {
       // validateRequestDto(NewsletterUnsubscribeQueryDto, 'query') 가 uid·sig 형식을 보장한다
       const { uid, sig } = req.query as unknown as NewsletterUnsubscribeQueryDto;
-      if (!verifyUnsubscribe(NEWSLETTER_UNSUBSCRIBE_SECRET, uid, sig)) {
+      const secret = getNewsletterUnsubscribeSecret();
+      if (!secret) {
+        throw new CustomError('지금은 수신거부를 처리할 수 없습니다.', 'UNSUBSCRIBE_UNAVAILABLE', 503);
+      }
+      if (!verifyUnsubscribe(secret, uid, sig)) {
         throw new BadRequestError('유효하지 않은 수신거부 링크입니다.', 'INVALID_UNSUBSCRIBE_LINK');
       }
 
@@ -237,7 +242,12 @@ export class UserController {
       const response = new EmptyResponseDto(true, '뉴스레터 수신거부가 처리되었습니다.', {}, null);
       res.status(200).json(response);
     } catch (error) {
-      logger.error(`뉴스레터 수신거부 실패: [uid: ${req.query.uid}]`, error);
+      // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류라 경고로만 남긴다
+      if (error instanceof BadRequestError) {
+        logger.warn(`뉴스레터 수신거부 거부: [uid: ${req.query.uid}] ${error.message}`);
+      } else {
+        logger.error(`뉴스레터 수신거부 실패: [uid: ${req.query.uid}]`, error);
+      }
       next(error);
     }
   };
