@@ -25,7 +25,12 @@ export const initSentry = () => {
       enabled: true,
 
       // Capture 100% of the transactions for performance monitoring
-      integrations: [Sentry.httpIntegration(), Sentry.expressIntegration()],
+      // 세션 쿠키(vd_session)를 그대로 보내면 세션 탈취로 이어지므로 쿠키는 수집하지 않는다(헤더의 cookie 도 함께 빠진다)
+      integrations: [
+        Sentry.httpIntegration(),
+        Sentry.expressIntegration(),
+        Sentry.requestDataIntegration({ include: { cookies: false } }),
+      ],
     });
 
     sentryInitialized = true;
