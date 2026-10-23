@@ -4,7 +4,7 @@ import { EmptyResponseDto, LoginResponseDto, QRLoginConfirmRequestDto } from '@/
 import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { QRTokenExpiredError, QRTokenInvalidError } from '@/exception';
+import { QRTokenExpiredError } from '@/exception';
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 
 type Token10 = string & { __lengthBrand: 10 };
@@ -124,25 +124,13 @@ export class UserController {
     }
   };
 
-  getToken: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const token = req.query.token as string;
-      if (!token) {
-        throw new QRTokenInvalidError('토큰이 필요합니다.');
-      }
-
-      const userLoginToken = await this.userService.useToken(token, getClientIp(req), req.headers['user-agent'] || '');
-      if (!userLoginToken) {
-        throw new QRTokenExpiredError();
-      }
-
-      setSessionCookie(res, userLoginToken);
-
-      res.redirect('/main');
-    } catch (error) {
-      logger.error(`QR 토큰 로그인 처리 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
-      next(error);
-    }
+  /**
+   * QR 코드 URL 진입점. 링크 미리보기나 스캐너가 먼저 열어도 토큰이 소비되지 않도록 상태를 바꾸지 않고
+   * FE 확인 화면으로만 보낸다. 토큰 검증은 확인(POST) 단계에서 한다.
+   */
+  getToken: RequestHandler = (req: Request, res: Response) => {
+    const token = req.query.token;
+    res.redirect(typeof token === 'string' && token ? `/qr-login?token=${encodeURIComponent(token)}` : '/qr-login');
   };
 
   confirmToken: RequestHandler = async (

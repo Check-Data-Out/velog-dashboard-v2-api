@@ -132,22 +132,19 @@ router.post('/qr-login', authMiddleware.verify, userController.createToken);
  * @swagger
  * /qr-login:
  *   get:
- *     summary: QR 로그인 토큰 조회 및 자동 로그인 처리
+ *     summary: QR 코드 URL 진입점. 토큰을 소비하지 않고 FE 확인 화면으로 리디렉션
  *     tags: [QRLogin]
+ *     security: []
  *     parameters:
  *       - in: query
  *         name: token
- *         required: true
+ *         required: false
  *         schema:
  *           type: string
- *         description: 조회할 QR 토큰
+ *         description: QR 코드에 담긴 토큰. 검증하지 않고 그대로 전달한다
  *     responses:
  *       302:
- *         description: 자동 로그인 완료 후 메인 페이지로 리디렉션
- *       400:
- *         description: 잘못된 토큰
- *       404:
- *         description: 만료 또는 존재하지 않는 토큰
+ *         description: '/qr-login?token=<토큰> 으로 리디렉션. 토큰이 없거나 문자열이 아니면 /qr-login'
  */
 router.get('/qr-login', userController.getToken);
 

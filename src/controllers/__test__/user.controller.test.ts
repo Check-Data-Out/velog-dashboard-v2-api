@@ -296,6 +296,27 @@ describe('UserController', () => {
     });
   });
 
+  describe('getToken', () => {
+    it('토큰을 소비하지 않고 FE 확인 화면으로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { token: 'ABC+12/3&=' };
+
+      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.useToken).not.toHaveBeenCalled();
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith(`/qr-login?token=${encodeURIComponent('ABC+12/3&=')}`);
+    });
+
+    it('토큰이 없거나 문자열이 아니면 토큰 없이 FE 확인 화면으로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { token: ['a', 'b'] };
+
+      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.useToken).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/qr-login');
+    });
+  });
+
   describe('confirmToken', () => {
     beforeEach(() => {
       mockRequest.headers = { 'user-agent': 'phone-agent' };
