@@ -5,7 +5,7 @@ import { UserRepository } from '@/repositories/user.repository';
 import { UserService } from '@/services/user.service';
 import { authMiddleware } from '@/middlewares/auth.middleware';
 import { validateRequestDto } from '@/middlewares/validation.middleware';
-import { LoginRequestDto } from '@/types';
+import { LoginRequestDto, QRLoginConfirmRequestDto } from '@/types';
 
 const router: Router = express.Router();
 
@@ -150,6 +150,38 @@ router.post('/qr-login', authMiddleware.verify, userController.createToken);
  *         description: 만료 또는 존재하지 않는 토큰
  */
 router.get('/qr-login', userController.getToken);
+
+/**
+ * @swagger
+ * /qr-login/confirm:
+ *   post:
+ *     summary: 휴대폰에서 QR 로그인 확인 (토큰 1회 소비 후 세션 발급)
+ *     tags: [QRLogin]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/QRLoginConfirmRequestDto'
+ *     responses:
+ *       '200':
+ *         description: 토큰을 소비하고 세션 쿠키를 발급함
+ *         headers:
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *             description: 세션 쿠키
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/EmptyResponseDto'
+ *       '400':
+ *         description: DTO 검증 실패 / 만료됐거나 이미 사용된 토큰
+ *       '401':
+ *         description: 로그인할 수 없는 사용자 (없거나 비활성)
+ */
+router.post('/qr-login/confirm', validateRequestDto(QRLoginConfirmRequestDto, 'body'), userController.confirmToken);
 
 /**
  * @swagger

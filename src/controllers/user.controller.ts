@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '@/configs/logger.config';
-import { EmptyResponseDto, LoginResponseDto } from '@/types';
+import { EmptyResponseDto, LoginResponseDto, QRLoginConfirmRequestDto } from '@/types';
 import { QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
@@ -10,7 +10,7 @@ import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 type Token10 = string & { __lengthBrand: 10 };
 
 // 프록시 뒤에서 받은 요청의 클라이언트 IP. x-forwarded-for 첫 값이라 위조할 수 있으므로 참고용이다.
-const getClientIp = (req: Request): string =>
+const getClientIp = (req: Pick<Request, 'headers' | 'ip'>): string =>
   typeof req.headers['x-forwarded-for'] === 'string'
     ? req.headers['x-forwarded-for'].split(',')[0].trim()
     : (req.ip ?? '');
@@ -141,6 +141,27 @@ export class UserController {
       res.redirect('/main');
     } catch (error) {
       logger.error(`QR 토큰 로그인 처리 실패: [userId: ${req.user?.id || 'anonymous'}]`, error);
+      next(error);
+    }
+  };
+
+  confirmToken: RequestHandler = async (
+    req: Request<object, object, QRLoginConfirmRequestDto>,
+    res: Response<EmptyResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      const user = await this.userService.useToken(req.body.token, getClientIp(req), req.headers['user-agent'] || '');
+      if (!user) {
+        throw new QRTokenExpiredError();
+      }
+
+      setSessionCookie(res, user);
+
+      const response = new EmptyResponseDto(true, 'QR 로그인에 성공하였습니다.', {}, null);
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error('QR 토큰 로그인 확인 실패 : ', error);
       next(error);
     }
   };

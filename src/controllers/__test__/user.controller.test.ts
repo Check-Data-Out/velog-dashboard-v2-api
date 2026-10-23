@@ -4,7 +4,7 @@ import { UserController } from '@/controllers/user.controller';
 import { UserService } from '@/services/user.service';
 import { UserRepository } from '@/repositories/user.repository';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { NotFoundError } from '@/exception';
+import { NotFoundError, QRTokenExpiredError, UnauthorizedError } from '@/exception';
 import { mockUser, mockPool } from '@/utils/fixtures';
 import { Pool } from 'pg';
 
@@ -296,49 +296,64 @@ describe('UserController', () => {
     });
   });
 
-  describe('getToken', () => {
-    it('유효한 토큰으로 QR 로그인에 성공해야 한다', async () => {
-      mockRequest.query = { token: 'valid-token' };
+  describe('confirmToken', () => {
+    beforeEach(() => {
+      mockRequest.headers = { 'user-agent': 'phone-agent' };
+    });
+
+    it('유효한 토큰을 확인하면 세션 쿠키를 심고 200 을 응답해야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
       mockUserService.useToken.mockResolvedValue(mockUser);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token', '127.0.0.1', '');
+      expect(mockUserService.useToken).toHaveBeenCalledWith('ABC123EFGH', '127.0.0.1', 'phone-agent');
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
-      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('토큰이 없는 경우 에러를 전달해야 한다', async () => {
-      mockRequest.query = {};
+    it('x-forwarded-for 가 있으면 첫 IP 를 넘겨야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
+      mockRequest.headers = { 'user-agent': 'phone-agent', 'x-forwarded-for': '10.0.0.1, 192.168.0.1' };
+      mockUserService.useToken.mockResolvedValue(mockUser);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(nextFunction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: '토큰이 필요합니다.',
-        }),
-      );
+      expect(mockUserService.useToken).toHaveBeenCalledWith('ABC123EFGH', '10.0.0.1', 'phone-agent');
     });
 
-    it('만료된 토큰인 경우 에러를 전달해야 한다', async () => {
-      mockRequest.query = { token: 'expired-token' };
+    it('만료되었거나 이미 사용된 토큰이면 QRTokenExpiredError 를 넘겨야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
       mockUserService.useToken.mockResolvedValue(null);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(QRTokenExpiredError));
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
+    });
+
+    it('비활성 사용자면 서비스의 UnauthorizedError 를 넘겨야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
+      const error = new UnauthorizedError('로그인할 수 없는 사용자입니다.');
+      mockUserService.useToken.mockRejectedValue(error);
+
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(error);
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
     });
 
     it('토큰 사용 중 에러 발생 시 에러를 전달해야 한다', async () => {
-      mockRequest.query = { token: 'valid-token' };
+      mockRequest.body = { token: 'ABC123EFGH' };
       const error = new Error('토큰 사용 실패');
       mockUserService.useToken.mockRejectedValue(error);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      // Assert
       expect(nextFunction).toHaveBeenCalledWith(error);
-      expect(mockResponse.redirect).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
   });
 
