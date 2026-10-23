@@ -14,18 +14,15 @@ import { BadRequestError, QRTokenExpiredError, ServiceUnavailableError } from '@
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 import { verifyUnsubscribe } from '@/utils/unsubscribe.util';
 import { getNewsletterUnsubscribeSecret } from '@/configs/newsletter.config';
+import { getClientIp } from '@/utils/logging.util';
 
 type Token10 = string & { __lengthBrand: 10 };
 
 // IP 를 저장하는 컬럼 길이(IPv6 최대 45자). 클라이언트가 보낸 값이 길어도 저장이 실패하지 않게 자른다
 const MAX_IP_LENGTH = 45;
 
-// 프록시 뒤에서 받은 요청의 클라이언트 IP. x-forwarded-for 첫 값이라 위조할 수 있으므로 참고용이다.
-const getClientIp = (req: Pick<Request, 'headers' | 'ip'>): string =>
-  (typeof req.headers['x-forwarded-for'] === 'string'
-    ? req.headers['x-forwarded-for'].split(',')[0].trim()
-    : (req.ip ?? '')
-  ).slice(0, MAX_IP_LENGTH);
+const getStoredClientIp = (req: Pick<Request, 'headers' | 'ip' | 'socket'>): string =>
+  getClientIp(req).slice(0, MAX_IP_LENGTH);
 
 export class UserController {
   constructor(private userService: UserService) {}
@@ -121,7 +118,7 @@ export class UserController {
   createToken: RequestHandler = async (req: Request, res: Response<QRLoginTokenResponseDto>, next: NextFunction) => {
     try {
       const user = req.user;
-      const ip = getClientIp(req);
+      const ip = getStoredClientIp(req);
       // users_qrlogintoken.user_agent 가 varchar(255) 라 넘치면 INSERT 가 실패한다
       const userAgent = (req.headers['user-agent'] || '').slice(0, 255);
 
@@ -151,7 +148,11 @@ export class UserController {
     next: NextFunction,
   ) => {
     try {
-      const user = await this.userService.useToken(req.body.token, getClientIp(req), req.headers['user-agent'] || '');
+      const user = await this.userService.useToken(
+        req.body.token,
+        getStoredClientIp(req),
+        req.headers['user-agent'] || '',
+      );
       if (!user) {
         throw new QRTokenExpiredError();
       }
@@ -248,8 +249,8 @@ export class UserController {
       const response = new EmptyResponseDto(true, '뉴스레터 수신거부가 처리되었습니다.', {}, null);
       res.status(200).json(response);
     } catch (error) {
-      // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류라 경고로만 남긴다
-      if (error instanceof BadRequestError) {
+      // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류이고, 키 미설정은 기동 시 이미 경고했으므로 경고로만 남긴다
+      if (error instanceof BadRequestError || error instanceof ServiceUnavailableError) {
         logger.warn(`뉴스레터 수신거부 거부: [uid: ${res.locals.query?.uid}] ${error.message}`);
       } else {
         logger.error(`뉴스레터 수신거부 실패: [uid: ${res.locals.query?.uid}]`, error);

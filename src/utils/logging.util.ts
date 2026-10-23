@@ -5,13 +5,14 @@ import { LogContext, ErrorLogData, AccessLogData } from '@/types/logging';
 import { CustomError } from '@/exception';
 
 /**
- * 클라이언트 IP 주소 추출
+ * 클라이언트 IP 주소 추출. 프록시 뒤에서는 x-forwarded-for 첫 값이라 위조할 수 있으므로 참고용이다.
  */
-export const getClientIp = (req: Request): string => {
+export const getClientIp = (req: Pick<Request, 'headers' | 'ip' | 'socket'>): string => {
   return (
-    (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
     (req.headers['x-real-ip'] as string) ||
-    req.socket.remoteAddress ||
+    req.ip ||
+    req.socket?.remoteAddress ||
     'unknown'
   );
 };
