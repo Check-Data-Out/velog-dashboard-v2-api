@@ -119,29 +119,32 @@ check_services() {
     # 각 서비스 헬스체크 (재시도 로직 적용)
     echo -e "\n${YELLOW}서비스 헬스체크 (exponential backoff 적용):${NC}"
 
-    local all_healthy=true
+    local failed=()
 
     # API 서비스 확인 (최대 10회, 2초부터 시작)
     if ! wait_for_service "API 서비스" "http://localhost:8080/health" 10 2; then
-        all_healthy=false
+        failed+=("API")
     fi
 
     # Frontend 서비스 확인 (포트 3000)
     if ! wait_for_service "Frontend 서비스" "http://localhost:3000" 10 2; then
-        all_healthy=false
+        failed+=("Frontend")
     fi
 
     # Nginx 서비스 확인 (포트 80)
     if ! wait_for_service "Nginx 서비스" "http://localhost" 10 2; then
-        all_healthy=false
+        failed+=("Nginx")
     fi
 
     echo ""
-    if [[ "$all_healthy" == true ]]; then
+    if [[ "${#failed[@]}" -eq 0 ]]; then
         echo -e "${GREEN}모든 서비스가 정상 동작 중입니다!${NC}"
-    else
-        echo -e "${YELLOW}일부 서비스가 아직 준비되지 않았습니다. 로그를 확인해주세요.${NC}"
+        return 0
     fi
+
+    # 실패를 0 으로 끝내면 CD 가 다음 서버까지 배포하고 성공으로 보고하므로 비정상 종료한다
+    echo -e "${RED}헬스체크 실패: ${failed[*]}. 이전 버전으로 되돌리려면 API CD 를 workflow_dispatch(version) 로 다시 실행하세요.${NC}" >&2
+    return 1
 }
 
 # 인자 파싱
