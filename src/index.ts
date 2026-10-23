@@ -135,7 +135,13 @@ class ServerManager {
       throw new Error('Express app not initialized');
     }
 
-    const server = this.app.listen(this.port, () => {
+    const server = this.app.listen(this.port, (error?: Error) => {
+      // Express 5 는 포트 사용 중 같은 listen 오류를 던지지 않고 이 콜백으로 넘긴다
+      if (error) {
+        logger.error('Failed to start server:', error);
+        process.exit(1);
+      }
+
       logger.info(`Server running on port ${this.port}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
 
