@@ -276,6 +276,15 @@ describe('UserController', () => {
       expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, '', 'Test Browser');
     });
 
+    it('User-Agent 가 255자를 넘으면 255자로 잘라 넘겨야 한다', async () => {
+      mockRequest.headers = { 'user-agent': 'a'.repeat(300) };
+      mockUserService.createUserQRToken.mockResolvedValue('ABC123EFGH');
+
+      await userController.createToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, '127.0.0.1', 'a'.repeat(255));
+    });
+
     it('QR 토큰 생성 실패 시 에러를 전달해야 한다', async () => {
       const error = new Error('토큰 생성 실패');
       mockUserService.createUserQRToken.mockRejectedValue(error);

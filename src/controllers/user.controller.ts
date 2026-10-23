@@ -110,7 +110,8 @@ export class UserController {
     try {
       const user = req.user;
       const ip = getClientIp(req);
-      const userAgent = req.headers['user-agent'] || '';
+      // users_qrlogintoken.user_agent 가 varchar(255) 라 넘치면 INSERT 가 실패한다
+      const userAgent = (req.headers['user-agent'] || '').slice(0, 255);
 
       const token = await this.userService.createUserQRToken(user.id, ip, userAgent);
       const typedToken = token as Token10;
