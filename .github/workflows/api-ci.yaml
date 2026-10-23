@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -28,7 +28,7 @@ jobs:
         run: corepack enable
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v6
         with:
           version: 9
           run_install: false
@@ -40,7 +40,7 @@ jobs:
           echo "store-path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.pnpm-cache.outputs.store-path }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -100,10 +100,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Checkout back-office
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: Check-Data-Out/velog-dashboard-v2-back-office
           ref: main
@@ -111,12 +111,12 @@ jobs:
           persist-credentials: false
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: 3.13.0
 
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v2
+        uses: abatilo/actions-poetry@v4
         with:
           poetry-version: 1.8.4
 
@@ -135,12 +135,12 @@ jobs:
           poetry run python manage.py migrate --noinput
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v6
         with:
           version: 9
           run_install: false
