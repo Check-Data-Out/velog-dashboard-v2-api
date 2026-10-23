@@ -59,78 +59,44 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
     await testPool.end();
   });
 
-  describe('QR 토큰 생성 및 조회', () => {
-    it('QR 토큰을 생성하고 정상 조회할 수 있어야 한다', async () => {
+  const findRow = async (token: string) =>
+    (await client.query('SELECT * FROM users_qrlogintoken WHERE token = $1', [token])).rows[0];
+
+  describe('QR 토큰 생성', () => {
+    it('QR 토큰을 5분 유효한 미사용 상태로 생성해야 한다', async () => {
       const token = generateRandomToken();
 
       await repo.createQRLoginToken(token, userId, ip, userAgent);
-      const foundToken = await repo.findQRLoginToken(token);
 
-      // 토큰이 존재함을 확인하고 타입 단언
-      expect(foundToken).not.toBeNull();
-      const nonNullToken = foundToken as NonNullable<typeof foundToken>;
-
-      expect(nonNullToken.token).toBe(token);
-      expect(Number(nonNullToken.user_id)).toBe(userId);
-      expect(nonNullToken.is_used).toBe(false);
-      expect(nonNullToken.ip_address).toBe(ip);
-      expect(nonNullToken.user_agent).toBe(userAgent);
-      expect(new Date(nonNullToken.expires_at).getTime()).toBeGreaterThan(new Date(nonNullToken.created_at).getTime());
-    });
-
-    it('존재하지 않는 토큰 조회 시 null을 반환해야 한다', async () => {
-      const invalidToken = generateRandomToken();
-      const result = await repo.findQRLoginToken(invalidToken);
-
-      expect(result).toBeNull();
+      const row = await findRow(token);
+      expect(Number(row.user_id)).toBe(userId);
+      expect(row.is_used).toBe(false);
+      expect(row.ip_address).toBe(ip);
+      expect(row.user_agent).toBe(userAgent);
+      expect(new Date(row.expires_at).getTime()).toBeGreaterThan(new Date(row.created_at).getTime());
     });
   });
 
-  describe('QR 토큰 사용 처리', () => {
-    it('QR 토큰을 사용 처리한 후 조회되지 않아야 한다', async () => {
+  describe('QR 토큰 로그아웃 무효화', () => {
+    it('그 사용자의 토큰을 모두 사용 처리하고 사용 시각은 남기지 않아야 한다', async () => {
       const token = generateRandomToken();
+      const otherToken = generateRandomToken();
       await repo.createQRLoginToken(token, userId, ip, userAgent);
-      expect(await repo.findQRLoginToken(token)).not.toBeNull();
+      await repo.createQRLoginToken(otherToken, userId, ip, userAgent);
 
       await repo.updateQRLoginTokenToUse(userId);
 
-      // 토큰이 is_used=true로 변경되었으므로 findQRLoginToken에서 null 반환 예상
-      const afterUpdate = await repo.findQRLoginToken(token);
-      expect(afterUpdate).toBeNull();
-    });
-  });
-
-  describe('QR 토큰 만료 처리', () => {
-    it('만료된 토큰은 조회되지 않아야 한다', async () => {
-      const token = generateRandomToken();
-      await insertQRLoginToken(client, userId, token, -5, false);
-
-      const found = await repo.findQRLoginToken(token);
-
-      expect(found).toBeNull();
-    });
-
-    it('만료되고 사용된 토큰도 조회되지 않아야 한다', async () => {
-      const token = generateRandomToken();
-      await insertQRLoginToken(client, userId, token, -5, true);
-
-      const found = await repo.findQRLoginToken(token);
-
-      expect(found).toBeNull();
+      for (const t of [token, otherToken]) {
+        const row = await findRow(t);
+        expect(row.is_used).toBe(true);
+        expect(row.used_at).toBeNull();
+      }
     });
   });
 
   describe('QR 토큰 확인 소비', () => {
     const usedIp = '10.0.0.1';
     const usedUserAgent = 'phone-agent';
-
-    const findRow = async (token: string) =>
-      (
-        await client.query(
-          'SELECT is_used, used_at, used_ip, used_user_agent FROM users_qrlogintoken WHERE token = $1',
-          [token],
-        )
-      ).rows[0];
 
     it('유효한 토큰을 소비하면 user_id 를 돌려주고 사용 시각·IP·User-Agent 를 남겨야 한다', async () => {
       const token = generateRandomToken();
