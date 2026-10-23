@@ -41,13 +41,13 @@
   },
   "dependencies": {
     "@sentry/node": "^9.36.0",
-    "axios": "^1.7.8",
+    "axios": "^1.20.0",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1",
+    "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.1",
+    "express": "^4.22.3",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.13.1",
     "redis": "^5.6.0",
@@ -84,5 +84,16 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.15.0",
     "typescript-transform-paths": "^3.5.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@>=1.0.0 <2.0.0": "^1.1.21",
+      "brace-expansion@>=2.0.0 <3.0.0": "^2.1.7",
+      "minimatch@>=3.0.0 <4.0.0": "^3.1.4",
+      "minimatch@>=9.0.0 <10.0.0": "^9.0.7",
+      "js-yaml@>=4.0.0 <5.0.0": "^4.3.2",
+      "validator@<13.15.22": "^13.15.22",
+      "moment@<2.31.0": "^2.31.0"
+    }
   }
 }
