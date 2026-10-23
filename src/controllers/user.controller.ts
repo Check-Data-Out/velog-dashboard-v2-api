@@ -4,10 +4,10 @@ import { EmptyResponseDto, LoginResponseDto, NewsletterUnsubscribeQueryDto, QRLo
 import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { BadRequestError, QRTokenExpiredError } from '@/exception';
+import { BadRequestError, CustomError, QRTokenExpiredError } from '@/exception';
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 import { verifyUnsubscribe } from '@/utils/unsubscribe.util';
-import { NEWSLETTER_UNSUBSCRIBE_SECRET } from '@/configs/newsletter.config';
+import { getNewsletterUnsubscribeSecret } from '@/configs/newsletter.config';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -224,7 +224,11 @@ export class UserController {
     try {
       // validateRequestDto(NewsletterUnsubscribeQueryDto, 'query') 가 uid·sig 형식을 보장한다
       const { uid, sig } = req.query as unknown as NewsletterUnsubscribeQueryDto;
-      if (!verifyUnsubscribe(NEWSLETTER_UNSUBSCRIBE_SECRET, uid, sig)) {
+      const secret = getNewsletterUnsubscribeSecret();
+      if (!secret) {
+        throw new CustomError('지금은 수신거부를 처리할 수 없습니다.', 'UNSUBSCRIBE_UNAVAILABLE', 503);
+      }
+      if (!verifyUnsubscribe(secret, uid, sig)) {
         throw new BadRequestError('유효하지 않은 수신거부 링크입니다.', 'INVALID_UNSUBSCRIBE_LINK');
       }
 
