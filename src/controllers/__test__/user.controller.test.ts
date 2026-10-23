@@ -510,5 +510,24 @@ describe('UserController', () => {
       expect(logger.warn).toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });
+
+    it('서명 키가 설정되지 않았으면 503 을 넘기고 수신거부하지 않아야 한다', async () => {
+      mockResponse.locals = { query: { uid: '42', sig } };
+      const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
+      delete process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
+
+      try {
+        await userController.confirmUnsubscribeNewsletter(
+          mockRequest as Request,
+          mockResponse as Response,
+          nextFunction,
+        );
+      } finally {
+        process.env.NEWSLETTER_UNSUBSCRIBE_SECRET = secret;
+      }
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 503 }));
+      expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+    });
   });
 });
