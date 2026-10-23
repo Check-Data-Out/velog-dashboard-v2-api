@@ -119,4 +119,67 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
       expect(found).toBeNull();
     });
   });
+
+  describe('QR 토큰 확인 소비', () => {
+    const usedIp = '10.0.0.1';
+    const usedUserAgent = 'phone-agent';
+
+    const findRow = async (token: string) =>
+      (
+        await client.query(
+          'SELECT is_used, used_at, used_ip, used_user_agent FROM users_qrlogintoken WHERE token = $1',
+          [token],
+        )
+      ).rows[0];
+
+    it('유효한 토큰을 소비하면 user_id 를 돌려주고 사용 시각·IP·User-Agent 를 남겨야 한다', async () => {
+      const token = generateRandomToken();
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+
+      const consumedUserId = await repo.consumeQRLoginToken(token, usedIp, usedUserAgent);
+
+      expect(consumedUserId).toBe(userId);
+      const row = await findRow(token);
+      expect(row.is_used).toBe(true);
+      expect(row.used_at).not.toBeNull();
+      expect(row.used_ip).toBe(usedIp);
+      expect(row.used_user_agent).toBe(usedUserAgent);
+    });
+
+    it('이미 소비한 토큰을 다시 소비하면 null 이어야 한다', async () => {
+      const token = generateRandomToken();
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+      await repo.consumeQRLoginToken(token, usedIp, usedUserAgent);
+
+      expect(await repo.consumeQRLoginToken(token, usedIp, usedUserAgent)).toBeNull();
+    });
+
+    it('같은 사용자의 다른 토큰은 쓰지 않은 상태로 남아야 한다', async () => {
+      const token = generateRandomToken();
+      const otherToken = generateRandomToken();
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+      await repo.createQRLoginToken(otherToken, userId, ip, userAgent);
+
+      await repo.consumeQRLoginToken(token, usedIp, usedUserAgent);
+
+      expect((await findRow(otherToken)).is_used).toBe(false);
+    });
+
+    it('만료된 토큰은 소비되지 않고 null 이어야 한다', async () => {
+      const token = generateRandomToken();
+      await insertQRLoginToken(client, userId, token, -5, false);
+
+      expect(await repo.consumeQRLoginToken(token, usedIp, usedUserAgent)).toBeNull();
+      expect((await findRow(token)).used_at).toBeNull();
+    });
+
+    it('255자를 넘는 User-Agent 도 자르지 않고 그대로 남겨야 한다', async () => {
+      const token = generateRandomToken();
+      const longUserAgent = 'a'.repeat(300);
+      await repo.createQRLoginToken(token, userId, ip, userAgent);
+
+      expect(await repo.consumeQRLoginToken(token, usedIp, longUserAgent)).toBe(userId);
+      expect((await findRow(token)).used_user_agent).toBe(longUserAgent);
+    });
+  });
 });

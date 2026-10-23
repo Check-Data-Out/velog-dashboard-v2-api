@@ -155,6 +155,26 @@ export class UserRepository {
     }
   }
 
+  /**
+   * 쓰지 않았고 만료되지 않은 토큰을 한 문장으로 사용 처리하고 토큰 주인의 user_id 를 돌려줍니다.
+   * 이미 쓰였거나 만료됐거나 없는 토큰이면 null 입니다.
+   */
+  async consumeQRLoginToken(token: string, ip: string, userAgent: string): Promise<number | null> {
+    try {
+      const query = `
+        UPDATE users_qrlogintoken
+        SET is_used = true, used_at = NOW(), used_ip = $2, used_user_agent = $3
+        WHERE token = $1 AND is_used = false AND expires_at > NOW()
+        RETURNING user_id;
+      `;
+      const result = await this.pool.query(query, [token, ip, userAgent]);
+      return result.rows[0] ? Number(result.rows[0].user_id) : null;
+    } catch (error) {
+      logger.error('QRLoginToken Repo consume Error : ', error);
+      throw new DBError('QR 코드 사용 처리 중 문제가 발생했습니다.');
+    }
+  }
+
   async updateQRLoginTokenToUse(user_id: number): Promise<void> {
     try {
       const query = `
