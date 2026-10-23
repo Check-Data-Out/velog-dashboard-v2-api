@@ -73,7 +73,7 @@ describe('UserRepository QR 토큰 통합 테스트', () => {
       expect(row.is_used).toBe(false);
       expect(row.ip_address).toBe(ip);
       expect(row.user_agent).toBe(userAgent);
-      expect(new Date(row.expires_at).getTime()).toBeGreaterThan(new Date(row.created_at).getTime());
+      expect(new Date(row.expires_at).getTime() - new Date(row.created_at).getTime()).toBe(5 * 60 * 1000);
     });
   });
 

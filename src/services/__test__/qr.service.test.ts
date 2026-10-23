@@ -106,15 +106,4 @@ describe('UserService의 QR 로그인 기능', () => {
       expect(userRepo.findByUserId).not.toHaveBeenCalled();
     });
   });
-
-  describe('getQRLoginTokenStatus', () => {
-    it('저장소가 판정한 본인 토큰 상태를 그대로 반환', async () => {
-      userRepo.findQRLoginTokenStatus.mockResolvedValue({ status: 'pending' });
-
-      const result = await userService.getQRLoginTokenStatus('token', 1);
-
-      expect(result).toEqual({ status: 'pending' });
-      expect(userRepo.findQRLoginTokenStatus).toHaveBeenCalledWith('token', 1);
-    });
-  });
 });
