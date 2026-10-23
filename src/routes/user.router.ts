@@ -5,7 +5,12 @@ import { UserRepository } from '@/repositories/user.repository';
 import { UserService } from '@/services/user.service';
 import { authMiddleware } from '@/middlewares/auth.middleware';
 import { validateRequestDto } from '@/middlewares/validation.middleware';
-import { LoginRequestDto, QRLoginConfirmRequestDto, QRLoginStatusQueryDto } from '@/types';
+import {
+  LoginRequestDto,
+  NewsletterUnsubscribeQueryDto,
+  QRLoginConfirmRequestDto,
+  QRLoginStatusQueryDto,
+} from '@/types';
 
 const router: Router = express.Router();
 
@@ -222,18 +227,81 @@ router.get(
  *   get:
  *     tags:
  *       - User
- *     summary: 뉴스레터 구독 해제 (메일에서 바로 접근)
+ *     summary: 뉴스레터 수신거부 메일 링크 진입점
+ *     description: |
+ *       서명 링크(uid·sig)는 상태를 바꾸지 않고 FE 확인 페이지로 리디렉션한다. 서명 검증은 POST 에서 한다.
+ *       기존 email 링크는 서명 링크로 옮기는 동안 바로 수신거부한 뒤 메인 페이지로 리디렉션한다.
+ *     security: []
  *     parameters:
  *       - in: query
+ *         name: uid
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: 사용자 id (서명 링크)
+ *       - in: query
+ *         name: sig
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: uid 서명 (서명 링크)
+ *       - in: query
  *         name: email
+ *         required: false
+ *         deprecated: true
+ *         schema:
+ *           type: string
+ *         description: 구독을 해제할 이메일 (기존 링크, 이전 기간 동안만 지원)
+ *     responses:
+ *       302:
+ *         description: 'uid·sig 가 있으면 /newsletter/unsubscribe?uid=<uid>&sig=<sig>, 그 외에는 수신거부 시도 후 /main'
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: 뉴스레터 수신거부 처리 (FE 확인 페이지 / RFC 8058 원클릭)
+ *     description: |
+ *       인증·쿠키 없이 URL 의 uid·sig 만으로 처리한다. body(List-Unsubscribe=One-Click 등)는 형식과 관계없이 읽지 않는다.
+ *       리디렉션하지 않으며, 없는 사용자·이미 수신거부한 사용자도 200 으로 응답한다.
+ *     security: []
+ *     parameters:
+ *       - in: query
+ *         name: uid
  *         required: true
  *         schema:
  *           type: string
- *         description: 구독을 해제할 이메일
+ *           pattern: '^[1-9]\d{0,18}$'
+ *         description: 사용자 id (앞자리 0 없는 십진수)
+ *       - in: query
+ *         name: sig
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 메일 링크에 담긴 서명 (패딩 없는 base64url HMAC-SHA256)
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               List-Unsubscribe:
+ *                 type: string
+ *                 example: One-Click
  *     responses:
- *       302:
- *         description: 뉴스레터 구독 해제 성공 후 메인 페이지로 리디렉션
+ *       '200':
+ *         description: 수신거부 처리됨 (멱등)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/EmptyResponseDto'
+ *       '400':
+ *         description: uid 형식 오류 / 서명 없음·불일치
  */
 router.get('/user/newsletter-unsubscribe', userController.unsubscribeNewsletter);
+router.post(
+  '/user/newsletter-unsubscribe',
+  validateRequestDto(NewsletterUnsubscribeQueryDto, 'query'),
+  userController.confirmUnsubscribeNewsletter,
+);
 
 export default router;

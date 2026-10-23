@@ -1,11 +1,13 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '@/configs/logger.config';
-import { EmptyResponseDto, LoginResponseDto, QRLoginConfirmRequestDto } from '@/types';
+import { EmptyResponseDto, LoginResponseDto, NewsletterUnsubscribeQueryDto, QRLoginConfirmRequestDto } from '@/types';
 import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { QRTokenExpiredError } from '@/exception';
+import { BadRequestError, QRTokenExpiredError } from '@/exception';
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
+import { verifyUnsubscribe } from '@/utils/unsubscribe.util';
+import { NEWSLETTER_UNSUBSCRIBE_SECRET } from '@/configs/newsletter.config';
 
 type Token10 = string & { __lengthBrand: 10 };
 
@@ -172,7 +174,18 @@ export class UserController {
     }
   };
 
+  /**
+   * 메일 링크 진입점. 서명 링크(uid·sig)는 링크 미리보기·스캐너가 먼저 열어도 수신거부되지 않도록
+   * 상태를 바꾸지 않고 FE 확인 페이지로 보낸다. 서명 검증은 POST 에서 한다.
+   * 기존 `?email=` 링크는 서명 링크로 옮기는 동안 바로 수신거부한다.
+   */
   unsubscribeNewsletter: RequestHandler = async (req: Request, res: Response<EmptyResponseDto>, next: NextFunction) => {
+    const { uid, sig } = req.query;
+    if (typeof uid === 'string' && typeof sig === 'string') {
+      res.redirect(`/newsletter/unsubscribe?uid=${encodeURIComponent(uid)}&sig=${encodeURIComponent(sig)}`);
+      return;
+    }
+
     try {
       const email = req.query.email as string;
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -190,6 +203,37 @@ export class UserController {
       res.redirect('/main');
     } catch (error) {
       logger.error('뉴스레터 구독 해제 실패 [기존 email 링크]', error);
+      next(error);
+    }
+  };
+
+  /**
+   * 서명 링크 수신거부 처리. FE 확인 페이지와 메일 사업자 원클릭(RFC 8058)이 함께 쓴다.
+   * 쿠키·body 에 의존하지 않고 URL 의 uid·sig 만 보며, 리다이렉트하지 않는다.
+   */
+  confirmUnsubscribeNewsletter: RequestHandler = async (
+    req: Request,
+    res: Response<EmptyResponseDto>,
+    next: NextFunction,
+  ) => {
+    try {
+      // validateRequestDto(NewsletterUnsubscribeQueryDto, 'query') 가 uid·sig 형식을 보장한다
+      const { uid, sig } = req.query as unknown as NewsletterUnsubscribeQueryDto;
+      if (!verifyUnsubscribe(NEWSLETTER_UNSUBSCRIBE_SECRET, uid, sig)) {
+        throw new BadRequestError('유효하지 않은 수신거부 링크입니다.', 'INVALID_UNSUBSCRIBE_LINK');
+      }
+
+      await this.userService.unsubscribeNewsletterById(Number(uid), {
+        // FE 확인 페이지는 같은 출처라 Origin 을 보내고, 메일 사업자 POST 는 보내지 않는다
+        source: req.headers.origin ? '확인 페이지' : '원클릭(메일 사업자)',
+        ip: getClientIp(req),
+        userAgent: req.headers['user-agent'] || '',
+      });
+
+      const response = new EmptyResponseDto(true, '뉴스레터 수신거부가 처리되었습니다.', {}, null);
+      res.status(200).json(response);
+    } catch (error) {
+      logger.error(`뉴스레터 수신거부 실패: [uid: ${req.query.uid}]`, error);
       next(error);
     }
   };

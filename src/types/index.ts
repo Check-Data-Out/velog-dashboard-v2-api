@@ -3,6 +3,7 @@ export type { User } from '@/types/models/User.type';
 export type { VelogJWTPayload, VelogUserCurrentResponse } from '@/modules/velog/velog.type';
 export { LoginRequestDto } from '@/types/dto/requests/loginRequest.type';
 export { QRLoginConfirmRequestDto, QRLoginStatusQueryDto } from '@/types/dto/requests/qrLoginRequest.type';
+export { NewsletterUnsubscribeQueryDto } from '@/types/dto/requests/newsletterUnsubscribeQuery.type';
 export { LoginResponseDto } from '@/types/dto/responses/loginResponse.type';
 export { UserWithTokenDto } from '@/types/dto/userWithToken.type';
 export { VelogUserLoginDto } from '@/types/dto/velogUser.type';

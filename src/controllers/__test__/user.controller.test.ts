@@ -4,7 +4,8 @@ import { UserController } from '@/controllers/user.controller';
 import { UserService } from '@/services/user.service';
 import { UserRepository } from '@/repositories/user.repository';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { NotFoundError, QRTokenExpiredError, UnauthorizedError } from '@/exception';
+import { BadRequestError, NotFoundError, QRTokenExpiredError, UnauthorizedError } from '@/exception';
+import { signUnsubscribe } from '@/utils/unsubscribe.util';
 import { mockUser, mockPool } from '@/utils/fixtures';
 import { Pool } from 'pg';
 
@@ -437,6 +438,65 @@ describe('UserController', () => {
       });
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
       expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('서명 링크(uid·sig)로 들어오면 상태를 바꾸지 않고 FE 확인 페이지로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { uid: '42', sig: 'a+b/c=' };
+
+      await userController.unsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
+      expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        `/newsletter/unsubscribe?uid=42&sig=${encodeURIComponent('a+b/c=')}`,
+      );
+    });
+  });
+
+  describe('confirmUnsubscribeNewsletter', () => {
+    const sig = signUnsubscribe(process.env.NEWSLETTER_UNSUBSCRIBE_SECRET as string, 42);
+
+    beforeEach(() => {
+      mockRequest.headers = { 'user-agent': 'mail-provider' };
+      mockRequest.body = { 'List-Unsubscribe': 'One-Click' };
+    });
+
+    it('메일 사업자의 원클릭 POST(Origin 없음)는 수신거부하고 리다이렉트 없이 200 을 응답해야 한다', async () => {
+      mockRequest.query = { uid: '42', sig };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.unsubscribeNewsletterById).toHaveBeenCalledWith(42, {
+        source: '원클릭(메일 사업자)',
+        ip: '127.0.0.1',
+        userAgent: 'mail-provider',
+      });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(mockResponse.redirect).not.toHaveBeenCalled();
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('확인 페이지 POST(Origin 있음)는 경로를 확인 페이지로 구분해야 한다', async () => {
+      mockRequest.query = { uid: '42', sig };
+      mockRequest.headers = { origin: 'https://velog-dashboard.kro.kr', 'user-agent': 'browser' };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.unsubscribeNewsletterById).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ source: '확인 페이지' }),
+      );
+    });
+
+    it('서명이 맞지 않으면 BadRequestError 를 넘기고 수신거부하지 않아야 한다', async () => {
+      mockRequest.query = { uid: '43', sig };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(BadRequestError));
+      expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
     });
   });
 });
