@@ -2,9 +2,14 @@ import { Pool } from 'pg';
 import { UserService } from '@/services/user.service';
 import { SAMPLE_USER_VELOG_UUID, UserRepository } from '@/repositories/user.repository';
 import { mockUser } from '@/utils/fixtures';
+import { sendSlackMessage } from '@/modules/slack/slack.notifier';
 
 jest.mock('@/utils/key.util', () => ({
   getKeyByGroup: jest.fn().mockReturnValue('01234567890123456789012345678901'),
+}));
+
+jest.mock('@/modules/slack/slack.notifier', () => ({
+  sendSlackMessage: jest.fn(),
 }));
 
 jest.mock('@/repositories/user.repository', () => ({
@@ -12,6 +17,8 @@ jest.mock('@/repositories/user.repository', () => ({
   UserRepository: jest.fn().mockImplementation(() => ({
     incrementSessionVersion: jest.fn(),
     updateQRLoginTokenToUse: jest.fn(),
+    findByUserId: jest.fn(),
+    unsubscribeNewsletter: jest.fn(),
   })),
 }));
 
@@ -35,5 +42,70 @@ describe('UserService 로그아웃', () => {
     await userService.logout({ ...mockUser, velog_uuid: SAMPLE_USER_VELOG_UUID });
 
     expect(userRepo.incrementSessionVersion).not.toHaveBeenCalled();
+  });
+});
+
+describe('UserService 뉴스레터 수신거부 (id)', () => {
+  let userService: UserService;
+  let userRepo: jest.Mocked<UserRepository>;
+  const context = { source: '원클릭(메일 사업자)' as const, ip: '10.0.0.1', userAgent: 'mail-provider' };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    userRepo = new UserRepository({} as Pool) as jest.Mocked<UserRepository>;
+    userService = new UserService(userRepo);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('구독 중인 사용자는 수신거부하고 Slack 에 사용자·시각·경로·요청 정보를 알려야 한다', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-22T15:00:00Z'));
+    userRepo.findByUserId.mockResolvedValue(mockUser);
+
+    await userService.unsubscribeNewsletterById(mockUser.id, context);
+
+    expect(userRepo.unsubscribeNewsletter).toHaveBeenCalledWith(mockUser.id);
+    const message = (sendSlackMessage as jest.Mock).mock.calls[0][0] as string;
+    for (const expected of [
+      `id: ${mockUser.id}`,
+      'nuung',
+      'test@example.com',
+      '2026-10-23 00:00:00 KST',
+      '원클릭(메일 사업자)',
+      '10.0.0.1',
+      'mail-provider',
+      '이미 수신거부 상태: 아니오',
+    ]) {
+      expect(message).toContain(expected);
+    }
+  });
+
+  it('이미 수신거부한 사용자는 다시 처리하지 않고 그 사실을 Slack 에 남겨야 한다', async () => {
+    userRepo.findByUserId.mockResolvedValue({ ...mockUser, newsletter_subscribed: false });
+
+    await userService.unsubscribeNewsletterById(mockUser.id, context);
+
+    expect(userRepo.unsubscribeNewsletter).not.toHaveBeenCalled();
+    expect(sendSlackMessage).toHaveBeenCalledWith(expect.stringContaining('이미 수신거부 상태: 예'));
+  });
+
+  it('없는 사용자는 조용히 끝나야 한다', async () => {
+    userRepo.findByUserId.mockResolvedValue(null);
+
+    await expect(userService.unsubscribeNewsletterById(999, context)).resolves.toBeUndefined();
+
+    expect(userRepo.unsubscribeNewsletter).not.toHaveBeenCalled();
+    expect(sendSlackMessage).not.toHaveBeenCalled();
+  });
+
+  it('Slack 전송이 실패해도 수신거부는 성공으로 끝나야 한다', async () => {
+    userRepo.findByUserId.mockResolvedValue(mockUser);
+    (sendSlackMessage as jest.Mock).mockRejectedValue(new Error('slack down'));
+
+    await expect(userService.unsubscribeNewsletterById(mockUser.id, context)).resolves.toBeUndefined();
+
+    expect(userRepo.unsubscribeNewsletter).toHaveBeenCalledWith(mockUser.id);
   });
 });

@@ -10,6 +10,15 @@ import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import { VelogUserCurrentResponse } from '@/modules/velog/velog.type';
 import { QRLoginTokenStatus } from '@/types/models/QRLoginToken.type';
 
+/** 수신거부 요청 경로. Slack 알림에서 어디서 왔는지 구분한다. */
+export type NewsletterUnsubscribeSource = '확인 페이지' | '원클릭(메일 사업자)' | '기존 email 링크';
+
+export interface NewsletterUnsubscribeContext {
+  source: NewsletterUnsubscribeSource;
+  ip: string;
+  userAgent: string;
+}
+
 export class UserService {
   constructor(private userRepo: UserRepository) {}
 
@@ -182,6 +191,40 @@ export class UserService {
     } catch (error) {
       logger.error('User Service unsubscribeNewsletter Error : ', error);
       throw error;
+    }
+  }
+
+  /**
+   * 서명 링크로 들어온 수신거부. 없는 사용자·이미 수신거부한 사용자도 오류 없이 끝난다(멱등).
+   */
+  async unsubscribeNewsletterById(id: number, context: NewsletterUnsubscribeContext): Promise<void> {
+    const user = await this.userRepo.findByUserId(id);
+    if (!user) {
+      logger.info(`뉴스레터 수신거부 대상 사용자가 없습니다. [userId: ${id}]`);
+      return;
+    }
+
+    const alreadyUnsubscribed = !user.newsletter_subscribed;
+    if (!alreadyUnsubscribed) {
+      await this.userRepo.unsubscribeNewsletter(user.id);
+    }
+
+    const processedAt = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' });
+    try {
+      await sendSlackMessage(
+        [
+          '뉴스레터 수신거부',
+          `- 사용자: ${user.username ?? '-'} (id: ${user.id})`,
+          `- 이메일: ${user.email ?? '-'}`,
+          `- 처리 시각: ${processedAt} KST`,
+          `- 경로: ${context.source}`,
+          `- IP: ${context.ip || '-'}`,
+          `- User-Agent: ${context.userAgent || '-'}`,
+          `- 이미 수신거부 상태: ${alreadyUnsubscribed ? '예' : '아니오'}`,
+        ].join('\n'),
+      );
+    } catch (error) {
+      logger.error('Slack 알림 전송 실패:', error);
     }
   }
 }
