@@ -16,7 +16,11 @@ const request = async (app: express.Express, method: string, path: string) =>
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
           server.close();
-          resolve({ status: res.statusCode ?? 0, body: JSON.parse(data) });
+          try {
+            resolve({ status: res.statusCode ?? 0, body: JSON.parse(data) });
+          } catch (error) {
+            reject(error);
+          }
         });
       });
       req.on('error', (error) => {
