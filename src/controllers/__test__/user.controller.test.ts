@@ -336,14 +336,14 @@ describe('UserController', () => {
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('x-forwarded-for 가 있으면 첫 IP 를 넘겨야 한다', async () => {
+    it('x-forwarded-for 첫 값이 IP 컬럼 길이(45)를 넘으면 잘라서 넘겨야 한다', async () => {
       mockRequest.body = { token: 'ABC123EFGH' };
-      mockRequest.headers = { 'user-agent': 'phone-agent', 'x-forwarded-for': '10.0.0.1, 192.168.0.1' };
+      mockRequest.headers = { 'user-agent': 'phone-agent', 'x-forwarded-for': `${'1'.repeat(60)}, 192.168.0.1` };
       mockUserService.useToken.mockResolvedValue(mockUser);
 
       await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.useToken).toHaveBeenCalledWith('ABC123EFGH', '10.0.0.1', 'phone-agent');
+      expect(mockUserService.useToken).toHaveBeenCalledWith('ABC123EFGH', '1'.repeat(45), 'phone-agent');
     });
 
     it('만료되었거나 이미 사용된 토큰이면 QRTokenExpiredError 를 넘겨야 한다', async () => {

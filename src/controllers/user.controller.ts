@@ -11,11 +11,15 @@ import { NEWSLETTER_UNSUBSCRIBE_SECRET } from '@/configs/newsletter.config';
 
 type Token10 = string & { __lengthBrand: 10 };
 
+// IP 를 저장하는 컬럼 길이(IPv6 최대 45자). 클라이언트가 보낸 값이 길어도 저장이 실패하지 않게 자른다
+const MAX_IP_LENGTH = 45;
+
 // 프록시 뒤에서 받은 요청의 클라이언트 IP. x-forwarded-for 첫 값이라 위조할 수 있으므로 참고용이다.
 const getClientIp = (req: Pick<Request, 'headers' | 'ip'>): string =>
-  typeof req.headers['x-forwarded-for'] === 'string'
+  (typeof req.headers['x-forwarded-for'] === 'string'
     ? req.headers['x-forwarded-for'].split(',')[0].trim()
-    : (req.ip ?? '');
+    : (req.ip ?? '')
+  ).slice(0, MAX_IP_LENGTH);
 
 export class UserController {
   constructor(private userService: UserService) {}
