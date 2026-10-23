@@ -243,8 +243,8 @@ export class UserController {
       const response = new EmptyResponseDto(true, '뉴스레터 수신거부가 처리되었습니다.', {}, null);
       res.status(200).json(response);
     } catch (error) {
-      // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류라 경고로만 남긴다
-      if (error instanceof BadRequestError) {
+      // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류이고, 키 미설정은 기동 시 이미 경고했으므로 경고로만 남긴다
+      if (error instanceof BadRequestError || error instanceof ServiceUnavailableError) {
         logger.warn(`뉴스레터 수신거부 거부: [uid: ${req.query.uid}] ${error.message}`);
       } else {
         logger.error(`뉴스레터 수신거부 실패: [uid: ${req.query.uid}]`, error);

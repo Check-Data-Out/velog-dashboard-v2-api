@@ -521,6 +521,7 @@ describe('UserController', () => {
 
       expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 503 }));
       expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
     });
   });
 });
