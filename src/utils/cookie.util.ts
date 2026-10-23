@@ -19,9 +19,10 @@ const cookieOption = (): CookieOptions => {
 const LEGACY_TOKEN_COOKIES = ['access_token', 'refresh_token'] as const;
 
 /**
- * 대시보드 세션 쿠키를 심습니다. 같은 이름의 세션 쿠키는 덮어쓴다.
+ * 대시보드 세션 쿠키를 심습니다. 같은 이름의 세션 쿠키는 덮어쓰고, 인증에 더 쓰지 않는 velog 토큰 쿠키는 지운다.
  */
 export const setSessionCookie = (res: Response, user: Pick<User, 'id' | 'velog_uuid' | 'session_version'>): void => {
+  LEGACY_TOKEN_COOKIES.forEach((name) => res.clearCookie(name, cookieOption()));
   res.cookie(SESSION_COOKIE_NAME, signSession(user), {
     ...cookieOption(),
     httpOnly: true,
