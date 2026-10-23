@@ -167,31 +167,17 @@ export class UserService {
     await this.userRepo.incrementSessionVersion(user.id);
   }
 
-  async unsubscribeNewsletter(email: string) {
-    try {
-      const user = await this.userRepo.findByUserEmail(email);
-
-      if (!user) {
-        logger.error(`유저를 찾을 수 없습니다. [email: ${email}]`);
-        return; // 일반적인 실패시 조용히 리디렉션
-      }
-
-      if (!user.newsletter_subscribed) {
-        logger.error(`이미 구독이 해제된 이메일입니다. [email: ${email}]`);
-        return; // 일반적인 실패시 조용히 리디렉션
-      }
-
-      await this.userRepo.unsubscribeNewsletter(user.id);
-
-      try {
-        await sendSlackMessage(`뉴스레터 구독 취소: ${email} (id: ${user.id})`);
-      } catch (error) {
-        logger.error('Slack 알림 전송 실패:', error);
-      }
-    } catch (error) {
-      logger.error('User Service unsubscribeNewsletter Error : ', error);
-      throw error;
+  /**
+   * 기존 `?email=` 링크로 들어온 수신거부. 서명 링크로 옮기는 동안만 유지한다.
+   */
+  async unsubscribeNewsletter(email: string, context: NewsletterUnsubscribeContext): Promise<void> {
+    const user = await this.userRepo.findByUserEmail(email);
+    if (!user) {
+      logger.info('뉴스레터 수신거부 대상 사용자가 없습니다. [기존 email 링크]');
+      return;
     }
+
+    await this.unsubscribeAndNotify(user, context);
   }
 
   /**

@@ -178,14 +178,18 @@ export class UserController {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       if (!email || !emailRegex.test(email)) {
-        logger.error(`올바르지 않은 이메일: [email: ${req.query.email}]`);
+        logger.error('올바르지 않은 이메일로 뉴스레터 구독 해제 요청');
       } else {
-        await this.userService.unsubscribeNewsletter(email);
+        await this.userService.unsubscribeNewsletter(email, {
+          source: '기존 email 링크',
+          ip: getClientIp(req),
+          userAgent: req.headers['user-agent'] || '',
+        });
       }
 
       res.redirect('/main');
     } catch (error) {
-      logger.error(`뉴스레터 구독 해제 실패: [email: ${req.query.email}]`, error);
+      logger.error('뉴스레터 구독 해제 실패 [기존 email 링크]', error);
       next(error);
     }
   };

@@ -3,6 +3,7 @@ import { UserService } from '@/services/user.service';
 import { SAMPLE_USER_VELOG_UUID, UserRepository } from '@/repositories/user.repository';
 import { mockUser } from '@/utils/fixtures';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
+import logger from '@/configs/logger.config';
 
 jest.mock('@/utils/key.util', () => ({
   getKeyByGroup: jest.fn().mockReturnValue('01234567890123456789012345678901'),
@@ -18,6 +19,7 @@ jest.mock('@/repositories/user.repository', () => ({
     incrementSessionVersion: jest.fn(),
     updateQRLoginTokenToUse: jest.fn(),
     findByUserId: jest.fn(),
+    findByUserEmail: jest.fn(),
     unsubscribeNewsletter: jest.fn(),
   })),
 }));
@@ -107,5 +109,39 @@ describe('UserService 뉴스레터 수신거부 (id)', () => {
     await expect(userService.unsubscribeNewsletterById(mockUser.id, context)).resolves.toBeUndefined();
 
     expect(userRepo.unsubscribeNewsletter).toHaveBeenCalledWith(mockUser.id);
+  });
+});
+
+describe('UserService 뉴스레터 수신거부 (기존 email 링크)', () => {
+  let userService: UserService;
+  let userRepo: jest.Mocked<UserRepository>;
+  const context = { source: '기존 email 링크' as const, ip: '10.0.0.1', userAgent: 'browser' };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    userRepo = new UserRepository({} as Pool) as jest.Mocked<UserRepository>;
+    userService = new UserService(userRepo);
+  });
+
+  it('이메일로 찾은 사용자를 수신거부하고 같은 형식으로 경로를 구분해 알려야 한다', async () => {
+    userRepo.findByUserEmail.mockResolvedValue(mockUser);
+
+    await userService.unsubscribeNewsletter(mockUser.email as string, context);
+
+    expect(userRepo.unsubscribeNewsletter).toHaveBeenCalledWith(mockUser.id);
+    expect(sendSlackMessage).toHaveBeenCalledWith(expect.stringContaining('- 경로: 기존 email 링크'));
+  });
+
+  it('사용자가 없어도 서버 로그에 이메일을 남기지 않아야 한다', async () => {
+    const logged = [jest.spyOn(logger, 'info'), jest.spyOn(logger, 'error')];
+    userRepo.findByUserEmail.mockResolvedValue(null);
+
+    await userService.unsubscribeNewsletter('nobody@example.com', context);
+
+    expect(sendSlackMessage).not.toHaveBeenCalled();
+    for (const spy of logged) {
+      expect(JSON.stringify(spy.mock.calls)).not.toContain('nobody@example.com');
+      spy.mockRestore();
+    }
   });
 });

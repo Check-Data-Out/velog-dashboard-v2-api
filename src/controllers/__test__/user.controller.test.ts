@@ -430,7 +430,11 @@ describe('UserController', () => {
 
       await userController.unsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.unsubscribeNewsletter).toHaveBeenCalledWith(email);
+      expect(mockUserService.unsubscribeNewsletter).toHaveBeenCalledWith(email, {
+        source: '기존 email 링크',
+        ip: '127.0.0.1',
+        userAgent: '',
+      });
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
       expect(nextFunction).not.toHaveBeenCalled();
     });
