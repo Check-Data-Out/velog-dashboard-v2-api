@@ -1,9 +1,9 @@
+import './instrument';
 import { createApp } from '@/app';
 import logger from '@/configs/logger.config';
 import { cache, closeCache, initCache } from './configs/cache.config';
 import { closeDatabase, initializeDatabase } from './configs/db.config';
 import { Server } from 'http';
-import { initSentry } from './configs/sentry.config';
 import { Application } from 'express';
 
 interface ShutdownHandler {
@@ -110,10 +110,6 @@ class ServerManager {
    * 데이터베이스 등 필요한 서비스들을 초기화
    */
   private async initializeServices(): Promise<void> {
-    // Sentry 초기화 (에러 모니터링을 위해 가장 먼저)
-    initSentry();
-    logger.info('Sentry initialized successfully');
-
     // Cache 초기화 (await 추가 - Redis 연결 완료까지 대기)
     await initCache();
     logger.info('Cache initialized successfully');
