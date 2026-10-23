@@ -1,8 +1,7 @@
 import { Pool } from 'pg';
-import { DBError } from '@/exception';
+import { DBError, UnauthorizedError } from '@/exception';
 import { UserService } from '@/services/user.service';
 import { UserRepository } from '@/repositories/user.repository';
-import { QRLoginToken } from '@/types/models/QRLoginToken.type';
 import { mockUser } from '@/utils/fixtures';
 
 // AESEncryption 클래스 모킹
@@ -62,59 +61,49 @@ describe('UserService의 QR 로그인 기능', () => {
   });
 
   describe('useToken', () => {
-    const mockQRToken: QRLoginToken = {
-      id: 1,
-      token: 'token',
-      user_id: 1,
-      created_at: new Date(),
-      expires_at: new Date(),
-      is_used: false,
-      ip_address: '127.0.0.1',
-      user_agent: 'Chrome',
-    };
+    const ip = '10.0.0.1';
+    const userAgent = 'phone-agent';
 
-    it('유효한 토큰 사용 시 토큰 주인 사용자 반환', async () => {
-      userRepo.findQRLoginToken.mockResolvedValue(mockQRToken);
+    it('토큰을 소비하고 토큰 주인 사용자를 반환', async () => {
+      userRepo.consumeQRLoginToken.mockResolvedValue(mockUser.id);
       userRepo.findByUserId.mockResolvedValue(mockUser);
 
-      const result = await userService.useToken('token');
+      const result = await userService.useToken('token', ip, userAgent);
 
       expect(result).toEqual(mockUser);
-      expect(userRepo.findQRLoginToken).toHaveBeenCalledWith('token');
-      expect(userRepo.findByUserId).toHaveBeenCalledWith(mockQRToken.user_id);
-      expect(userRepo.updateQRLoginTokenToUse).toHaveBeenCalledWith(mockQRToken.user_id);
+      expect(userRepo.consumeQRLoginToken).toHaveBeenCalledWith('token', ip, userAgent);
+      expect(userRepo.findByUserId).toHaveBeenCalledWith(mockUser.id);
+      expect(userRepo.updateQRLoginTokenToUse).not.toHaveBeenCalled();
     });
 
-    it('토큰이 존재하지 않으면 null 반환', async () => {
-      userRepo.findQRLoginToken.mockResolvedValue(null);
+    it('소비할 수 없는 토큰이면 null 반환', async () => {
+      userRepo.consumeQRLoginToken.mockResolvedValue(null);
 
-      const result = await userService.useToken('token');
+      const result = await userService.useToken('token', ip, userAgent);
 
       expect(result).toBeNull();
-      expect(userRepo.findQRLoginToken).toHaveBeenCalledWith('token');
       expect(userRepo.findByUserId).not.toHaveBeenCalled();
-      expect(userRepo.updateQRLoginTokenToUse).not.toHaveBeenCalled();
     });
 
-    it('findByUserId 호출 시 예외가 발생하면 전파', async () => {
-      userRepo.findQRLoginToken.mockResolvedValue(mockQRToken);
-      userRepo.findByUserId.mockRejectedValueOnce(new DBError('사용자 조회 실패'));
+    it('토큰 주인이 비활성 사용자면 UnauthorizedError', async () => {
+      userRepo.consumeQRLoginToken.mockResolvedValue(mockUser.id);
+      userRepo.findByUserId.mockResolvedValue({ ...mockUser, is_active: false });
 
-      await expect(userService.useToken('token')).rejects.toThrow('사용자 조회 실패');
-      expect(userRepo.findQRLoginToken).toHaveBeenCalledWith('token');
-      expect(userRepo.findByUserId).toHaveBeenCalledWith(mockQRToken.user_id);
-      expect(userRepo.updateQRLoginTokenToUse).not.toHaveBeenCalled();
+      await expect(userService.useToken('token', ip, userAgent)).rejects.toThrow(UnauthorizedError);
     });
 
-    it('updateQRLoginTokenToUse 호출 시 예외가 발생하면 전파', async () => {
-      userRepo.findQRLoginToken.mockResolvedValue(mockQRToken);
-      userRepo.findByUserId.mockResolvedValue(mockUser);
-      userRepo.updateQRLoginTokenToUse.mockRejectedValueOnce(new DBError('토큰 사용 처리 실패'));
+    it('토큰 주인 사용자가 없으면 UnauthorizedError', async () => {
+      userRepo.consumeQRLoginToken.mockResolvedValue(mockUser.id);
+      userRepo.findByUserId.mockResolvedValue(null);
 
-      await expect(userService.useToken('token')).rejects.toThrow('토큰 사용 처리 실패');
-      expect(userRepo.findQRLoginToken).toHaveBeenCalledWith('token');
-      expect(userRepo.findByUserId).toHaveBeenCalledWith(mockQRToken.user_id);
-      expect(userRepo.updateQRLoginTokenToUse).toHaveBeenCalledWith(mockQRToken.user_id);
+      await expect(userService.useToken('token', ip, userAgent)).rejects.toThrow(UnauthorizedError);
+    });
+
+    it('토큰 소비 중 예외가 발생하면 전파', async () => {
+      userRepo.consumeQRLoginToken.mockRejectedValueOnce(new DBError('토큰 사용 처리 실패'));
+
+      await expect(userService.useToken('token', ip, userAgent)).rejects.toThrow('토큰 사용 처리 실패');
+      expect(userRepo.findByUserId).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,5 +1,5 @@
 import logger from '@/configs/logger.config';
-import { NotFoundError, TokenError } from '@/exception/';
+import { NotFoundError, TokenError, UnauthorizedError } from '@/exception/';
 import { getKeyByGroup } from '@/utils/key.util';
 import AESEncryption from '@/modules/token_encryption/aes_encryption';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
@@ -125,21 +125,21 @@ export class UserService {
     return token;
   }
 
-  async useToken(token: string): Promise<User | null> {
-    // 1. 사용자의 토큰을 찾는다.
-    const qrToken = await this.userRepo.findQRLoginToken(token);
-    if (!qrToken) {
+  /**
+   * QR 토큰을 소비하고 토큰 주인을 돌려줍니다. 소비할 수 없는 토큰이면 null 입니다.
+   */
+  async useToken(token: string, ip: string, userAgent: string): Promise<User | null> {
+    const userId = await this.userRepo.consumeQRLoginToken(token, ip, userAgent);
+    if (userId === null) {
       return null;
     }
 
-    // 2. 찾은 토큰을 기반으로 사용자를 다시 찾는다. (토큰 획득 및 사용자의 QR토큰 모두 비활성화)
-    const qrTokenUser = await this.userRepo.findByUserId(qrToken.user_id);
-    if (!qrTokenUser) {
-      return null;
+    const user = await this.userRepo.findByUserId(userId);
+    if (!user || !user.is_active) {
+      throw new UnauthorizedError('로그인할 수 없는 사용자입니다.');
     }
 
-    await this.userRepo.updateQRLoginTokenToUse(qrToken.user_id);
-    return qrTokenUser;
+    return user;
   }
 
   /**

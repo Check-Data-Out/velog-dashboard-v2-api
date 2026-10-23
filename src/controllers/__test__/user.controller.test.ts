@@ -294,7 +294,7 @@ describe('UserController', () => {
 
       await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token');
+      expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token', '127.0.0.1', '');
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
     });

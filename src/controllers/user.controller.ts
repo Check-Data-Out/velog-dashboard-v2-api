@@ -130,7 +130,7 @@ export class UserController {
         throw new QRTokenInvalidError('토큰이 필요합니다.');
       }
 
-      const userLoginToken = await this.userService.useToken(token);
+      const userLoginToken = await this.userService.useToken(token, getClientIp(req), req.headers['user-agent'] || '');
       if (!userLoginToken) {
         throw new QRTokenExpiredError();
       }
