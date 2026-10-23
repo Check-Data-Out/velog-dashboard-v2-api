@@ -149,6 +149,12 @@ class ServerManager {
       logger.info(`Health Check: http://localhost:${this.port}/health`);
     });
 
+    // listen 콜백은 한 번만 불리므로, 기동 이후의 서버 오류는 Express 4 처럼 종료되도록 따로 받는다
+    server.on('error', (error) => {
+      logger.error('Server error:', error);
+      process.exit(1);
+    });
+
     return server;
   }
 
