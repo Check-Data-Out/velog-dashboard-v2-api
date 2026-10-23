@@ -210,8 +210,9 @@ function verifySentrySignature() {
       const bodyToVerify = req.rawBody || JSON.stringify(req.body);
       const sentrySignature = req.headers['sentry-hook-signature'];
 
-      if (!bodyToVerify) throw new Error('요청 본문이 없습니다.');
-      if (!sentrySignature) throw new Error('시그니처 헤더가 없습니다.');
+      // Express 5 는 파싱되지 않은 본문을 undefined 로 두므로, 본문·서명이 없는 요청은 서버 오류가 아닌 요청 오류로 거부한다
+      if (!bodyToVerify) throw new CustomError('요청 본문이 없습니다.', 'INVALID_SIGNATURE', 400);
+      if (!sentrySignature) throw new CustomError('시그니처 헤더가 없습니다.', 'INVALID_SIGNATURE', 400);
 
       hmac.update(bodyToVerify, 'utf8');
       const digest = hmac.digest('hex');
