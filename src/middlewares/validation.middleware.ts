@@ -12,7 +12,8 @@ export const validateRequestDto = <T extends object>(
 ) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const value = plainToInstance(dtoClass, req[key]);
+      // Express 5 는 JSON 이 아닌 요청의 req.body 를 undefined 로 두므로 빈 객체로 검증해 400 으로 보낸다
+      const value = plainToInstance(dtoClass, req[key] ?? {});
       const errors = await validate(value);
 
       if (errors.length > 0) {
