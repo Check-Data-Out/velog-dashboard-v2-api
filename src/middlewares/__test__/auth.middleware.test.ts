@@ -666,3 +666,21 @@ describe('verifyBearerTokens', () => {
     });
   });
 });
+
+describe('Sentry 웹훅 서명 검증', () => {
+  const originalSecret = process.env.SENTRY_CLIENT_SECRET;
+
+  afterEach(() => {
+    process.env.SENTRY_CLIENT_SECRET = originalSecret;
+  });
+
+  it('본문이 없는 요청은 서버 오류가 아니라 400 으로 거부해야 한다', () => {
+    process.env.SENTRY_CLIENT_SECRET = 'test-sentry-secret';
+    const req = { headers: { 'sentry-hook-signature': 'any' }, body: undefined } as unknown as Request;
+    const next = jest.fn();
+
+    authMiddleware.verifySignature(req, {} as Response, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+  });
+});

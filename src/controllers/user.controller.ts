@@ -1,6 +1,12 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
 import logger from '@/configs/logger.config';
-import { EmptyResponseDto, LoginResponseDto, NewsletterUnsubscribeQueryDto, QRLoginConfirmRequestDto } from '@/types';
+import {
+  EmptyResponseDto,
+  LoginResponseDto,
+  NewsletterUnsubscribeQueryDto,
+  QRLoginConfirmRequestDto,
+  QRLoginStatusQueryDto,
+} from '@/types';
 import { QRLoginStatusResponseDto, QRLoginTokenResponseDto } from '@/types/dto/responses/qrResponse.type';
 import { UserService } from '@/services/user.service';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
@@ -168,7 +174,7 @@ export class UserController {
   ) => {
     try {
       // validateRequestDto(QRLoginStatusQueryDto, 'query') 가 10자리 문자열임을 보장한다
-      const token = req.query.token as string;
+      const { token } = res.locals.query as QRLoginStatusQueryDto;
       const status = await this.userService.getQRLoginTokenStatus(token, req.user.id);
 
       const response = new QRLoginStatusResponseDto(true, 'QR 토큰 상태 조회 완료', status, null);
@@ -224,7 +230,7 @@ export class UserController {
   ) => {
     try {
       // validateRequestDto(NewsletterUnsubscribeQueryDto, 'query') 가 uid·sig 형식을 보장한다
-      const { uid, sig } = req.query as unknown as NewsletterUnsubscribeQueryDto;
+      const { uid, sig } = res.locals.query as NewsletterUnsubscribeQueryDto;
       const secret = getNewsletterUnsubscribeSecret();
       if (!secret) {
         throw new ServiceUnavailableError('지금은 수신거부를 처리할 수 없습니다.', 'UNSUBSCRIBE_UNAVAILABLE');
@@ -245,9 +251,9 @@ export class UserController {
     } catch (error) {
       // 서명 불일치는 링크 스캐너·변조 링크가 흔히 일으키는 요청 오류이고, 키 미설정은 기동 시 이미 경고했으므로 경고로만 남긴다
       if (error instanceof BadRequestError || error instanceof ServiceUnavailableError) {
-        logger.warn(`뉴스레터 수신거부 거부: [uid: ${req.query.uid}] ${error.message}`);
+        logger.warn(`뉴스레터 수신거부 거부: [uid: ${res.locals.query?.uid}] ${error.message}`);
       } else {
-        logger.error(`뉴스레터 수신거부 실패: [uid: ${req.query.uid}]`, error);
+        logger.error(`뉴스레터 수신거부 실패: [uid: ${res.locals.query?.uid}]`, error);
       }
       next(error);
     }

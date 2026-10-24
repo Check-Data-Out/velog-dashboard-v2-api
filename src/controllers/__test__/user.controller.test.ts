@@ -383,7 +383,7 @@ describe('UserController', () => {
 
   describe('getTokenStatus', () => {
     it('본인 토큰의 상태를 서비스 결과 그대로 응답해야 한다', async () => {
-      mockRequest.query = { token: 'ABC123EFGH' };
+      mockResponse.locals = { query: { token: 'ABC123EFGH' } };
       const status = {
         status: 'used' as const,
         usedAt: '2026-10-22T00:00:00.000Z',
@@ -465,7 +465,7 @@ describe('UserController', () => {
     });
 
     it('메일 사업자의 원클릭 POST(Origin 없음)는 수신거부하고 리다이렉트 없이 200 을 응답해야 한다', async () => {
-      mockRequest.query = { uid: '42', sig };
+      mockResponse.locals = { query: { uid: '42', sig } };
 
       await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
 
@@ -481,7 +481,7 @@ describe('UserController', () => {
     });
 
     it('확인 페이지 POST(Origin 있음)는 경로를 확인 페이지로 구분해야 한다', async () => {
-      mockRequest.query = { uid: '42', sig };
+      mockResponse.locals = { query: { uid: '42', sig } };
       mockRequest.headers = { origin: 'https://velog-dashboard.kro.kr', 'user-agent': 'browser' };
 
       await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -493,7 +493,7 @@ describe('UserController', () => {
     });
 
     it('서명이 맞지 않으면 BadRequestError 를 넘기고 수신거부하지 않으며, 스캐너·변조 링크라 warn 으로만 남겨야 한다', async () => {
-      mockRequest.query = { uid: '43', sig };
+      mockResponse.locals = { query: { uid: '43', sig } };
 
       await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
 
@@ -505,7 +505,7 @@ describe('UserController', () => {
     });
 
     it('서명 키가 설정되지 않았으면 503 을 넘기고 수신거부하지 않아야 한다', async () => {
-      mockRequest.query = { uid: '42', sig };
+      mockResponse.locals = { query: { uid: '42', sig } };
       const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
       delete process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
 
