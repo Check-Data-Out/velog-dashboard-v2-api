@@ -26,7 +26,7 @@ const notiController = new NotiController(notiService);
  *     description: 사용자의 알림 게시글 목록을 조회합니다
  *     tags: [Notifications]
  *     security:
- *       - bearerAuth: []
+ *       - SessionCookieAuth: []
  *     responses:
  *       200:
  *         description: 알림 게시글 목록 조회 성공

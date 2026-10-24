@@ -37,6 +37,14 @@ check_docker() {
     fi
 }
 
+# 신뢰 프록시 파일 확인. 없으면 모든 요청의 접속 IP 가 LB 로 보여 인증 실패 제한이 사용자 전체에 걸린다
+check_trusted_proxies() {
+    if ! compgen -G "nginx/trusted-proxies/*.conf" > /dev/null; then
+        echo -e "${RED}nginx/trusted-proxies/*.conf 가 없습니다. README 의 '신뢰 프록시' 를 보고 만든 뒤 다시 배포하세요.${NC}"
+        exit 1
+    fi
+}
+
 # 서비스 중지
 stop_services() {
     print_step "0. 현재 사용 중인 서비스 중지"
@@ -119,29 +127,32 @@ check_services() {
     # 각 서비스 헬스체크 (재시도 로직 적용)
     echo -e "\n${YELLOW}서비스 헬스체크 (exponential backoff 적용):${NC}"
 
-    local all_healthy=true
+    local failed=()
 
     # API 서비스 확인 (최대 10회, 2초부터 시작)
     if ! wait_for_service "API 서비스" "http://localhost:8080/health" 10 2; then
-        all_healthy=false
+        failed+=("API")
     fi
 
     # Frontend 서비스 확인 (포트 3000)
     if ! wait_for_service "Frontend 서비스" "http://localhost:3000" 10 2; then
-        all_healthy=false
+        failed+=("Frontend")
     fi
 
     # Nginx 서비스 확인 (포트 80)
     if ! wait_for_service "Nginx 서비스" "http://localhost" 10 2; then
-        all_healthy=false
+        failed+=("Nginx")
     fi
 
     echo ""
-    if [[ "$all_healthy" == true ]]; then
+    if [[ "${#failed[@]}" -eq 0 ]]; then
         echo -e "${GREEN}모든 서비스가 정상 동작 중입니다!${NC}"
-    else
-        echo -e "${YELLOW}일부 서비스가 아직 준비되지 않았습니다. 로그를 확인해주세요.${NC}"
+        return 0
     fi
+
+    # 실패를 0 으로 끝내면 CD 가 다음 서버까지 배포하고 성공으로 보고하므로 비정상 종료한다
+    echo -e "${RED}헬스체크 실패: ${failed[*]}. 이전 버전으로 되돌리려면 API CD 를 workflow_dispatch(version) 로 다시 실행하세요.${NC}" >&2
+    return 1
 }
 
 # 인자 파싱
@@ -158,6 +169,7 @@ main() {
     print_step "Velog Dashboard V2 배포 스크립트 시작"
 
     check_docker
+    check_trusted_proxies
     stop_services
     cleanup_docker
     update_images

@@ -3,7 +3,7 @@ import { ForbiddenError } from '@/exception';
 import { SESSION_COOKIE_NAME } from '@/utils/session.util';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-const AUTH_COOKIES = [SESSION_COOKIE_NAME, 'access_token', 'refresh_token'];
+const AUTH_COOKIES = [SESSION_COOKIE_NAME];
 
 const toOrigin = (value: string): string | null => {
   try {

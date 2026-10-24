@@ -21,13 +21,13 @@ export const options = {
         },
         AccessTokenAuth: {
           type: 'apiKey',
-          description: 'velog 액세스 토큰입니다. 세션 쿠키가 없을 때 헤더(익스텐션)로 전달합니다.',
+          description: 'velog 액세스 토큰입니다. 익스텐션 전용 헤더입니다.',
           name: 'access_token',
           in: 'header',
         },
         RefreshTokenAuth: {
           type: 'apiKey',
-          description: 'velog 리프레시 토큰입니다. 세션 쿠키가 없을 때 헤더(익스텐션)로 전달합니다.',
+          description: 'velog 리프레시 토큰입니다. 익스텐션 전용 헤더입니다.',
           name: 'refresh_token',
           in: 'header',
         },

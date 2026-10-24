@@ -10,7 +10,7 @@ import { AuthRateLimitService, AUTH_RATE_LIMIT_CONFIG } from '@/services/authRat
 import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
 import { SESSION_COOKIE_NAME, verifySession } from '@/utils/session.util';
-import { cookieOption, setSessionCookie } from '@/utils/cookie.util';
+import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
@@ -19,13 +19,11 @@ let globalRateLimitService: AuthRateLimitService | undefined;
  * 요청에서 velog 토큰을 추출하는 함수
  * @param req - Express Request 객체
  * @returns  추출된 토큰 객체
- * @description 다음 순서로 토큰을 확인합니다:
- * 1. 쿠키 - 세션 쿠키 도입 전에 로그인한 웹 클라이언트
- * 2. 요청 헤더 - 익스텐션
+ * @description 익스텐션이 보내는 요청 헤더에서만 읽는다. 웹 클라이언트는 세션 쿠키로 인증한다.
  */
 const extractTokens = (req: Request): { accessToken: string; refreshToken: string } => {
-  const accessToken = req.cookies['access_token'] || req.headers['access_token'];
-  const refreshToken = req.cookies['refresh_token'] || req.headers['refresh_token'];
+  const accessToken = req.headers['access_token'] as string;
+  const refreshToken = req.headers['refresh_token'] as string;
 
   return { accessToken, refreshToken };
 };
@@ -174,7 +172,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
           req.user = await authenticateSession(sessionToken, res);
         } catch (error) {
           // 무효 세션 쿠키가 남아 있으면 FE 가드가 계속 대시보드로 들여보내므로 지운다 (DB 오류 등은 제외)
-          if (error instanceof UnauthorizedError) res.clearCookie(SESSION_COOKIE_NAME, cookieOption(true));
+          if (error instanceof UnauthorizedError) clearAuthCookies(res);
           throw error;
         }
         next();
@@ -185,11 +183,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
 
       const user = await authenticateVelogTokens(accessToken, refreshToken);
 
-      // 브라우저의 velog 토큰 쿠키는 세션 쿠키로 바꿔 준다 (헤더로 보내는 익스텐션은 그대로)
-      if (req.cookies['access_token']) setSessionCookie(res, user);
-
       req.user = user;
-      req.tokens = { accessToken, refreshToken };
       next();
     } catch (error) {
       logger.error('인증 처리중 오류가 발생하였습니다. : ', error);
@@ -216,8 +210,9 @@ function verifySentrySignature() {
       const bodyToVerify = req.rawBody || JSON.stringify(req.body);
       const sentrySignature = req.headers['sentry-hook-signature'];
 
-      if (!bodyToVerify) throw new Error('요청 본문이 없습니다.');
-      if (!sentrySignature) throw new Error('시그니처 헤더가 없습니다.');
+      // Express 5 는 파싱되지 않은 본문을 undefined 로 두므로, 본문·서명이 없는 요청은 서버 오류가 아닌 요청 오류로 거부한다
+      if (!bodyToVerify) throw new CustomError('요청 본문이 없습니다.', 'INVALID_SIGNATURE', 400);
+      if (!sentrySignature) throw new CustomError('시그니처 헤더가 없습니다.', 'INVALID_SIGNATURE', 400);
 
       hmac.update(bodyToVerify, 'utf8');
       const digest = hmac.digest('hex');

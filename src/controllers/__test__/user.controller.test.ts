@@ -4,8 +4,10 @@ import { UserController } from '@/controllers/user.controller';
 import { UserService } from '@/services/user.service';
 import { UserRepository } from '@/repositories/user.repository';
 import { fetchVelogApi } from '@/modules/velog/velog.api';
-import { NotFoundError } from '@/exception';
+import { BadRequestError, NotFoundError, QRTokenExpiredError, UnauthorizedError } from '@/exception';
+import { signUnsubscribe } from '@/utils/unsubscribe.util';
 import { mockUser, mockPool } from '@/utils/fixtures';
+import logger from '@/configs/logger.config';
 import { Pool } from 'pg';
 
 // Mock dependencies
@@ -15,6 +17,7 @@ jest.mock('@/modules/velog/velog.api');
 // logger 모킹
 jest.mock('@/configs/logger.config', () => ({
   error: jest.fn(),
+  warn: jest.fn(),
   info: jest.fn(),
 }));
 
@@ -88,7 +91,6 @@ describe('UserController', () => {
         'valid-access-token',
         'valid-refresh-token',
       );
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -151,7 +153,6 @@ describe('UserController', () => {
       await userController.sampleLogin(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(mockUserService.findSampleUser).toHaveBeenCalled();
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -243,9 +244,9 @@ describe('UserController', () => {
     it('QR 토큰 생성에 성공해야 한다', async () => {
       const mockToken = 'ABCD123456';
       mockRequest.headers = {
-        'x-forwarded-for': '192.168.1.1, 127.0.0.1',
         'user-agent': 'Mozilla/5.0 (Test Browser)',
       };
+      mockRequest = { ...mockRequest, ip: '192.168.1.1' };
       mockUserService.createUserQRToken.mockResolvedValue(mockToken);
 
       await userController.createToken(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -264,7 +265,7 @@ describe('UserController', () => {
       });
     });
 
-    it('IP 주소가 없는 경우 빈 문자열을 사용해야 한다', async () => {
+    it('IP 주소가 없는 경우 unknown 을 사용해야 한다', async () => {
       const mockToken = 'ABCD123456';
       const mockRequestWithoutIp = {
         ...mockRequest,
@@ -275,7 +276,16 @@ describe('UserController', () => {
 
       await userController.createToken(mockRequestWithoutIp as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, '', 'Test Browser');
+      expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, 'unknown', 'Test Browser');
+    });
+
+    it('User-Agent 가 255자를 넘으면 255자로 잘라 넘겨야 한다', async () => {
+      mockRequest.headers = { 'user-agent': 'a'.repeat(300) };
+      mockUserService.createUserQRToken.mockResolvedValue('ABC123EFGH');
+
+      await userController.createToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.createUserQRToken).toHaveBeenCalledWith(mockUser.id, '127.0.0.1', 'a'.repeat(255));
     });
 
     it('QR 토큰 생성 실패 시 에러를 전달해야 한다', async () => {
@@ -290,49 +300,104 @@ describe('UserController', () => {
   });
 
   describe('getToken', () => {
-    it('유효한 토큰으로 QR 로그인에 성공해야 한다', async () => {
-      mockRequest.query = { token: 'valid-token' };
+    it('토큰을 소비하지 않고 FE 확인 화면으로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { token: 'ABC+12/3&=' };
+
+      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.useToken).not.toHaveBeenCalled();
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith(`/qr-login?token=${encodeURIComponent('ABC+12/3&=')}`);
+    });
+
+    it('토큰이 없거나 문자열이 아니면 토큰 없이 FE 확인 화면으로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { token: ['a', 'b'] };
+
+      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.useToken).not.toHaveBeenCalled();
+      expect(mockResponse.redirect).toHaveBeenCalledWith('/qr-login');
+    });
+  });
+
+  describe('confirmToken', () => {
+    beforeEach(() => {
+      mockRequest.headers = { 'user-agent': 'phone-agent' };
+    });
+
+    it('유효한 토큰을 확인하면 세션 쿠키를 심고 200 을 응답해야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
       mockUserService.useToken.mockResolvedValue(mockUser);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.useToken).toHaveBeenCalledWith('valid-token');
-      expect(namesOf(mockResponse.clearCookie)).toEqual(['access_token', 'refresh_token']);
+      expect(mockUserService.useToken).toHaveBeenCalledWith('ABC123EFGH', '127.0.0.1', 'phone-agent');
       expect(namesOf(mockResponse.cookie)).toEqual(['vd_session']);
-      expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('토큰이 없는 경우 에러를 전달해야 한다', async () => {
-      mockRequest.query = {};
+    it('IP 가 IP 컬럼 길이(45)를 넘으면 잘라서 넘겨야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
+      mockRequest.headers = { 'user-agent': 'phone-agent' };
+      mockRequest = { ...mockRequest, ip: '1'.repeat(60) };
+      mockUserService.useToken.mockResolvedValue(mockUser);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(nextFunction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: '토큰이 필요합니다.',
-        }),
-      );
+      expect(mockUserService.useToken).toHaveBeenCalledWith('ABC123EFGH', '1'.repeat(45), 'phone-agent');
     });
 
-    it('만료된 토큰인 경우 에러를 전달해야 한다', async () => {
-      mockRequest.query = { token: 'expired-token' };
+    it('만료되었거나 이미 사용된 토큰이면 QRTokenExpiredError 를 넘겨야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
       mockUserService.useToken.mockResolvedValue(null);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(QRTokenExpiredError));
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
+    });
+
+    it('비활성 사용자면 서비스의 UnauthorizedError 를 넘겨야 한다', async () => {
+      mockRequest.body = { token: 'ABC123EFGH' };
+      const error = new UnauthorizedError('로그인할 수 없는 사용자입니다.');
+      mockUserService.useToken.mockRejectedValue(error);
+
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(error);
+      expect(mockResponse.cookie).not.toHaveBeenCalled();
     });
 
     it('토큰 사용 중 에러 발생 시 에러를 전달해야 한다', async () => {
-      mockRequest.query = { token: 'valid-token' };
+      mockRequest.body = { token: 'ABC123EFGH' };
       const error = new Error('토큰 사용 실패');
       mockUserService.useToken.mockRejectedValue(error);
 
-      await userController.getToken(mockRequest as Request, mockResponse as Response, nextFunction);
+      await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      // Assert
       expect(nextFunction).toHaveBeenCalledWith(error);
-      expect(mockResponse.redirect).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getTokenStatus', () => {
+    it('본인 토큰의 상태를 서비스 결과 그대로 응답해야 한다', async () => {
+      mockResponse.locals = { query: { token: 'ABC123EFGH' } };
+      const status = {
+        status: 'used' as const,
+        usedAt: '2026-10-22T00:00:00.000Z',
+        userAgent: 'phone-agent',
+        ip: '10.0.0.1',
+      };
+      mockUserService.getQRLoginTokenStatus.mockResolvedValue(status);
+
+      await userController.getTokenStatus(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.getQRLoginTokenStatus).toHaveBeenCalledWith('ABC123EFGH', mockUser.id);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, data: status }));
     });
   });
 
@@ -369,9 +434,95 @@ describe('UserController', () => {
 
       await userController.unsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
 
-      expect(mockUserService.unsubscribeNewsletter).toHaveBeenCalledWith(email);
+      expect(mockUserService.unsubscribeNewsletter).toHaveBeenCalledWith(email, {
+        source: '기존 email 링크',
+        ip: '127.0.0.1',
+        userAgent: '',
+      });
       expect(mockResponse.redirect).toHaveBeenCalledWith('/main');
       expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('서명 링크(uid·sig)로 들어오면 상태를 바꾸지 않고 서명을 fragment 에 담아 FE 확인 페이지로 리다이렉트해야 한다', async () => {
+      mockRequest.query = { uid: '42', sig: 'a+b/c=' };
+
+      await userController.unsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.unsubscribeNewsletter).not.toHaveBeenCalled();
+      expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      // 분석 도구가 수집하는 query 대신 fragment 에 담아 서명이 새지 않게 한다
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        `/newsletter/unsubscribe#uid=42&sig=${encodeURIComponent('a+b/c=')}`,
+      );
+    });
+  });
+
+  describe('confirmUnsubscribeNewsletter', () => {
+    const sig = signUnsubscribe(process.env.NEWSLETTER_UNSUBSCRIBE_SECRET as string, 42);
+
+    beforeEach(() => {
+      mockRequest.headers = { 'user-agent': 'mail-provider' };
+      mockRequest.body = { 'List-Unsubscribe': 'One-Click' };
+    });
+
+    it('메일 사업자의 원클릭 POST(Origin 없음)는 수신거부하고 리다이렉트 없이 200 을 응답해야 한다', async () => {
+      mockResponse.locals = { query: { uid: '42', sig } };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.unsubscribeNewsletterById).toHaveBeenCalledWith(42, {
+        source: '원클릭(메일 사업자)',
+        ip: '127.0.0.1',
+        userAgent: 'mail-provider',
+      });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(mockResponse.redirect).not.toHaveBeenCalled();
+      expect(nextFunction).not.toHaveBeenCalled();
+    });
+
+    it('확인 페이지 POST(Origin 있음)는 경로를 확인 페이지로 구분해야 한다', async () => {
+      mockResponse.locals = { query: { uid: '42', sig } };
+      mockRequest.headers = { origin: 'https://velog-dashboard.kro.kr', 'user-agent': 'browser' };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(mockUserService.unsubscribeNewsletterById).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ source: '확인 페이지' }),
+      );
+    });
+
+    it('서명이 맞지 않으면 BadRequestError 를 넘기고 수신거부하지 않으며, 스캐너·변조 링크라 warn 으로만 남겨야 한다', async () => {
+      mockResponse.locals = { query: { uid: '43', sig } };
+
+      await userController.confirmUnsubscribeNewsletter(mockRequest as Request, mockResponse as Response, nextFunction);
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(BadRequestError));
+      expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      expect(mockResponse.json).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it('서명 키가 설정되지 않았으면 503 을 넘기고 수신거부하지 않아야 한다', async () => {
+      mockResponse.locals = { query: { uid: '42', sig } };
+      const secret = process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
+      delete process.env.NEWSLETTER_UNSUBSCRIBE_SECRET;
+
+      try {
+        await userController.confirmUnsubscribeNewsletter(
+          mockRequest as Request,
+          mockResponse as Response,
+          nextFunction,
+        );
+      } finally {
+        process.env.NEWSLETTER_UNSUBSCRIBE_SECRET = secret;
+      }
+
+      expect(nextFunction).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 503 }));
+      expect(mockUserService.unsubscribeNewsletterById).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
     });
   });
 });

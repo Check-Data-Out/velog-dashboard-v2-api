@@ -14,14 +14,10 @@ interface BadgeQuery {
 export class TotalStatsController {
   constructor(private totalStatsService: TotalStatsService) {}
 
-  getTotalStats: RequestHandler = async (
-    req: Request<object, object, object, GetTotalStatsQuery>,
-    res: Response<TotalStatsResponseDto>,
-    next: NextFunction,
-  ) => {
+  getTotalStats: RequestHandler = async (req: Request, res: Response<TotalStatsResponseDto>, next: NextFunction) => {
     try {
       const { id } = req.user;
-      const { period, type } = req.query;
+      const { period, type } = res.locals.query as GetTotalStatsQuery;
 
       const stats = await this.totalStatsService.getTotalStats(id, period, type);
       const message = this.totalStatsService.getSuccessMessage(type);

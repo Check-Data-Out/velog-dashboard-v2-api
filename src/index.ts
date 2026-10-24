@@ -1,9 +1,9 @@
+import './instrument';
 import { createApp } from '@/app';
 import logger from '@/configs/logger.config';
 import { cache, closeCache, initCache } from './configs/cache.config';
 import { closeDatabase, initializeDatabase } from './configs/db.config';
 import { Server } from 'http';
-import { initSentry } from './configs/sentry.config';
 import { Application } from 'express';
 
 interface ShutdownHandler {
@@ -110,10 +110,6 @@ class ServerManager {
    * 데이터베이스 등 필요한 서비스들을 초기화
    */
   private async initializeServices(): Promise<void> {
-    // Sentry 초기화 (에러 모니터링을 위해 가장 먼저)
-    initSentry();
-    logger.info('Sentry initialized successfully');
-
     // Cache 초기화 (await 추가 - Redis 연결 완료까지 대기)
     await initCache();
     logger.info('Cache initialized successfully');
@@ -135,7 +131,13 @@ class ServerManager {
       throw new Error('Express app not initialized');
     }
 
-    const server = this.app.listen(this.port, () => {
+    const server = this.app.listen(this.port, (error?: Error) => {
+      // Express 5 는 포트 사용 중 같은 listen 오류를 던지지 않고 이 콜백으로 넘긴다
+      if (error) {
+        logger.error('Failed to start server:', error);
+        process.exit(1);
+      }
+
       logger.info(`Server running on port ${this.port}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
 
@@ -145,6 +147,12 @@ class ServerManager {
       }
 
       logger.info(`Health Check: http://localhost:${this.port}/health`);
+    });
+
+    // listen 콜백은 한 번만 불리므로, 기동 이후의 서버 오류는 Express 4 처럼 종료되도록 따로 받는다
+    server.on('error', (error) => {
+      logger.error('Server error:', error);
+      process.exit(1);
     });
 
     return server;

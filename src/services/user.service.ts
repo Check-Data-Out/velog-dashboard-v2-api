@@ -1,5 +1,5 @@
 import logger from '@/configs/logger.config';
-import { NotFoundError, TokenError } from '@/exception/';
+import { NotFoundError, TokenError, UnauthorizedError } from '@/exception/';
 import { getKeyByGroup } from '@/utils/key.util';
 import AESEncryption from '@/modules/token_encryption/aes_encryption';
 import { sendSlackMessage } from '@/modules/slack/slack.notifier';
@@ -8,6 +8,16 @@ import { UserWithTokenDto, User } from '@/types';
 import { generateRandomGroupId } from '@/utils/generateGroupId.util';
 import { generateRandomToken } from '@/utils/generateRandomToken.util';
 import { VelogUserCurrentResponse } from '@/modules/velog/velog.type';
+import { QRLoginTokenStatus } from '@/types/models/QRLoginToken.type';
+
+/** 수신거부 요청 경로. Slack 알림에서 어디서 왔는지 구분한다. */
+export type NewsletterUnsubscribeSource = '확인 페이지' | '원클릭(메일 사업자)' | '기존 email 링크';
+
+export interface NewsletterUnsubscribeContext {
+  source: NewsletterUnsubscribeSource;
+  ip: string;
+  userAgent: string;
+}
 
 export class UserService {
   constructor(private userRepo: UserRepository) {}
@@ -125,21 +135,25 @@ export class UserService {
     return token;
   }
 
-  async useToken(token: string): Promise<User | null> {
-    // 1. 사용자의 토큰을 찾는다.
-    const qrToken = await this.userRepo.findQRLoginToken(token);
-    if (!qrToken) {
+  /**
+   * QR 토큰을 소비하고 토큰 주인을 돌려줍니다. 소비할 수 없는 토큰이면 null 입니다.
+   */
+  async useToken(token: string, ip: string, userAgent: string): Promise<User | null> {
+    const userId = await this.userRepo.consumeQRLoginToken(token, ip, userAgent);
+    if (userId === null) {
       return null;
     }
 
-    // 2. 찾은 토큰을 기반으로 사용자를 다시 찾는다. (토큰 획득 및 사용자의 QR토큰 모두 비활성화)
-    const qrTokenUser = await this.userRepo.findByUserId(qrToken.user_id);
-    if (!qrTokenUser) {
-      return null;
+    const user = await this.userRepo.findByUserId(userId);
+    if (!user || !user.is_active) {
+      throw new UnauthorizedError('로그인할 수 없는 사용자입니다.');
     }
 
-    await this.userRepo.updateQRLoginTokenToUse(qrToken.user_id);
-    return qrTokenUser;
+    return user;
+  }
+
+  async getQRLoginTokenStatus(token: string, userId: number): Promise<QRLoginTokenStatus> {
+    return await this.userRepo.findQRLoginTokenStatus(token, userId);
   }
 
   /**
@@ -153,30 +167,54 @@ export class UserService {
     await this.userRepo.incrementSessionVersion(user.id);
   }
 
-  async unsubscribeNewsletter(email: string) {
-    try {
-      const user = await this.userRepo.findByUserEmail(email);
+  /**
+   * 기존 `?email=` 링크로 들어온 수신거부. 서명 링크로 옮기는 동안만 유지한다.
+   */
+  async unsubscribeNewsletter(email: string, context: NewsletterUnsubscribeContext): Promise<void> {
+    const user = await this.userRepo.findByUserEmail(email);
+    if (!user) {
+      logger.info('뉴스레터 수신거부 대상 사용자가 없습니다. [기존 email 링크]');
+      return;
+    }
 
-      if (!user) {
-        logger.error(`유저를 찾을 수 없습니다. [email: ${email}]`);
-        return; // 일반적인 실패시 조용히 리디렉션
-      }
+    await this.unsubscribeAndNotify(user, context);
+  }
 
-      if (!user.newsletter_subscribed) {
-        logger.error(`이미 구독이 해제된 이메일입니다. [email: ${email}]`);
-        return; // 일반적인 실패시 조용히 리디렉션
-      }
+  /**
+   * 서명 링크로 들어온 수신거부. 없는 사용자·이미 수신거부한 사용자도 오류 없이 끝난다(멱등).
+   */
+  async unsubscribeNewsletterById(id: number, context: NewsletterUnsubscribeContext): Promise<void> {
+    const user = await this.userRepo.findByUserId(id);
+    if (!user) {
+      logger.info(`뉴스레터 수신거부 대상 사용자가 없습니다. [userId: ${id}]`);
+      return;
+    }
 
+    await this.unsubscribeAndNotify(user, context);
+  }
+
+  private async unsubscribeAndNotify(user: User, context: NewsletterUnsubscribeContext): Promise<void> {
+    const alreadyUnsubscribed = !user.newsletter_subscribed;
+    if (!alreadyUnsubscribed) {
       await this.userRepo.unsubscribeNewsletter(user.id);
+    }
 
-      try {
-        await sendSlackMessage(`뉴스레터 구독 취소: ${email} (id: ${user.id})`);
-      } catch (error) {
-        logger.error('Slack 알림 전송 실패:', error);
-      }
+    const processedAt = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' });
+    try {
+      await sendSlackMessage(
+        [
+          '뉴스레터 수신거부',
+          `- 사용자: ${user.username ?? '-'} (id: ${user.id})`,
+          `- 이메일: ${user.email ?? '-'}`,
+          `- 처리 시각: ${processedAt} KST`,
+          `- 경로: ${context.source}`,
+          `- IP: ${context.ip || '-'}`,
+          `- User-Agent: ${context.userAgent || '-'}`,
+          `- 이미 수신거부 상태: ${alreadyUnsubscribed ? '예' : '아니오'}`,
+        ].join('\n'),
+      );
     } catch (error) {
-      logger.error('User Service unsubscribeNewsletter Error : ', error);
-      throw error;
+      logger.error('Slack 알림 전송 실패:', error);
     }
   }
 }

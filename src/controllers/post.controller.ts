@@ -13,14 +13,10 @@ import {
 export class PostController {
   constructor(private postService: PostService) {}
 
-  getAllPosts: RequestHandler = async (
-    req: Request<object, object, object, GetAllPostsQuery>,
-    res: Response<PostsResponseDto>,
-    next: NextFunction,
-  ) => {
+  getAllPosts: RequestHandler = async (req: Request, res: Response<PostsResponseDto>, next: NextFunction) => {
     try {
       const { id } = req.user;
-      const { cursor, sort, asc } = req.query;
+      const { cursor, sort, asc } = res.locals.query as GetAllPostsQuery;
 
       const result = await this.postService.getAllposts(id, cursor, sort, asc);
 
@@ -64,14 +60,14 @@ export class PostController {
   };
 
   getPostByPostId: RequestHandler<PostParam> = async (
-    req: Request<PostParam, object, object, GetPostQuery>,
+    req: Request<PostParam>,
     res: Response<PostResponseDto>,
     next: NextFunction,
   ) => {
     try {
       const postId = Number(req.params.postId);
 
-      const { start, end } = req.query;
+      const { start, end } = res.locals.query as GetPostQuery;
       const post = await this.postService.getPostByPostId(postId, start, end);
       const response = new PostResponseDto(true, '단건 post 조회에 성공하였습니다.', { post }, null);
 

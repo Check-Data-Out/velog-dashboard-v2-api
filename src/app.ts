@@ -35,8 +35,9 @@ export function createApp(cache: ICache): Application {
   const authRateLimitService = new AuthRateLimitService(cache);
   setRateLimitService(authRateLimitService);
 
-  // 실제 클라이언트 IP를 알기 위한 trust proxy 설정
-  app.set('trust proxy', process.env.NODE_ENV === 'production');
+  // 운영 요청은 LB → 서버 nginx(docker) → API 순서다. 서버 nginx 가 신뢰 프록시 목록으로 확인한 접속 IP 하나로
+  // X-Forwarded-For 를 덮어쓰므로, 그 nginx 가 있는 docker 내부망만 믿으면 req.ip 가 그 값이 된다
+  app.set('trust proxy', process.env.NODE_ENV === 'production' ? 'loopback, uniquelocal' : false);
 
   const swaggerSpec = swaggerJSDoc(options);
 

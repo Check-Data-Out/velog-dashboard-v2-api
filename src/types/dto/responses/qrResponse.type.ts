@@ -1,4 +1,5 @@
 import { BaseResponseDto } from '@/types/dto/responses/baseResponse.type';
+import { QRLoginTokenStatus } from '@/types/models/QRLoginToken.type';
 
 /**
  * @swagger
@@ -33,3 +34,38 @@ export interface QRLoginTokenResponseData {
  *               $ref: '#/components/schemas/QRLoginTokenResponseData'
  */
 export class QRLoginTokenResponseDto extends BaseResponseDto<QRLoginTokenResponseData> {}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     QRLoginStatusResponseData:
+ *       type: object
+ *       required:
+ *         - status
+ *       properties:
+ *         status:
+ *           type: string
+ *           enum: [pending, used, expired]
+ *           description: pending 은 대기, used 는 휴대폰에서 확인됨, expired 는 만료·무효화·없는 토큰
+ *         usedAt:
+ *           type: string
+ *           format: date-time
+ *           description: 확인 시각 (used 일 때만)
+ *         userAgent:
+ *           type: string
+ *           nullable: true
+ *           description: 확인한 기기의 User-Agent (used 일 때만)
+ *         ip:
+ *           type: string
+ *           nullable: true
+ *           description: 확인한 기기의 IP (used 일 때만)
+ *     QRLoginStatusResponseDto:
+ *       allOf:
+ *         - $ref: '#/components/schemas/BaseResponseDto'
+ *         - type: object
+ *           properties:
+ *             data:
+ *               $ref: '#/components/schemas/QRLoginStatusResponseData'
+ */
+export class QRLoginStatusResponseDto extends BaseResponseDto<QRLoginTokenStatus> {}
