@@ -35,8 +35,8 @@ export function createApp(cache: ICache): Application {
   const authRateLimitService = new AuthRateLimitService(cache);
   setRateLimitService(authRateLimitService);
 
-  // 운영 요청은 LB → 서버 nginx(docker) → API 순서다. 서버 nginx 가 신뢰 프록시 목록으로 푼 접속 IP 를
-  // X-Forwarded-For 끝에 붙이므로 docker 내부망만 믿으면 req.ip 가 그 값이 된다(앞쪽 값은 요청자가 꾸밀 수 있음)
+  // 운영 요청은 LB → 서버 nginx(docker) → API 순서다. 서버 nginx 가 신뢰 프록시 목록으로 확인한 접속 IP 하나로
+  // X-Forwarded-For 를 덮어쓰므로, 그 nginx 가 있는 docker 내부망만 믿으면 req.ip 가 그 값이 된다
   app.set('trust proxy', process.env.NODE_ENV === 'production' ? 'loopback, uniquelocal' : false);
 
   const swaggerSpec = swaggerJSDoc(options);
