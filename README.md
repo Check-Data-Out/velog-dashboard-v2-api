@@ -42,6 +42,13 @@ pnpm dev
 - 테스트는 필요한 데이터를 직접 넣고(`fixtures.ts`) 트랜잭션을 되돌리므로 데이터를 남기지 않습니다.
 - 로컬에서는 `.env` 의 DB 를 바라봅니다. `.env` 가 운영 DB 를 가리키면 운영에 붙으니 **_어떤 DB 에 붙는지 반드시 확인하고_** 돌려주세요.
 
+## 신뢰 프록시 (클라이언트 IP)
+
+- 운영 요청은 LB → 각 서버의 nginx(docker) → API 순서로 오고, FE 의 SSR 요청은 공개 도메인으로 LB 를 한 번 더 거칩니다.
+- 서버 nginx 는 `nginx/trusted-proxies/*.conf` 에 적힌 프록시만 믿고 `X-Forwarded-For` 에서 실제 접속 IP 를 찾습니다. API 는 그 값(`req.ip`)만 씁니다(인증 실패 제한, QR 로그인 기기 IP, 로그).
+- IP 는 공개 레포에 두지 않으므로 각 서버에서 `nginx/trusted-proxies/trusted.conf.sample` 을 `trusted.conf` 로 복사해 LB 와 API 서버들의 공인 IP 를 `set_real_ip_from` 으로 적습니다(`*.conf` 는 커밋하지 않음).
+- 파일이 없으면 모든 요청이 LB IP 로 보이므로 `run.sh` 가 서비스를 내리기 전에 멈춥니다. LB 나 서버를 바꾸면 이 파일도 함께 고칩니다.
+
 ## 실행 가능한 명령어
 
 ```bash

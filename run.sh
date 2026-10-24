@@ -37,6 +37,14 @@ check_docker() {
     fi
 }
 
+# 신뢰 프록시 파일 확인. 없으면 모든 요청의 접속 IP 가 LB 로 보여 인증 실패 제한이 사용자 전체에 걸린다
+check_trusted_proxies() {
+    if ! compgen -G "nginx/trusted-proxies/*.conf" > /dev/null; then
+        echo -e "${RED}nginx/trusted-proxies/*.conf 가 없습니다. README 의 '신뢰 프록시' 를 보고 만든 뒤 다시 배포하세요.${NC}"
+        exit 1
+    fi
+}
+
 # 서비스 중지
 stop_services() {
     print_step "0. 현재 사용 중인 서비스 중지"
@@ -161,6 +169,7 @@ main() {
     print_step "Velog Dashboard V2 배포 스크립트 시작"
 
     check_docker
+    check_trusted_proxies
     stop_services
     cleanup_docker
     update_images
