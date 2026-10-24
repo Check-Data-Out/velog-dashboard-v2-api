@@ -244,9 +244,9 @@ describe('UserController', () => {
     it('QR 토큰 생성에 성공해야 한다', async () => {
       const mockToken = 'ABCD123456';
       mockRequest.headers = {
-        'x-forwarded-for': '192.168.1.1, 127.0.0.1',
         'user-agent': 'Mozilla/5.0 (Test Browser)',
       };
+      mockRequest = { ...mockRequest, ip: '192.168.1.1' };
       mockUserService.createUserQRToken.mockResolvedValue(mockToken);
 
       await userController.createToken(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -338,9 +338,10 @@ describe('UserController', () => {
       expect(nextFunction).not.toHaveBeenCalled();
     });
 
-    it('x-forwarded-for 첫 값이 IP 컬럼 길이(45)를 넘으면 잘라서 넘겨야 한다', async () => {
+    it('IP 가 IP 컬럼 길이(45)를 넘으면 잘라서 넘겨야 한다', async () => {
       mockRequest.body = { token: 'ABC123EFGH' };
-      mockRequest.headers = { 'user-agent': 'phone-agent', 'x-forwarded-for': `${'1'.repeat(60)}, 192.168.0.1` };
+      mockRequest.headers = { 'user-agent': 'phone-agent' };
+      mockRequest = { ...mockRequest, ip: '1'.repeat(60) };
       mockUserService.useToken.mockResolvedValue(mockUser);
 
       await userController.confirmToken(mockRequest as Request, mockResponse as Response, nextFunction);

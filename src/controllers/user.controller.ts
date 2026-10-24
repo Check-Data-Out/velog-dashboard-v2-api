@@ -21,8 +21,7 @@ type Token10 = string & { __lengthBrand: 10 };
 // IP 를 저장하는 컬럼 길이(IPv6 최대 45자). 클라이언트가 보낸 값이 길어도 저장이 실패하지 않게 자른다
 const MAX_IP_LENGTH = 45;
 
-const getStoredClientIp = (req: Pick<Request, 'headers' | 'ip' | 'socket'>): string =>
-  getClientIp(req).slice(0, MAX_IP_LENGTH);
+const getStoredClientIp = (req: Pick<Request, 'ip' | 'socket'>): string => getClientIp(req).slice(0, MAX_IP_LENGTH);
 
 export class UserController {
   constructor(private userService: UserService) {}

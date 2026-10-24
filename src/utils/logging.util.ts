@@ -5,17 +5,10 @@ import { LogContext, ErrorLogData, AccessLogData } from '@/types/logging';
 import { CustomError } from '@/exception';
 
 /**
- * 클라이언트 IP 주소 추출. 프록시 뒤에서는 x-forwarded-for 첫 값이라 위조할 수 있으므로 참고용이다.
+ * 클라이언트 IP 주소. 운영에서는 trust proxy 설정에 따라 서버 nginx 가 확인한 접속 IP 다.
  */
-export const getClientIp = (req: Pick<Request, 'headers' | 'ip' | 'socket'>): string => {
-  return (
-    (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-    (req.headers['x-real-ip'] as string) ||
-    req.ip ||
-    req.socket?.remoteAddress ||
-    'unknown'
-  );
-};
+export const getClientIp = (req: Pick<Request, 'ip' | 'socket'>): string =>
+  req.ip || req.socket?.remoteAddress || 'unknown';
 
 // 뉴스레터 수신거부 링크의 서명(sig)은 만료되지 않으므로 로그에 원문을 남기지 않는다
 const maskSignature = (url: string): string => url.replace(/([?&]sig=)[^&#]*/g, '$1***');

@@ -13,6 +13,7 @@ SYSTEM_DESIGN.md
 .env.prod
 .env.local
 .env.*.local
+nginx/trusted-proxies/*.conf
 
 # TypeScript
 dist/

@@ -59,7 +59,7 @@ export class QRLoginTokenResponseDto extends BaseResponseDto<QRLoginTokenRespons
  *         ip:
  *           type: string
  *           nullable: true
- *           description: 확인한 기기의 참고용 IP. x-forwarded-for 첫 값이라 위조될 수 있다 (used 일 때만)
+ *           description: 확인한 기기의 IP (used 일 때만)
  *     QRLoginStatusResponseDto:
  *       allOf:
  *         - $ref: '#/components/schemas/BaseResponseDto'
