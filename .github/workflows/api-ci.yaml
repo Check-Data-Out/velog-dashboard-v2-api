@@ -53,22 +53,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Create .env file
+        # 단위 테스트용 SLACK_WEBHOOK_URL·AES_KEY_* 는 jest.setup.ts 가 넣는다
         # 특수문자('#' 등)가 있는 값은 dotenv 가 인라인 주석으로 잘라내므로 따옴표로 감싼다 (.env.sample 참고)
         run: |
-          echo "SLACK_WEBHOOK_URL='${{ secrets.SLACK_WEBHOOK_URL }}'" >> .env
           echo "SENTRY_CLIENT_SECRET='${{ secrets.SENTRY_CLIENT_SECRET }}'" >> .env
           echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
-          # AES 키들 추가 (테스트용 더미 키)
-          echo "AES_KEY_0=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" >> .env
-          echo "AES_KEY_1=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" >> .env
-          echo "AES_KEY_2=cccccccccccccccccccccccccccccccc" >> .env
-          echo "AES_KEY_3=dddddddddddddddddddddddddddddddd" >> .env
-          echo "AES_KEY_4=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" >> .env
-          echo "AES_KEY_5=ffffffffffffffffffffffffffffffff" >> .env
-          echo "AES_KEY_6=gggggggggggggggggggggggggggggggg" >> .env
-          echo "AES_KEY_7=hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh" >> .env
-          echo "AES_KEY_8=iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii" >> .env
-          echo "AES_KEY_9=jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" >> .env
 
       - name: Run lint
         run: pnpm run lint
@@ -117,7 +106,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v7
         with:
-          python-version: 3.13.0
+          python-version: "3.13"
 
       - name: Install Poetry
         uses: abatilo/actions-poetry@v4

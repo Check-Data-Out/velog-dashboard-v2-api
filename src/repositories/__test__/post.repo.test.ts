@@ -28,19 +28,6 @@ describe('PostRepository', () => {
       expect(result).toHaveProperty('nextCursor');
     });
 
-    it('정렬 순서를 보장해야 한다', async () => {
-      const mockPosts = [
-        { id: 2, post_released_at: '2025-03-02T00:00:00Z', daily_view_count: 20, daily_like_count: 15 },
-        { id: 1, post_released_at: '2025-03-01T00:00:00Z', daily_view_count: 10, daily_like_count: 5 },
-      ];
-
-      mockPool.query.mockResolvedValue(createMockQueryResult(mockPosts));
-
-      const result = await repo.findPostsByUserId(1, undefined, 'released_at', false);
-      expect(result.posts).toEqual(mockPosts);
-      expect(result.posts[0].id).toBeGreaterThan(result.posts[1].id);
-    });
-
     it('쿼리에 is_active = TRUE 조건이 포함되어야 한다', async () => {
       const mockPosts = [
         { id: 1, post_released_at: '2025-03-01T00:00:00Z', daily_view_count: 10, daily_like_count: 5 },

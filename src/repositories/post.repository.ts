@@ -7,10 +7,6 @@ export class PostRepository {
   constructor(private pool: Pool) {}
 
   async findPostsByUserId(userId: number, cursor?: string, sort?: string, isAsc: boolean = false, limit: number = 15) {
-    const nowDateKST = getCurrentKSTDateString();
-    const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
-    const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
-
     try {
       // 1) 정렬 컬럼 매핑
       let sortCol = 'p.released_at';
@@ -66,16 +62,7 @@ export class PostRepository {
           COALESCE(yesterday_stats.daily_like_count, 0) AS yesterday_daily_like_count,
           pds.date
         FROM posts_post p
-        LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count, date
-          FROM posts_postdailystatistics
-          WHERE date >= '${nowDateKST}' AND date < '${tomorrowDateKST}'
-        ) pds ON p.id = pds.post_id
-        LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count, date
-          FROM posts_postdailystatistics
-          WHERE date >= '${yesterDateKST}' AND date < '${nowDateKST}'
-        ) yesterday_stats ON p.id = yesterday_stats.post_id
+        ${this.todayAndYesterdayStatsJoins()}
         WHERE p.user_id = $1
           AND p.is_active = TRUE
           AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
@@ -127,10 +114,6 @@ export class PostRepository {
     isAsc: boolean = false,
     limit: number = 15,
   ) {
-    const nowDateKST = getCurrentKSTDateString();
-    const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
-    const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
-
     try {
       const selectFields = `
         p.id,
@@ -175,16 +158,7 @@ export class PostRepository {
       const query = `
         SELECT ${selectFields}
         FROM posts_post p
-        LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count, date
-          FROM posts_postdailystatistics
-          WHERE date >= '${nowDateKST}' AND date < '${tomorrowDateKST}'
-        ) pds ON p.id = pds.post_id
-        LEFT JOIN (
-          SELECT post_id, daily_view_count, daily_like_count, date
-          FROM posts_postdailystatistics
-          WHERE date >= '${yesterDateKST}' AND date < '${nowDateKST}'
-        ) yesterday_stats ON p.id = yesterday_stats.post_id
+        ${this.todayAndYesterdayStatsJoins()}
         WHERE p.user_id = $1
           AND p.is_active = TRUE
           AND (pds.post_id IS NOT NULL OR yesterday_stats.post_id IS NOT NULL)
@@ -335,5 +309,23 @@ export class PostRepository {
       logger.error('Post Repo findPostByUUID error : ', error);
       throw new DBError('통계 데이터 조회 중 문제가 발생했습니다.');
     }
+  }
+
+  // 목록 두 쿼리가 함께 쓰는 오늘·어제 통계 JOIN. 날짜 창을 바꿀 때 두 목록이 다른 날을 보지 않도록 한 곳에 둔다
+  private todayAndYesterdayStatsJoins(): string {
+    const nowDateKST = getCurrentKSTDateString();
+    const tomorrowDateKST = getKSTDateStringWithOffset(24 * 60);
+    const yesterDateKST = getKSTDateStringWithOffset(-24 * 60);
+
+    return `LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count, date
+          FROM posts_postdailystatistics
+          WHERE date >= '${nowDateKST}' AND date < '${tomorrowDateKST}'
+        ) pds ON p.id = pds.post_id
+        LEFT JOIN (
+          SELECT post_id, daily_view_count, daily_like_count, date
+          FROM posts_postdailystatistics
+          WHERE date >= '${yesterDateKST}' AND date < '${nowDateKST}'
+        ) yesterday_stats ON p.id = yesterday_stats.post_id`;
   }
 }

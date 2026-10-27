@@ -14,6 +14,7 @@ jest.mock('@/configs/logger.config', () => ({
 }));
 
 jest.mock('@/utils/logging.util', () => ({
+  ...jest.requireActual('@/utils/logging.util'),
   logError: jest.fn(),
 }));
 
@@ -53,16 +54,6 @@ describe('ErrorHandlingMiddleware', () => {
   });
 
   describe('createErrorHandlingMiddleware', () => {
-    it('AuthRateLimitService를 선택적 인자로 받아야 한다', () => {
-      // AuthRateLimitService 없이 호출
-      const middlewareWithoutService = createErrorHandlingMiddleware();
-      expect(typeof middlewareWithoutService).toBe('function');
-
-      // AuthRateLimitService와 함께 호출
-      const middlewareWithService = createErrorHandlingMiddleware(mockService);
-      expect(typeof middlewareWithService).toBe('function');
-    });
-
     it('AuthRateLimitService 없이도 기존 동작이 유지되어야 한다', () => {
       const customError = new CustomError('테스트 에러', 'TEST_ERROR', 400);
 

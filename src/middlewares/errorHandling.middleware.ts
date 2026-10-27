@@ -2,14 +2,14 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { CustomError, InvalidTokenError } from '@/exception';
 import * as Sentry from '@sentry/node';
-import { logError } from '@/utils/logging.util';
+import { getClientIp, logError } from '@/utils/logging.util';
 import { AuthRateLimitService } from '@/services/authRateLimit.service';
 
 export const createErrorHandlingMiddleware = (authRateLimitService?: AuthRateLimitService): ErrorRequestHandler => {
   return async (err: Error, req: Request, res: Response, next: NextFunction) => {
     // InvalidTokenError 발생 시 인증 실패 추적
     if (err instanceof InvalidTokenError && authRateLimitService) {
-      const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+      const ip = getClientIp(req);
       await authRateLimitService.trackAuthFailure(ip);
     }
 
