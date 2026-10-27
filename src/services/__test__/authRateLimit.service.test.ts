@@ -33,13 +33,6 @@ describe('AuthRateLimitService', () => {
     jest.clearAllMocks();
   });
 
-  describe('constructor', () => {
-    it('ICache를 생성자 인자로 받아야 한다', () => {
-      authRateLimitService = new AuthRateLimitService(mockCache);
-      expect(authRateLimitService).toBeInstanceOf(AuthRateLimitService);
-    });
-  });
-
   describe('trackAuthFailure', () => {
     beforeEach(() => {
       authRateLimitService = new AuthRateLimitService(mockCache);

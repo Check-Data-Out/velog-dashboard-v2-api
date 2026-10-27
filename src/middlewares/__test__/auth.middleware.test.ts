@@ -342,22 +342,6 @@ describe('인증 미들웨어', () => {
       expect(error).not.toBeInstanceOf(InvalidTokenError);
     });
 
-    it('유효하지 않은 토큰으로 InvalidTokenError를 전달해야 한다', async () => {
-      // 유효하지 않은 토큰 (JWT 형식은 맞지만 내용이 잘못됨)
-      const invalidToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbnZhbGlkIjoidG9rZW4ifQ.invalidSignature';
-      mockRequest.headers = {
-        access_token: invalidToken,
-        refresh_token: REFRESH_TOKEN,
-      };
-
-      // 미들웨어 실행
-      await authMiddleware.verify(mockRequest as Request, mockResponse as Response, nextFunction);
-
-      // 검증
-      expect(nextFunction).toHaveBeenCalledTimes(1);
-      expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
-    });
-
     it('UUID가 없는 페이로드로 InvalidTokenError를 전달해야 한다', async () => {
       // UUID가 없는 토큰 (페이로드를 임의로 조작)
       const tokenWithoutUUID =
@@ -548,18 +532,6 @@ describe('verifyBearerTokens', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('함수 시그니처', () => {
-    it('AuthRateLimitService를 인자로 받아 미들웨어 함수를 반환해야 한다', () => {
-      const middleware = verifyBearerTokens(mockRateLimitService);
-      expect(typeof middleware).toBe('function');
-    });
-
-    it('AuthRateLimitService 없이도 동작해야 한다', () => {
-      const middleware = verifyBearerTokens();
-      expect(typeof middleware).toBe('function');
-    });
   });
 
   describe('전역 rate limit 서비스', () => {

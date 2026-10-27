@@ -44,7 +44,7 @@ describe('UserRepository - QR Login Token', () => {
 
       await expect(repo.updateQRLoginTokenToUse(targetUserId)).resolves.not.toThrow();
 
-      expect(mockPool.query).toHaveBeenCalledTimes(targetUserId);
+      expect(mockPool.query).toHaveBeenCalledTimes(1);
       expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE users_qrlogintoken'), [targetUserId]);
     });
 
