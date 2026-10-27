@@ -14,6 +14,7 @@ jest.mock('@/configs/logger.config', () => ({
 }));
 
 jest.mock('@/utils/logging.util', () => ({
+  ...jest.requireActual('@/utils/logging.util'),
   logError: jest.fn(),
 }));
 

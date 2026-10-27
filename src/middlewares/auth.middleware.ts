@@ -11,6 +11,7 @@ import { fetchVelogApi } from '@/modules/velog/velog.api';
 import { cache } from '@/configs/cache.config';
 import { SESSION_COOKIE_NAME, verifySession } from '@/utils/session.util';
 import { clearAuthCookies, setSessionCookie } from '@/utils/cookie.util';
+import { getClientIp } from '@/utils/logging.util';
 
 // 전역 rate limit 서비스 (나중에 주입)
 let globalRateLimitService: AuthRateLimitService | undefined;
@@ -150,7 +151,7 @@ export const verifyBearerTokens = (rateLimitService?: AuthRateLimitService) => {
       const limiter = rateLimitService ?? globalRateLimitService;
       if (limiter) {
         try {
-          const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+          const ip = getClientIp(req);
           const isBlocked = await limiter.isIpBlocked(ip);
           if (isBlocked) {
             res.status(429).json({
